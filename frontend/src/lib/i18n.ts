@@ -18,6 +18,34 @@ export const LANGUAGES: { id: Language; label: string; flag: string }[] = [
 interface Strings {
   planTripTitle: string;
   port: string;
+  portPlaceholder: string;
+  pickPort: string;
+  ground: string;
+  anyGround: string;
+  groundPlaceholder: string;
+  closedPrefix: string; // "Closed" word for the chip
+  copyLink: string;
+  linkCopied: string;
+  about: string;
+  aboutWhatTitle: string;
+  aboutWhatBody: string;
+  aboutDataTitle: string;
+  aboutKiroTitle: string;
+  aboutKiroBody: string;
+  aboutLimitsTitle: string;
+  aboutLimitsBody: string;
+  aboutTeamTitle: string;
+  aboutBack: string;
+  colLayer: string;
+  colSource: string;
+  colKind: string;
+  colFetched: string;
+  colLicense: string;
+  real: string;
+  synthetic: string;
+  comparedWith: string; // "Compared with Fastest:"
+  avoidsClosures: string; // "avoids {n} closure(s)"
+  avoidsNoClosures: string; // "avoids no extra closures"
   vessel: string;
   cruiseSpeed: string;
   maxHours: string;
@@ -113,6 +141,37 @@ const STRINGS: Record<Language, Strings> = {
   en: {
     planTripTitle: 'Plan a trip',
     port: 'Port',
+    portPlaceholder: 'Search a port…',
+    pickPort: 'Pick a port from the list',
+    ground: 'Target ground',
+    anyGround: 'Any ground',
+    groundPlaceholder: 'Search a ground…',
+    closedPrefix: 'Closed',
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied',
+    about: 'About',
+    aboutWhatTitle: 'What Fathom does',
+    aboutWhatBody:
+      'Fathom is an advisory ocean decision copilot for Massachusetts captains and fisheries managers. It fuses weather, protection zones, and a whale-strike risk model into ranked, legal trip plans and a what-if simulator — balancing right-whale protection with fishing livelihoods.',
+    aboutDataTitle: 'Data sources',
+    aboutKiroTitle: 'How we used Kiro',
+    aboutKiroBody:
+      'Built spec-first with Kiro: requirements, design, and tasks specs; steering files for tech and product rules; agent hooks (citation guard, evidence log); an MCP server exposing the data/risk/route tools; and property-based tests for the risk and routing invariants.',
+    aboutLimitsTitle: 'Limits',
+    aboutLimitsBody:
+      'Advisory only — never a substitute for official notices, VHF warnings, or the captain’s judgment. Zone polygons are hand-drawn approximations (their dates are real). The demo uses ~60 recent whale sightings. The effort proxy is an estimate, not catch or revenue.',
+    aboutTeamTitle: 'Team',
+    aboutBack: 'Back to the map',
+    colLayer: 'Layer',
+    colSource: 'Source',
+    colKind: 'Real / synthetic',
+    colFetched: 'Fetched',
+    colLicense: 'License',
+    real: 'Real',
+    synthetic: 'Synthetic',
+    comparedWith: 'Compared with Fastest:',
+    avoidsClosures: 'avoids {n} closure(s)',
+    avoidsNoClosures: 'no extra closures avoided',
     vessel: 'Vessel',
     cruiseSpeed: 'Cruise speed',
     maxHours: 'Max hours',
@@ -200,6 +259,37 @@ const STRINGS: Record<Language, Strings> = {
   pt: {
     planTripTitle: 'Planejar uma viagem',
     port: 'Porto',
+    portPlaceholder: 'Buscar um porto…',
+    pickPort: 'Escolha um porto da lista',
+    ground: 'Pesqueiro-alvo',
+    anyGround: 'Qualquer pesqueiro',
+    groundPlaceholder: 'Buscar um pesqueiro…',
+    closedPrefix: 'Fechado',
+    copyLink: 'Copiar link',
+    linkCopied: 'Link copiado',
+    about: 'Sobre',
+    aboutWhatTitle: 'O que o Fathom faz',
+    aboutWhatBody:
+      'O Fathom é um copiloto consultivo para capitães e gestores de pesca de Massachusetts. Reúne clima, zonas de proteção e um modelo de risco de colisão com baleias em planos de viagem legais e ranqueados e um simulador hipotético — equilibrando a proteção das baleias com o sustento da pesca.',
+    aboutDataTitle: 'Fontes de dados',
+    aboutKiroTitle: 'Como usamos o Kiro',
+    aboutKiroBody:
+      'Construído com especificações primeiro no Kiro: specs de requisitos, design e tarefas; arquivos de steering para regras de tecnologia e produto; hooks de agente (guarda de citações, registro de evidências); um servidor MCP expondo as ferramentas de dados/risco/rota; e testes baseados em propriedades para os invariantes de risco e rota.',
+    aboutLimitsTitle: 'Limites',
+    aboutLimitsBody:
+      'Apenas informativo — nunca substitui avisos oficiais, alertas de VHF ou o julgamento do capitão. Os polígonos das zonas são aproximações desenhadas à mão (as datas são reais). A demo usa ~60 avistamentos recentes de baleias. O proxy de esforço é uma estimativa, não captura nem receita.',
+    aboutTeamTitle: 'Equipe',
+    aboutBack: 'Voltar ao mapa',
+    colLayer: 'Camada',
+    colSource: 'Fonte',
+    colKind: 'Real / sintético',
+    colFetched: 'Obtido em',
+    colLicense: 'Licença',
+    real: 'Real',
+    synthetic: 'Sintético',
+    comparedWith: 'Comparado com Mais rápida:',
+    avoidsClosures: 'evita {n} fechamento(s)',
+    avoidsNoClosures: 'nenhum fechamento extra evitado',
     vessel: 'Embarcação',
     cruiseSpeed: 'Velocidade de cruzeiro',
     maxHours: 'Horas máx.',
@@ -287,6 +377,37 @@ const STRINGS: Record<Language, Strings> = {
   es: {
     planTripTitle: 'Planificar un viaje',
     port: 'Puerto',
+    portPlaceholder: 'Buscar un puerto…',
+    pickPort: 'Elige un puerto de la lista',
+    ground: 'Zona objetivo',
+    anyGround: 'Cualquier zona',
+    groundPlaceholder: 'Buscar una zona…',
+    closedPrefix: 'Cerrado',
+    copyLink: 'Copiar enlace',
+    linkCopied: 'Enlace copiado',
+    about: 'Acerca de',
+    aboutWhatTitle: 'Qué hace Fathom',
+    aboutWhatBody:
+      'Fathom es un copiloto consultivo para capitanes y gestores pesqueros de Massachusetts. Combina clima, zonas de protección y un modelo de riesgo de choque con ballenas en planes de viaje legales y clasificados y un simulador hipotético, equilibrando la protección de las ballenas con el sustento pesquero.',
+    aboutDataTitle: 'Fuentes de datos',
+    aboutKiroTitle: 'Cómo usamos Kiro',
+    aboutKiroBody:
+      'Construido con especificaciones primero en Kiro: specs de requisitos, diseño y tareas; archivos de steering para reglas de tecnología y producto; hooks de agente (guardia de citas, registro de evidencia); un servidor MCP que expone las herramientas de datos/riesgo/ruta; y pruebas basadas en propiedades para los invariantes de riesgo y ruta.',
+    aboutLimitsTitle: 'Límites',
+    aboutLimitsBody:
+      'Solo informativo — nunca sustituye avisos oficiales, alertas de VHF ni el criterio del capitán. Los polígonos de zonas son aproximaciones dibujadas a mano (sus fechas son reales). La demo usa ~60 avistamientos recientes de ballenas. El proxy de esfuerzo es una estimación, no captura ni ingresos.',
+    aboutTeamTitle: 'Equipo',
+    aboutBack: 'Volver al mapa',
+    colLayer: 'Capa',
+    colSource: 'Fuente',
+    colKind: 'Real / sintético',
+    colFetched: 'Obtenido',
+    colLicense: 'Licencia',
+    real: 'Real',
+    synthetic: 'Sintético',
+    comparedWith: 'Comparado con Más rápida:',
+    avoidsClosures: 'evita {n} cierre(s)',
+    avoidsNoClosures: 'ningún cierre adicional evitado',
     vessel: 'Embarcación',
     cruiseSpeed: 'Velocidad de crucero',
     maxHours: 'Horas máx.',

@@ -16,7 +16,11 @@ interface PlanCardProps {
   plans: RoutePlan[];
   language: Language;
   selected: boolean;
+  /** Highlighted from the comparison chart hover (item 3). */
+  highlighted?: boolean;
   onSelect: () => void;
+  onHover?: () => void;
+  onLeave?: () => void;
   /** Resolve a zone id to its display name (names stay identical across langs). */
   zoneName: (id: string) => string;
   /** The trip request this plan answers (for the printable brief). */
@@ -39,7 +43,10 @@ export function PlanCard({
   plans,
   language,
   selected,
+  highlighted,
   onSelect,
+  onHover,
+  onLeave,
   zoneName,
   trip,
   narrative,
@@ -58,9 +65,15 @@ export function PlanCard({
 
   return (
     <div
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
       className={[
         'rounded-xl border p-3 transition-colors',
-        selected ? 'border-surf bg-surf/10' : 'border-depth bg-abyss/50',
+        selected
+          ? 'border-surf bg-surf/10'
+          : highlighted
+            ? 'border-surf/70 bg-surf/5'
+            : 'border-depth bg-abyss/50',
       ].join(' ')}
     >
       <div className="flex items-center justify-between gap-2">
@@ -122,6 +135,39 @@ export function PlanCard({
 
       {open && (
         <div className="mt-3 space-y-3 border-t border-depth pt-3 text-xs">
+          {/* Explainer vs Fastest (item 6) — computed only from API fields */}
+          {showTradeoff && (
+            <p className="text-mist">
+              {s.comparedWith}{' '}
+              {(() => {
+                // Prefer backend vs_fastest fields; fall back to computed deltas.
+                const extraMin =
+                  plan.vs_fastest?.extra_hours != null
+                    ? Math.round(plan.vs_fastest.extra_hours * 60)
+                    : Math.round(deltaMin);
+                const riskChange =
+                  plan.vs_fastest?.risk_change != null
+                    ? plan.vs_fastest.risk_change * 100
+                    : riskChangePct;
+                const lessPct = Math.max(0, Math.round(-riskChange));
+                // Closures avoided: explicit field if present, else zones the
+                // fastest crosses that this plan does not.
+                const avoided =
+                  plan.zones_avoided?.length ??
+                  fastest.zones_crossed.filter((z) => !plan.zones_crossed.includes(z)).length;
+                const avoidText =
+                  avoided > 0
+                    ? s.avoidsClosures.replace('{n}', String(avoided))
+                    : s.avoidsNoClosures;
+                return (
+                  <span className="text-foam">
+                    +{extraMin} min, {lessPct}% {s.lessRisk}, {avoidText}
+                  </span>
+                );
+              })()}
+            </p>
+          )}
+
           {/* Zones crossed */}
           <section>
             <h4 className="mb-1 font-bold text-foam">{s.zonesCrossed}</h4>

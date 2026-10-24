@@ -3,10 +3,24 @@ import { api } from '@/api/client';
 import type {
   Conditions,
   MetaResponse,
+  Port,
   RiskCell,
   Sighting,
   Zone,
 } from '@/api/types';
+
+/** Load the port list (with grounds) for the given time (item 1/2). */
+export function usePorts(timeIso: string): Port[] {
+  const [ports, setPorts] = useState<Port[]>([]);
+  useEffect(() => {
+    let alive = true;
+    api.getPorts(timeIso).then((p) => alive && setPorts(p));
+    return () => {
+      alive = false;
+    };
+  }, [timeIso]);
+  return ports;
+}
 
 /** Load source metadata once on mount. */
 export function useMeta(): MetaResponse | null {

@@ -5,9 +5,10 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Relative asset paths so the SPA works whether served from a domain root
-  // (Vercel, with the /index.html rewrite) or opened directly.
-  base: './',
+  // Absolute asset paths so deep client routes (e.g. /about) load the same
+  // /assets/* bundle. The Vercel SPA rewrite serves index.html for non-asset
+  // paths, so absolute paths resolve correctly at any route depth (item 5).
+  base: '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

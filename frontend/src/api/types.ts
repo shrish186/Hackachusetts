@@ -127,6 +127,34 @@ export interface RoutePlan {
   citations: Citation[];
   /** Optional weather window for the "why" drawer. */
   weather_window?: WeatherWindow;
+  /** Closures/zones this route avoids (contract: added in the QA round). */
+  zones_avoided?: string[];
+  /** Comparison vs the fastest plan, if the backend provides it. */
+  vs_fastest?: { extra_hours?: number; risk_change?: number };
+}
+
+/** A fishing ground returned with a port (GET /api/meta/ports). */
+export interface Ground {
+  id: string;
+  name: string;
+  lon: number;
+  lat: number;
+  /** Closed at the queried time? */
+  closed?: boolean;
+  /** Plain reason / zone name when closed. */
+  closed_reason?: string;
+  /** Optional active window of the closing zone, for the chip. */
+  closed_from?: string | null;
+  closed_to?: string | null;
+}
+
+/** A port returned by GET /api/meta/ports. */
+export interface Port {
+  id: string;
+  name: string;
+  lon: number;
+  lat: number;
+  grounds: Ground[];
 }
 
 /** A single streamed agent step (design.md §7; requirements.md Req 4.5). */

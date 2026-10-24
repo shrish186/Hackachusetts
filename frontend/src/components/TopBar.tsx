@@ -4,6 +4,7 @@ import { ReplayToggle } from './ReplayToggle';
 import { formatLocalShort } from '@/lib/time';
 import { useAppState } from '@/state/AppState';
 import { t } from '@/lib/i18n';
+import { navigate } from '@/lib/router';
 
 interface TopBarProps {
   demoMode: boolean;
@@ -40,6 +41,16 @@ export function TopBar({ demoMode, dataTimestamp, onOpenSources }: TopBarProps) 
           >
             Sources
           </button>
+          <a
+            href="/about"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/about');
+            }}
+            className="rounded-md border border-depth bg-deep/70 px-2 py-1 font-semibold text-surf backdrop-blur transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
+          >
+            {s.about}
+          </a>
         </div>
 
         {/* Replay whale season toggle (item 1) */}

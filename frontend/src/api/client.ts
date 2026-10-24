@@ -17,6 +17,8 @@ import type {
   Conditions,
   Language,
   MetaResponse,
+  Port,
+  Ground,
   RiskCell,
   RoutePlan,
   ScenarioListItem,
@@ -28,6 +30,7 @@ import type {
   Zone,
 } from './types';
 import * as mock from '@/mocks';
+import { bundledPorts } from '@/data/ports';
 import { STUDY_AREA } from '@/config/studyArea';
 
 /* -------------------------------------------------------------------------- */
@@ -160,6 +163,31 @@ function delay<T>(value: T, ms = 150): Promise<T> {
 /* -------------------------------------------------------------------------- */
 /* Response adapters (backend wrapped shape -> clean types)                   */
 /* -------------------------------------------------------------------------- */
+
+/** Normalize a port object (tolerant of missing/extra fields). */
+function adaptPort(raw: unknown): Port {
+  const o = raw as Record<string, unknown>;
+  const grounds = Array.isArray(o.grounds) ? o.grounds : [];
+  return {
+    id: String(o.id ?? ''),
+    name: String(o.name ?? o.id ?? ''),
+    lon: Number(o.lon),
+    lat: Number(o.lat),
+    grounds: grounds.map((g): Ground => {
+      const x = g as Record<string, unknown>;
+      return {
+        id: String(x.id ?? ''),
+        name: String(x.name ?? x.id ?? ''),
+        lon: Number(x.lon),
+        lat: Number(x.lat),
+        closed: Boolean(x.closed),
+        closed_reason: (x.closed_reason as string | undefined) ?? undefined,
+        closed_from: (x.closed_from as string | null | undefined) ?? null,
+        closed_to: (x.closed_to as string | null | undefined) ?? null,
+      };
+    }),
+  };
+}
 
 function adaptMeta(raw: unknown): MetaResponse {
   const r = raw as { demo_mode?: boolean; sources?: unknown[]; data_timestamp?: string };
@@ -379,6 +407,25 @@ export const api = {
     return withFallback(
       async () => adaptMeta(await fetchJson('/api/meta/sources')),
       () => mock.meta,
+    );
+  },
+
+  /**
+   * Ports + their fishing grounds (GET /api/meta/ports, item 1). Accepts an
+   * optional time so the backend can mark grounds closed at that instant.
+   * Falls back to the bundled list in src/data/ports.ts on 404 / failure.
+   */
+  async getPorts(time?: string): Promise<Port[]> {
+    return withFallback(
+      async () => {
+        const q = time ? `?time=${encodeURIComponent(time)}` : '';
+        const raw = await fetchJson<unknown>(`/api/meta/ports${q}`);
+        const arr = (Array.isArray(raw)
+          ? raw
+          : (raw as { ports?: unknown[] }).ports ?? []) as Port[];
+        return arr.length ? arr.map(adaptPort) : bundledPorts(time);
+      },
+      () => bundledPorts(time),
     );
   },
 

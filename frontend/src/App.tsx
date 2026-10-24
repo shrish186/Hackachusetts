@@ -10,7 +10,13 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { MapUnavailable } from '@/map/MapUnavailable';
 import { useAppState } from '@/state/AppState';
 import { useMeta } from '@/hooks/useLayerData';
+import { useRoute } from '@/lib/router';
 import type { RoutePlan } from '@/api/types';
+
+// About page is a lazy client route (item 5).
+const AboutPage = lazy(() =>
+  import('@/about/AboutPage').then((m) => ({ default: m.AboutPage })),
+);
 
 // Code-split the heavy map (MapLibre + deck.gl) and the Manager panel so the
 // first paint on mobile is fast (task 12).
@@ -28,12 +34,24 @@ const ManagerPanel = lazy(() =>
 const PANEL_SCROLL = 'max-h-[calc(100dvh-16rem)] overflow-y-auto overscroll-contain pb-6';
 
 export function App() {
+  const route = useRoute();
   const { mode } = useAppState();
   const meta = useMeta();
   const [selectedRoute, setSelectedRoute] = useState<RoutePlan | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+
+  // Client-side route: /about renders the evidence page (item 5).
+  if (route.replace(/\/$/, '') === '/about') {
+    return (
+      <ErrorBoundary fallback={<AboutFallback />}>
+        <Suspense fallback={<div className="min-h-dvh bg-abyss" />}>
+          <AboutPage />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
 
   const panel =
     mode === 'captain' ? (
@@ -62,7 +80,7 @@ export function App() {
         </Suspense>
       </ErrorBoundary>
 
-      {/* Top bar: brand, data timestamp + sources, mode toggle, demo badge */}
+      {/* Top bar: brand, data timestamp + sources, about, mode toggle, badge */}
       <TopBar
         demoMode={meta?.demo_mode ?? true}
         dataTimestamp={meta?.data_timestamp ?? null}
@@ -143,5 +161,16 @@ function ManagerUnavailable() {
       The simulator hit an error. Reload to try again — the trip planner still
       works.
     </aside>
+  );
+}
+
+function AboutFallback() {
+  return (
+    <div className="min-h-dvh bg-abyss p-8 text-foam">
+      <p className="text-sm text-mist">Could not load the About page.</p>
+      <a href="/" className="mt-2 inline-block text-surf hover:underline">
+        ← Back to the map
+      </a>
+    </div>
   );
 }
