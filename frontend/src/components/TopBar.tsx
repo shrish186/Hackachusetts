@@ -5,9 +5,10 @@ import { formatLocalShort } from '@/lib/time';
 interface TopBarProps {
   demoMode: boolean;
   dataTimestamp: string | null;
+  onOpenSources: () => void;
 }
 
-export function TopBar({ demoMode, dataTimestamp }: TopBarProps) {
+export function TopBar({ demoMode, dataTimestamp, onOpenSources }: TopBarProps) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-3 sm:p-4">
       {/* Brand + data timestamp strip */}
@@ -27,6 +28,13 @@ export function TopBar({ demoMode, dataTimestamp }: TopBarProps) {
               Data as of {formatLocalShort(dataTimestamp)}
             </span>
           )}
+          <button
+            onClick={onOpenSources}
+            className="rounded-md border border-depth bg-deep/70 px-2 py-1 font-semibold text-surf backdrop-blur transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
+            title="Show data sources and their timestamps"
+          >
+            Sources
+          </button>
         </div>
       </div>
 
