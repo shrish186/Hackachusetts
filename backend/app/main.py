@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
-from app.api import health, layers, meta, sim, trip  # noqa: E402
+from app.api import health, layers, meta, ports, sim, trip  # noqa: E402
 from app.api.security import (  # noqa: E402
     CORS_HEADERS,
     CORS_METHODS,
@@ -66,6 +66,7 @@ install_error_handlers(app)
 # --- Routers -----------------------------------------------------------------
 app.include_router(health.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
+app.include_router(ports.router, prefix="/api")
 app.include_router(layers.router, prefix="/api")
 app.include_router(sim.router, prefix="/api")
 app.include_router(trip.router, prefix="/api")

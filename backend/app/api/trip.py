@@ -27,6 +27,8 @@ router = APIRouter(tags=["trip"])
 _ID = r"^[a-z0-9_]{1,40}$"
 MAX_WINDOW = timedelta(days=14)
 MAX_PAST = timedelta(days=7)
+#: Furthest-ahead time accepted by /api/meta/ports.
+MAX_FUTURE = timedelta(days=30)
 #: Bundled demo data is from mid-March 2026; demo-mode trips may depart from then on.
 DEMO_EPOCH = datetime(2026, 3, 14, tzinfo=timezone.utc)
 
@@ -47,7 +49,7 @@ class TripPlanBody(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    port: str = Field(..., pattern=_ID)
+    port: str = Field(..., max_length=40)
     vessel: Literal["small_boat", "mid_trawler", "scalloper"]
     cruise_kn: float = Field(..., gt=0, le=30)
     max_hours: float = Field(..., gt=0, le=72)
@@ -72,8 +74,9 @@ class TripPlanBody(BaseModel):
     @field_validator("port")
     @classmethod
     def _known_port(cls, v: str) -> str:
-        if v not in ports_config()["ports"]:
-            raise ValueError("unknown port")
+        valid = sorted(ports_config()["ports"])
+        if v not in valid:
+            raise ValueError(f"unknown port; valid ports: {', '.join(valid)}")
         return v
 
     @field_validator("target_ground")
@@ -84,8 +87,9 @@ class TripPlanBody(BaseModel):
         if parse_coord(v) is not None:
             lon, lat = parse_coord(v)
             return f"{lon:g},{lat:g}"
-        if not re.fullmatch(_ID, v) or v not in ports_config()["fishing_grounds"]:
-            raise ValueError("unknown fishing ground")
+        valid = sorted(ports_config()["fishing_grounds"])
+        if not re.fullmatch(_ID, v) or v not in valid:
+            raise ValueError(f"unknown fishing ground; valid grounds: {', '.join(valid)} or \"lon,lat\" inside the study area")
         return v
 
     def to_trip(self) -> TripRequest:

@@ -80,7 +80,7 @@ down. `FATHOM_DEMO_MODE=true` (default) serves bundled snapshots with no network
 
 Key API endpoints: `GET /api/health`, `GET /api/ready`,
 `GET /api/layers/{conditions,zones,risk}`, `GET /api/sim/scenarios`,
-`POST /api/sim/run`, `GET /api/meta/sources`, `POST /api/trip/plan` (SSE agent
+`POST /api/sim/run`, `GET /api/meta/sources`, `GET /api/meta/ports`, `POST /api/trip/plan` (SSE agent
 stream), `POST /api/trip/brief`. Full shapes: [docs/API_CONTRACT.md](docs/API_CONTRACT.md).
 Interactive docs (`/docs`) are off unless `FATHOM_ENABLE_DOCS=true`.
 Deployment: [docs/DEPLOY.md](docs/DEPLOY.md).

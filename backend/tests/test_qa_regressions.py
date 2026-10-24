@@ -105,7 +105,9 @@ def test_cors_disallowed_origin_gets_no_acao(monkeypatch) -> None:
 def test_bad_depart_window_is_422_with_field(window) -> None:
     r = client().post("/api/trip/plan", json={**TRIP, "depart_window": window})
     assert r.status_code == 422
-    assert r.json() == {"error": "Invalid input.", "fields": ["depart_window"]}
+    body = r.json()
+    assert body["error"] == "Invalid input." and body["fields"] == ["depart_window"]
+    assert body["messages"]["depart_window"]  # friendly reason, no stack trace
 
 
 def test_equal_depart_window_is_allowed() -> None:

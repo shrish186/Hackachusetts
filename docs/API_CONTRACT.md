@@ -52,6 +52,34 @@ Returns `MetaResponse`.
 
 `zones.synthetic` is true when at least one zone in the snapshot is synthetic.
 
+## GET /api/meta/ports?time
+
+Ports and fishing grounds from `config/ports.yaml`, with each ground's closure state at `time`. `time` is optional and defaults to now (UTC, to the minute). It follows the same date rule as `/api/trip/plan`: no more than 7 days in the past (in demo mode, counted back from the bundled data date 2026-03-14), and no more than 30 days ahead. A bad or out-of-range time returns `422 {"error": "Invalid input.", "fields": ["time"], "message": "..."}`.
+
+A ground is `closed` when an active prohibited zone covers it, or when its point is on land or outside the grid. This is the same test the router uses for `access_lost`. Responses are cached on the server for 30 s per time and sent with `Cache-Control: public, max-age=30`.
+
+```json
+{
+  "time": "2026-03-15T13:00:00Z",
+  "ports": [
+    {
+      "id": "gloucester", "name": "Gloucester", "state": "MA", "lon": -70.625, "lat": 42.575,
+      "grounds": [
+        { "id": "stellwagen_bank", "name": "Stellwagen Bank", "lon": -70.25, "lat": 42.35,
+          "closed": false, "closed_reason": null, "zone_id": null },
+        { "id": "jeffreys_ledge", "name": "Jeffreys Ledge", "lon": -70.25, "lat": 42.9,
+          "closed": true, "closed_reason": "Inside active closed zone Western Gulf of Maine Seasonal Closure until 2026-04-30.",
+          "zone_id": "closure_western_gom" },
+        { "id": "cape_cod_bay", "name": "Cape Cod Bay", "lon": -70.35, "lat": 41.9,
+          "closed": false, "closed_reason": null, "zone_id": null }
+      ]
+    }
+  ]
+}
+```
+
+Every port lists all three grounds. On 2026-10-24 Jeffreys Ledge is open.
+
 ## Layers
 
 Common query parameters:
@@ -213,6 +241,17 @@ The router never moves a destination. If the target ground (or the departure por
 **Baseline access loss is expected.** On the simulator's baseline date (2026-03-15), 57 of the 200 synthetic fleet trips report `access_lost`. Every one of them is a trip to Jeffreys Ledge (-70.25, 42.90). That point lies inside the Western Gulf of Maine Seasonal Closure (`closure_western_gom`, prohibited, active 2026-02-01 to 2026-04-30). None of the trips fail because of a land cell: all three fishing grounds sit in water cells. This is the correct result for the closure window, not a bug; outside the window the same trips route normally. `backend/tests/test_latency_order.py::test_baseline_access_lost_is_only_closed_jeffreys_ledge` checks this. Note for Lane D: the baseline explanation text in `engine/simulator.py` also names the Vineyard Wind construction exclusion, but no fleet ground is inside it, so that part of the sentence can be dropped.
 
 ### Validation (422)
+
+Unknown `port` or `target_ground` returns 422 with the field name and the valid ids, never echoing the input:
+
+```json
+{ "error": "Invalid input.", "fields": ["port"],
+  "messages": { "port": "unknown port; valid ports: boston, gloucester, new_bedford, plymouth, provincetown" },
+  "message": "port: unknown port; valid ports: boston, gloucester, new_bedford, plymouth, provincetown" }
+```
+
+`messages` and `message` are present whenever one of our own validators rejected a value (ports, grounds, `depart_window`, `time`); type and range errors give only `fields`.
+
 
 `depart_window` must satisfy `start <= end` (equal is allowed; the frontend sends a single time twice), `end - start <= 14 days`, and a start no more than 7 days in the past. In demo mode the 7 days count back from the bundled data date (2026-03-14), so the March demo trips stay valid. Errors look like `{"error": "Invalid input.", "fields": ["depart_window"]}`. Unparseable JSON gives `"fields": ["body"]`.
 

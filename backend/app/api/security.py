@@ -243,13 +243,24 @@ def _field_name(err: dict[str, Any]) -> str:
     return ".".join(parts) or "body"
 
 
+def _clean_msg(msg: str) -> str:
+    return msg.removeprefix("Value error, ")[:300]
+
+
 def install_error_handlers(app: FastAPI) -> None:
     """Replace default error bodies with short generic messages."""
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
-        fields = sorted({_field_name(e) for e in exc.errors()})
-        return JSONResponse({"error": "Invalid input.", "fields": fields}, status_code=422)
+        errs = exc.errors()
+        fields = sorted({_field_name(e) for e in errs})
+        body: dict[str, Any] = {"error": "Invalid input.", "fields": fields}
+        # Our own validator messages (value_error) are safe to show; they never echo input.
+        msgs = {_field_name(e): _clean_msg(e["msg"]) for e in errs if e.get("type") == "value_error"}
+        if msgs:
+            body["messages"] = msgs
+            body["message"] = "; ".join(f"{k}: {v}" for k, v in sorted(msgs.items()))
+        return JSONResponse(body, status_code=422)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:

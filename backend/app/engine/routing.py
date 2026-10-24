@@ -899,6 +899,29 @@ def name_plans(routes: Sequence[dict[str, Any]], fastest: dict[str, Any]) -> lis
     return out
 
 
+def ground_status(lonlat: LonLat, when: datetime, extra_zones: Sequence[Any] | None = None) -> dict[str, Any]:
+    """Is a destination point reachable at ``when``? Same tests as route_one's access_lost.
+
+    Returns {"closed": bool, "code": None|"closed_zone"|"land"|"outside",
+    "zone_id", "zone_name", "zone_active_to"}.
+    """
+    g = default_grid()
+    when = _as_utc(when)
+    out: dict[str, Any] = {"closed": False, "code": None, "zone_id": None, "zone_name": None, "zone_active_to": None}
+    if not _in_grid(g, lonlat):
+        return {**out, "closed": True, "code": "outside"}
+    closed_zones = [z for z in _zone_set(extra_zones) if z.prohibited and z.active(when)]
+    ix, iy = g.index_of(*lonlat)
+    z = _zone_at(g, lonlat, closed_zones) or next(
+        (z for z in closed_zones if _zone_mask(z.geom_key)[iy, ix]), None)
+    if z is not None:
+        until = z.active_to.isoformat().replace("+00:00", "Z") if z.active_to else None
+        return {**out, "closed": True, "code": "closed_zone", "zone_id": z.id, "zone_name": z.name, "zone_active_to": until}
+    if _land()[iy, ix]:
+        return {**out, "closed": True, "code": "land"}
+    return out
+
+
 def explain_access_lost(info: dict[str, Any], ground: str) -> str:
     """Plain message for an access_lost result (Lane D and the agent both use it)."""
     try:
