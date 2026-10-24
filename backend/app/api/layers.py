@@ -11,6 +11,11 @@ demo_mode) and an ``items`` array whose elements match frontend/src/api/types.ts
 """
 from __future__ import annotations
 
+import os
+
+# Demo mode is the default for every entry point (app, agent tools, MCP server).
+os.environ.setdefault("FATHOM_DEMO_MODE", "true")
+
 import json
 from datetime import datetime, timezone
 from functools import lru_cache
