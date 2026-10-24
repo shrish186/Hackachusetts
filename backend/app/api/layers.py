@@ -120,12 +120,14 @@ def zones_provenance() -> dict[str, Any]:
 def sightings_provenance() -> dict[str, Any]:
     meta = snapshot_meta("sightings.json")
     return {
-        "source": "app.engine.risk + " + str(meta.get("source", "sightings.json")),
+        "source": "app.engine.risk screening model + " + str(meta.get("source", "sightings.json")),
         "source_url": meta.get("source_url"),
         "fetched_at": meta.get("fetched_at"),
         "cached": True,
-        # Risk parameters are TODO-VERIFY (config/risk.yaml); treat as synthetic
-        # unless both the sightings are real and the parameters are verified.
+        # Risk is a transparent screening MODEL: inputs are real (OBIS sightings
+        # + the verified Vanderlaan & Taggart 2007 lethality curve), but the
+        # per-cell score is a derived estimate, so the layer is flagged
+        # synthetic (a model output, not a measured observation).
         "synthetic": True,
         "demo_mode": demo_mode(),
     }

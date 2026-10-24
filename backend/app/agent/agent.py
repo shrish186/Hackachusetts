@@ -430,11 +430,15 @@ def _route_plans(lang: str, ids: dict[str, str], res: dict[str, Any]) -> list[di
     for p in plan["plans"]:
         name = plan_name(lang, p["name"])
         cites = [
+            # max_wave_m is the route-max of the wave field interpolated inside
+            # plan_routes, so cite it to plan_routes (whose result carries that
+            # number); the raw buoy/forecast source_url is carried for reference.
             _citation(plan_cid, "plan_routes",
-                      f"eta_hours {fmt(p['eta_hours'])}, fuel_est_l {fmt(p['fuel_est_l'])}, risk_exposure {fmt(p['risk_exposure'])}",
-                      source_url=None, synthetic=plan_synth),
+                      f"eta_hours {fmt(p['eta_hours'])}, fuel_est_l {fmt(p['fuel_est_l'])}, "
+                      f"risk_exposure {fmt(p['risk_exposure'])}, max_wave_m {fmt(p['max_wave_m'])}",
+                      source_url=cond_url, synthetic=plan_synth),
             _citation(cond_cid, "get_conditions",
-                      f"max_wave_m {fmt(p['max_wave_m'])} interpolated from buoy readings",
+                      "wave and wind readings from buoys and marine forecast",
                       source_url=cond_url, synthetic=cond_synth),
         ]
         for zid in p["zones_crossed"] + p["zones_avoided"]:

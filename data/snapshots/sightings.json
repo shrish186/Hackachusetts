@@ -1,18 +1,2815 @@
 {
   "metadata": {
-    "description": "Whale sighting sample for the Fathom study area, seeded from published seasonal patterns. Synthetic aggregate; no individual vessel identity.",
-    "synthetic": true,
-    "source_url": null,
-    "fetched_at": "2026-03-14T00:00:00Z"
+    "description": "Real Eubalaena glacialis (North Atlantic right whale) occurrence records for the Fathom study bbox from OBIS. Most recent records retained.",
+    "source": "OBIS (Ocean Biodiversity Information System), aggregating NOAA/NMFS/NEFSC surveys",
+    "source_url": "https://obis.org/",
+    "license": "CC-BY 4.0 (OBIS); cite OBIS and the underlying datasets",
+    "note": "Real observations clipped to the study bbox; the demo retains the most recent records.",
+    "scientific_name": "Eubalaena glacialis",
+    "record_count": 400,
+    "fetched_at": "2026-10-24T18:18:15Z",
+    "synthetic": false
   },
   "sightings": [
-    { "lon": -70.28, "lat": 41.98, "observed_at": "2026-03-14T15:30:00Z", "count": 3, "source": "synthetic" },
-    { "lon": -70.35, "lat": 42.05, "observed_at": "2026-03-14T11:10:00Z", "count": 1, "source": "synthetic" },
-    { "lon": -70.22, "lat": 42.30, "observed_at": "2026-03-13T16:45:00Z", "count": 2, "source": "synthetic" },
-    { "lon": -70.40, "lat": 42.38, "observed_at": "2026-03-12T09:20:00Z", "count": 4, "source": "synthetic" },
-    { "lon": -70.10, "lat": 42.12, "observed_at": "2026-03-14T08:00:00Z", "count": 1, "source": "synthetic" },
-    { "lon": -70.48, "lat": 41.88, "observed_at": "2026-03-11T14:05:00Z", "count": 2, "source": "synthetic" },
-    { "lon": -70.18, "lat": 42.45, "observed_at": "2026-03-10T17:30:00Z", "count": 1, "source": "synthetic" },
-    { "lon": -70.33, "lat": 42.22, "observed_at": "2026-03-14T13:50:00Z", "count": 5, "source": "synthetic" }
+    {
+      "lon": -70.29282,
+      "lat": 42.1864,
+      "observed_at": "2025-07-22T17:22:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.32683,
+      "lat": 41.97584,
+      "observed_at": "2025-04-21T16:30:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.4975,
+      "lat": 41.88284,
+      "observed_at": "2025-04-17T19:38:20Z",
+      "count": 80,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20837,
+      "lat": 42.03505,
+      "observed_at": "2025-04-05T14:03:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.27859,
+      "lat": 42.06868,
+      "observed_at": "2025-03-27T15:14:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.27679,
+      "lat": 42.0199,
+      "observed_at": "2025-03-10T14:47:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.39251,
+      "lat": 42.07596,
+      "observed_at": "2025-02-25T16:39:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.47942,
+      "lat": 41.91505,
+      "observed_at": "2025-02-15T18:55:53Z",
+      "count": 45,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.21843,
+      "lat": 42.25588,
+      "observed_at": "2024-05-11T19:53:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.15746,
+      "lat": 41.92117,
+      "observed_at": "2024-05-03T18:49:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.59623,
+      "lat": 42.22603,
+      "observed_at": "2024-04-08T10:00:14Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.52885,
+      "lat": 42.14996,
+      "observed_at": "2024-04-08T09:01:58Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.59666,
+      "lat": 41.53482,
+      "observed_at": "2024-04-02T12:28:17Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.49566,
+      "lat": 41.35382,
+      "observed_at": "2024-03-18T13:03:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.45328,
+      "lat": 41.25616,
+      "observed_at": "2024-03-18T12:23:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.59406,
+      "lat": 41.23023,
+      "observed_at": "2024-03-18T09:20:58Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.62167,
+      "lat": 41.24213,
+      "observed_at": "2024-03-18T08:21:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.60046,
+      "lat": 41.49691,
+      "observed_at": "2024-02-09T12:49:48Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.51513,
+      "lat": 41.54745,
+      "observed_at": "2024-02-09T11:37:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.37198,
+      "lat": 41.40247,
+      "observed_at": "2024-02-09T10:58:40Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.36638,
+      "lat": 41.50301,
+      "observed_at": "2024-02-09T10:41:17Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.36623,
+      "lat": 41.50793,
+      "observed_at": "2024-02-09T10:41:08Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.41623,
+      "lat": 41.4206,
+      "observed_at": "2024-02-09T10:15:21Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.55558,
+      "lat": 41.56162,
+      "observed_at": "2024-02-09T09:59:56Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.42609,
+      "lat": 41.53513,
+      "observed_at": "2024-02-09T09:07:50Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.41544,
+      "lat": 41.43257,
+      "observed_at": "2024-02-07T13:16:23Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.36039,
+      "lat": 41.46634,
+      "observed_at": "2024-02-07T13:07:57Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.43898,
+      "lat": 41.37104,
+      "observed_at": "2024-01-31T15:36:43Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.49882,
+      "lat": 41.54171,
+      "observed_at": "2024-01-31T13:27:07Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.47127,
+      "lat": 41.52564,
+      "observed_at": "2024-01-31T12:21:34Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.46198,
+      "lat": 41.58395,
+      "observed_at": "2024-01-31T11:50:31Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.44769,
+      "lat": 41.53753,
+      "observed_at": "2024-01-31T11:27:13Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.44061,
+      "lat": 41.54063,
+      "observed_at": "2024-01-31T11:27:01Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.20712,
+      "lat": 42.65472,
+      "observed_at": "2024-01-09T14:02:16Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.38159,
+      "lat": 42.14052,
+      "observed_at": "2023-04-27T14:14:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.39644,
+      "lat": 42.00065,
+      "observed_at": "2023-04-27T14:09:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.35363,
+      "lat": 42.12784,
+      "observed_at": "2023-04-27T14:03:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.24326,
+      "lat": 42.13807,
+      "observed_at": "2023-04-14T16:21:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.47495,
+      "lat": 41.9269,
+      "observed_at": "2023-04-13T16:18:06Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.48518,
+      "lat": 41.93562,
+      "observed_at": "2023-04-13T16:17:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.59097,
+      "lat": 42.05596,
+      "observed_at": "2023-04-13T15:52:31Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.63921,
+      "lat": 42.14891,
+      "observed_at": "2023-04-13T15:47:40Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.75526,
+      "lat": 42.28038,
+      "observed_at": "2023-04-13T14:57:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.38899,
+      "lat": 42.0788,
+      "observed_at": "2023-04-13T10:29:56Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.36371,
+      "lat": 41.84444,
+      "observed_at": "2023-04-10T14:46:26Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.38534,
+      "lat": 42.01242,
+      "observed_at": "2023-04-10T14:40:24Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.22409,
+      "lat": 42.13244,
+      "observed_at": "2023-04-07T22:03:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -69.73206,
+      "lat": 41.97167,
+      "observed_at": "2023-04-04T11:52:23Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.75135,
+      "lat": 41.98853,
+      "observed_at": "2023-04-04T11:26:30Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.48003,
+      "lat": 41.70323,
+      "observed_at": "2023-03-31T14:08:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.56759,
+      "lat": 41.67767,
+      "observed_at": "2023-03-31T13:36:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.38758,
+      "lat": 41.0103,
+      "observed_at": "2023-03-29T12:13:39Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.35793,
+      "lat": 41.10209,
+      "observed_at": "2023-03-24T16:13:21Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.35793,
+      "lat": 41.11689,
+      "observed_at": "2023-03-24T15:23:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.37936,
+      "lat": 41.12263,
+      "observed_at": "2023-03-24T15:06:43Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.30592,
+      "lat": 42.13618,
+      "observed_at": "2023-03-21T15:34:48Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.25584,
+      "lat": 42.2249,
+      "observed_at": "2023-03-21T15:06:14Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.25584,
+      "lat": 42.2249,
+      "observed_at": "2023-03-21T15:06:14Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.97382,
+      "lat": 41.09703,
+      "observed_at": "2023-03-09T13:25:21Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.39229,
+      "lat": 41.80591,
+      "observed_at": "2023-02-18T14:51:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2352,
+      "lat": 42.92256,
+      "observed_at": "2022-12-13T14:20:05Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.09442,
+      "lat": 43.12432,
+      "observed_at": "2022-11-19T13:04:37Z",
+      "count": 6,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.72221,
+      "lat": 41.54725,
+      "observed_at": "2022-05-01T15:18:14Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.58873,
+      "lat": 42.25823,
+      "observed_at": "2022-05-01T12:56:46Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.62926,
+      "lat": 42.19981,
+      "observed_at": "2022-05-01T12:41:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.59053,
+      "lat": 42.2586,
+      "observed_at": "2022-05-01T12:20:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.58747,
+      "lat": 42.20035,
+      "observed_at": "2022-05-01T12:16:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.24944,
+      "lat": 42.12157,
+      "observed_at": "2022-05-01T11:50:23Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.38524,
+      "lat": 42.1794,
+      "observed_at": "2022-04-23T18:45:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.60674,
+      "lat": 42.44459,
+      "observed_at": "2022-04-18T11:12:51Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.31742,
+      "lat": 42.12751,
+      "observed_at": "2022-04-15T13:13:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.27024,
+      "lat": 42.35632,
+      "observed_at": "2022-04-15T10:54:53Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.19394,
+      "lat": 41.04484,
+      "observed_at": "2022-04-05T17:01:27Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.18215,
+      "lat": 41.05433,
+      "observed_at": "2022-04-05T16:47:21Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.43842,
+      "lat": 42.22342,
+      "observed_at": "2022-04-04T17:01:46Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.0518,
+      "lat": 41.14454,
+      "observed_at": "2022-03-26T13:27:41Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.22968,
+      "lat": 41.10564,
+      "observed_at": "2022-03-26T11:59:31Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.26164,
+      "lat": 42.17772,
+      "observed_at": "2022-03-18T16:38:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.33051,
+      "lat": 42.21453,
+      "observed_at": "2022-03-07T10:49:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.52655,
+      "lat": 41.08861,
+      "observed_at": "2022-03-05T13:44:03Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.53011,
+      "lat": 41.07022,
+      "observed_at": "2022-03-05T13:29:26Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.748,
+      "lat": 41.05817,
+      "observed_at": "2022-03-04T11:29:36Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.07974,
+      "lat": 41.07316,
+      "observed_at": "2021-10-13T12:45:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.93462,
+      "lat": 41.0127,
+      "observed_at": "2021-10-07T11:45:11Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.65819,
+      "lat": 42.35152,
+      "observed_at": "2021-04-08T14:55:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.43664,
+      "lat": 41.07009,
+      "observed_at": "2021-04-04T09:33:38Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.36231,
+      "lat": 41.04699,
+      "observed_at": "2021-03-18T11:25:52Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.62264,
+      "lat": 41.05111,
+      "observed_at": "2021-03-08T13:39:36Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.61554,
+      "lat": 41.04722,
+      "observed_at": "2021-03-08T13:07:15Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.23138,
+      "lat": 42.18449,
+      "observed_at": "2021-03-03T13:29:09Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.49648,
+      "lat": 42.18464,
+      "observed_at": "2021-02-23T16:32:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.60892,
+      "lat": 42.37472,
+      "observed_at": "2021-02-23T14:34:02Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20077,
+      "lat": 42.05756,
+      "observed_at": "2021-02-09T00:04:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.30733,
+      "lat": 41.79044,
+      "observed_at": "2021-01-26T10:50:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.88142,
+      "lat": 41.10178,
+      "observed_at": "2021-01-15T12:19:17Z",
+      "count": 15,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.88326,
+      "lat": 41.07131,
+      "observed_at": "2021-01-15T11:19:06Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.88093,
+      "lat": 41.04785,
+      "observed_at": "2021-01-14T14:50:56Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.28662,
+      "lat": 41.06675,
+      "observed_at": "2020-12-20T12:32:26Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20216,
+      "lat": 41.04918,
+      "observed_at": "2020-12-20T11:35:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.15118,
+      "lat": 41.05996,
+      "observed_at": "2020-10-31T12:00:18Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.63628,
+      "lat": 41.04873,
+      "observed_at": "2020-09-17T13:42:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.63363,
+      "lat": 41.0493,
+      "observed_at": "2020-09-17T13:05:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.17908,
+      "lat": 42.255,
+      "observed_at": "2020-04-26T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17908,
+      "lat": 42.255,
+      "observed_at": "2020-04-21T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.54595,
+      "lat": 42.43724,
+      "observed_at": "2020-04-14T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24246,
+      "lat": 42.47071,
+      "observed_at": "2020-04-13T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24264,
+      "lat": 42.47096,
+      "observed_at": "2020-04-07T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.90335,
+      "lat": 42.27502,
+      "observed_at": "2020-03-24T15:32:25Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.54586,
+      "lat": 42.43693,
+      "observed_at": "2020-03-22T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.54586,
+      "lat": 42.43693,
+      "observed_at": "2020-03-18T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17963,
+      "lat": 42.25523,
+      "observed_at": "2020-03-10T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17963,
+      "lat": 42.25523,
+      "observed_at": "2020-03-07T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24264,
+      "lat": 42.47096,
+      "observed_at": "2020-03-05T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17963,
+      "lat": 42.25523,
+      "observed_at": "2020-02-24T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17963,
+      "lat": 42.25523,
+      "observed_at": "2020-02-06T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24235,
+      "lat": 42.47099,
+      "observed_at": "2020-01-23T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17945,
+      "lat": 42.25539,
+      "observed_at": "2019-12-17T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -69.67408,
+      "lat": 41.08477,
+      "observed_at": "2019-08-30T12:42:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.67697,
+      "lat": 41.09571,
+      "observed_at": "2019-08-30T12:41:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.00639,
+      "lat": 41.05613,
+      "observed_at": "2019-08-04T13:58:52Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.03425,
+      "lat": 41.05931,
+      "observed_at": "2019-08-03T11:50:17Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.21117,
+      "lat": 41.83859,
+      "observed_at": "2019-08-02T15:41:00Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.57967,
+      "lat": 41.92305,
+      "observed_at": "2019-05-01T09:20:26Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.17901,
+      "lat": 42.25541,
+      "observed_at": "2019-05-01T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.4688,
+      "lat": 41.79743,
+      "observed_at": "2019-04-24T16:30:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.17901,
+      "lat": 42.25541,
+      "observed_at": "2019-04-24T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17901,
+      "lat": 42.25541,
+      "observed_at": "2019-04-17T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24276,
+      "lat": 42.47136,
+      "observed_at": "2019-04-13T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24276,
+      "lat": 42.47136,
+      "observed_at": "2019-04-10T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17901,
+      "lat": 42.25541,
+      "observed_at": "2019-04-08T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.54666,
+      "lat": 42.43668,
+      "observed_at": "2019-03-31T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.30993,
+      "lat": 41.02565,
+      "observed_at": "2019-03-28T13:11:23Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.43307,
+      "lat": 42.26519,
+      "observed_at": "2019-03-27T13:21:51Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.54666,
+      "lat": 42.43668,
+      "observed_at": "2019-03-19T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.24281,
+      "lat": 42.47084,
+      "observed_at": "2019-03-12T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17884,
+      "lat": 42.25539,
+      "observed_at": "2019-03-09T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.17884,
+      "lat": 42.25539,
+      "observed_at": "2019-02-15T00:00:00Z",
+      "count": 1,
+      "source": "OBIS (OBIS)"
+    },
+    {
+      "lon": -70.3965,
+      "lat": 42.2941,
+      "observed_at": "2018-05-05T18:00:42Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.35893,
+      "lat": 42.06824,
+      "observed_at": "2018-05-01T16:08:41Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.6038,
+      "lat": 42.0569,
+      "observed_at": "2018-04-27T13:10:26Z",
+      "count": 29,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6099,
+      "lat": 42.0647,
+      "observed_at": "2018-04-27T13:04:34Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6127,
+      "lat": 42.1004,
+      "observed_at": "2018-04-27T12:55:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6505,
+      "lat": 42.1347,
+      "observed_at": "2018-04-27T12:38:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.7848,
+      "lat": 42.5138,
+      "observed_at": "2018-04-27T12:13:58Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.1469,
+      "lat": 41.1348,
+      "observed_at": "2018-04-24T13:18:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.78189,
+      "lat": 42.15609,
+      "observed_at": "2018-04-23T21:54:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -70.7847,
+      "lat": 41.1136,
+      "observed_at": "2018-04-23T14:39:42Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.8817,
+      "lat": 41.8396,
+      "observed_at": "2018-04-22T11:14:29Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.8629,
+      "lat": 41.8764,
+      "observed_at": "2018-04-22T11:03:49Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6093,
+      "lat": 42.0964,
+      "observed_at": "2018-04-21T18:47:46Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6327,
+      "lat": 42.1197,
+      "observed_at": "2018-04-21T18:46:26Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6574,
+      "lat": 42.1412,
+      "observed_at": "2018-04-21T18:40:40Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.346,
+      "lat": 42.3095,
+      "observed_at": "2018-04-21T16:23:01Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.7944,
+      "lat": 42.3164,
+      "observed_at": "2018-04-21T14:43:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6506,
+      "lat": 42.2232,
+      "observed_at": "2018-04-21T14:20:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6457,
+      "lat": 42.1588,
+      "observed_at": "2018-04-21T13:52:00Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.3559,
+      "lat": 42.3793,
+      "observed_at": "2018-04-14T14:28:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.3803,
+      "lat": 42.3736,
+      "observed_at": "2018-04-14T14:24:19Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.1785,
+      "lat": 42.3707,
+      "observed_at": "2018-04-14T14:10:05Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.4633,
+      "lat": 42.1704,
+      "observed_at": "2018-04-11T15:31:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.4602,
+      "lat": 42.1707,
+      "observed_at": "2018-04-11T15:27:59Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.1467,
+      "lat": 42.2673,
+      "observed_at": "2018-04-11T13:58:26Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.33,
+      "lat": 42.1423,
+      "observed_at": "2018-04-11T13:23:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2309,
+      "lat": 42.1986,
+      "observed_at": "2018-04-11T11:03:45Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2876,
+      "lat": 42.1665,
+      "observed_at": "2018-04-11T10:50:46Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2971,
+      "lat": 42.1615,
+      "observed_at": "2018-04-11T10:47:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2603,
+      "lat": 42.1572,
+      "observed_at": "2018-04-11T10:37:15Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.3771,
+      "lat": 42.3866,
+      "observed_at": "2018-04-10T10:33:06Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.4243,
+      "lat": 42.2743,
+      "observed_at": "2018-04-10T10:07:22Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.3173,
+      "lat": 42.1688,
+      "observed_at": "2018-04-10T09:23:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.8525,
+      "lat": 41.0446,
+      "observed_at": "2018-03-28T14:35:42Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.4095,
+      "lat": 41.1206,
+      "observed_at": "2018-03-23T11:24:40Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.11348,
+      "lat": 41.86676,
+      "observed_at": "2017-05-17T08:39:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.35357,
+      "lat": 41.89838,
+      "observed_at": "2017-05-16T12:41:11Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.02709,
+      "lat": 41.83187,
+      "observed_at": "2017-05-10T17:49:49Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.08284,
+      "lat": 41.35042,
+      "observed_at": "2017-05-10T12:44:44Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.16388,
+      "lat": 41.46717,
+      "observed_at": "2017-04-30T16:16:21Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.05462,
+      "lat": 41.52516,
+      "observed_at": "2017-04-30T14:53:01Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.76451,
+      "lat": 41.10193,
+      "observed_at": "2017-04-24T13:03:10Z",
+      "count": 12,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.60378,
+      "lat": 41.12703,
+      "observed_at": "2017-04-24T11:22:56Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.6247,
+      "lat": 41.10252,
+      "observed_at": "2017-04-24T11:08:52Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.41854,
+      "lat": 41.00362,
+      "observed_at": "2017-04-24T10:41:10Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.41854,
+      "lat": 41.00362,
+      "observed_at": "2017-04-24T10:41:10Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.57453,
+      "lat": 41.09473,
+      "observed_at": "2017-04-23T15:09:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.57642,
+      "lat": 41.0929,
+      "observed_at": "2017-04-23T15:08:57Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.61208,
+      "lat": 41.0579,
+      "observed_at": "2017-04-23T15:07:22Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.71247,
+      "lat": 41.07916,
+      "observed_at": "2017-04-23T13:47:34Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.72589,
+      "lat": 41.08211,
+      "observed_at": "2017-04-23T13:45:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.54544,
+      "lat": 41.09693,
+      "observed_at": "2017-04-23T13:12:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.53743,
+      "lat": 41.10572,
+      "observed_at": "2017-04-23T12:55:23Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.92793,
+      "lat": 41.07317,
+      "observed_at": "2017-04-18T13:58:17Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.23787,
+      "lat": 42.0836,
+      "observed_at": "2017-04-15T14:29:00Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -69.79041,
+      "lat": 41.62329,
+      "observed_at": "2017-04-14T10:24:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.80119,
+      "lat": 41.61044,
+      "observed_at": "2017-04-14T10:16:51Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.06743,
+      "lat": 42.06133,
+      "observed_at": "2017-04-12T16:33:52Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.09066,
+      "lat": 42.07005,
+      "observed_at": "2017-04-12T16:30:10Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.18299,
+      "lat": 42.0932,
+      "observed_at": "2017-04-12T16:22:00Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.96473,
+      "lat": 42.01883,
+      "observed_at": "2017-04-12T13:32:45Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.03456,
+      "lat": 42.04993,
+      "observed_at": "2017-04-12T13:07:15Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.03848,
+      "lat": 42.04835,
+      "observed_at": "2017-04-12T13:06:34Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.48206,
+      "lat": 42.11229,
+      "observed_at": "2017-04-12T12:21:37Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.48492,
+      "lat": 42.11951,
+      "observed_at": "2017-04-12T12:16:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.50506,
+      "lat": 42.50605,
+      "observed_at": "2017-04-10T15:59:32Z",
+      "count": 1,
+      "source": "OBIS (iNaturalist)"
+    },
+    {
+      "lon": -69.01087,
+      "lat": 41.42506,
+      "observed_at": "2016-05-26T14:39:35Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.14474,
+      "lat": 41.36702,
+      "observed_at": "2016-05-26T14:03:38Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.06482,
+      "lat": 41.27253,
+      "observed_at": "2016-05-23T12:45:50Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.2697,
+      "lat": 41.29076,
+      "observed_at": "2016-05-21T13:01:24Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.11632,
+      "lat": 41.384,
+      "observed_at": "2016-05-21T12:48:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.00189,
+      "lat": 41.24953,
+      "observed_at": "2016-05-20T16:21:07Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.47665,
+      "lat": 41.67841,
+      "observed_at": "2016-05-19T12:16:14Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.50475,
+      "lat": 42.22576,
+      "observed_at": "2016-05-18T12:10:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.4771,
+      "lat": 42.22284,
+      "observed_at": "2016-05-18T12:01:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.338,
+      "lat": 41.55709,
+      "observed_at": "2016-05-14T14:21:50Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.34633,
+      "lat": 41.55569,
+      "observed_at": "2016-05-14T14:15:28Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03413,
+      "lat": 41.40587,
+      "observed_at": "2016-05-12T13:54:18Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.54805,
+      "lat": 42.08683,
+      "observed_at": "2016-04-27T12:17:06Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.55612,
+      "lat": 42.07357,
+      "observed_at": "2016-04-27T11:53:14Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.7513,
+      "lat": 42.09173,
+      "observed_at": "2016-04-22T12:22:33Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.04284,
+      "lat": 42.21876,
+      "observed_at": "2016-04-22T10:42:13Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.79631,
+      "lat": 42.27118,
+      "observed_at": "2016-04-21T12:30:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.84986,
+      "lat": 42.08468,
+      "observed_at": "2016-04-21T12:21:22Z",
+      "count": 6,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.85907,
+      "lat": 42.09348,
+      "observed_at": "2016-04-21T11:50:43Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.86929,
+      "lat": 41.98429,
+      "observed_at": "2016-04-21T11:27:59Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.14735,
+      "lat": 42.27233,
+      "observed_at": "2016-04-17T13:43:54Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.05839,
+      "lat": 42.06538,
+      "observed_at": "2015-11-09T14:46:14Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.6043,
+      "lat": 42.00736,
+      "observed_at": "2015-05-22T15:47:44Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03689,
+      "lat": 41.74599,
+      "observed_at": "2015-05-08T12:11:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.69122,
+      "lat": 42.45794,
+      "observed_at": "2015-05-06T12:53:39Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.6941,
+      "lat": 42.45064,
+      "observed_at": "2015-05-06T12:28:03Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.19963,
+      "lat": 42.50084,
+      "observed_at": "2015-05-05T11:27:35Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.13146,
+      "lat": 41.11451,
+      "observed_at": "2015-04-27T12:41:50Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.16154,
+      "lat": 41.15652,
+      "observed_at": "2015-04-27T11:23:02Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.07627,
+      "lat": 41.56372,
+      "observed_at": "2015-04-16T12:53:06Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.35938,
+      "lat": 42.16672,
+      "observed_at": "2015-04-15T13:00:41Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.3387,
+      "lat": 42.17749,
+      "observed_at": "2015-04-15T12:56:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.90118,
+      "lat": 42.09698,
+      "observed_at": "2015-04-15T12:08:52Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.0443,
+      "lat": 42.38343,
+      "observed_at": "2015-04-15T09:49:34Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.34618,
+      "lat": 41.48875,
+      "observed_at": "2015-04-06T12:50:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.60214,
+      "lat": 41.05687,
+      "observed_at": "2015-04-01T17:39:13Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.26006,
+      "lat": 41.04843,
+      "observed_at": "2015-04-01T16:08:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.91429,
+      "lat": 41.16247,
+      "observed_at": "2015-03-29T14:51:35Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.00705,
+      "lat": 41.28862,
+      "observed_at": "2014-06-07T11:35:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03866,
+      "lat": 41.74076,
+      "observed_at": "2014-05-08T18:43:43Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.37818,
+      "lat": 41.50269,
+      "observed_at": "2014-05-08T17:33:21Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.16248,
+      "lat": 41.75444,
+      "observed_at": "2014-05-08T14:54:11Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.23578,
+      "lat": 41.85789,
+      "observed_at": "2014-05-08T12:32:11Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.17513,
+      "lat": 42.04763,
+      "observed_at": "2014-05-08T11:42:15Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03863,
+      "lat": 41.30688,
+      "observed_at": "2014-05-06T13:10:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.01407,
+      "lat": 41.33232,
+      "observed_at": "2014-05-06T13:05:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.94335,
+      "lat": 42.67679,
+      "observed_at": "2014-05-05T14:51:49Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.41578,
+      "lat": 42.14365,
+      "observed_at": "2014-04-19T14:17:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.23385,
+      "lat": 42.09588,
+      "observed_at": "2014-04-19T10:19:08Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.39968,
+      "lat": 41.46891,
+      "observed_at": "2014-04-07T12:02:26Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.84401,
+      "lat": 41.54627,
+      "observed_at": "2014-04-07T11:41:09Z",
+      "count": 7,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.84116,
+      "lat": 41.54802,
+      "observed_at": "2014-04-07T11:35:18Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.83583,
+      "lat": 41.5421,
+      "observed_at": "2014-04-07T11:21:22Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.48361,
+      "lat": 41.81163,
+      "observed_at": "2014-04-07T10:16:21Z",
+      "count": 33,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.29327,
+      "lat": 41.22729,
+      "observed_at": "2014-03-05T09:26:03Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.12729,
+      "lat": 42.974,
+      "observed_at": "2013-11-02T12:05:05Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.1384,
+      "lat": 41.13027,
+      "observed_at": "2013-06-05T09:01:13Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.2104,
+      "lat": 41.40715,
+      "observed_at": "2013-05-18T16:45:23Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.09338,
+      "lat": 42.16725,
+      "observed_at": "2013-05-05T10:50:54Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.05676,
+      "lat": 41.26719,
+      "observed_at": "2013-05-02T12:56:19Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.10125,
+      "lat": 42.87023,
+      "observed_at": "2012-07-26T11:59:43Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03741,
+      "lat": 42.817,
+      "observed_at": "2012-07-26T11:54:52Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.04235,
+      "lat": 42.82969,
+      "observed_at": "2012-07-26T10:39:25Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.02103,
+      "lat": 42.30426,
+      "observed_at": "2012-07-20T10:41:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.08724,
+      "lat": 42.97234,
+      "observed_at": "2012-07-12T11:42:32Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.4752,
+      "lat": 42.06692,
+      "observed_at": "2012-06-10T09:56:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.47269,
+      "lat": 42.06864,
+      "observed_at": "2012-06-10T09:52:05Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.40532,
+      "lat": 41.82615,
+      "observed_at": "2012-04-26T12:16:20Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.07381,
+      "lat": 41.30711,
+      "observed_at": "2012-04-25T15:17:01Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.00564,
+      "lat": 41.27623,
+      "observed_at": "2012-04-25T14:55:05Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.00906,
+      "lat": 41.38364,
+      "observed_at": "2012-04-25T13:41:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.18575,
+      "lat": 41.39223,
+      "observed_at": "2012-04-25T12:52:54Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.04772,
+      "lat": 43.03217,
+      "observed_at": "2012-02-03T13:14:10Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.06501,
+      "lat": 43.09477,
+      "observed_at": "2012-02-03T11:45:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20657,
+      "lat": 41.79911,
+      "observed_at": "2012-01-23T08:50:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.32368,
+      "lat": 42.78841,
+      "observed_at": "2012-01-19T15:22:44Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.31466,
+      "lat": 42.78015,
+      "observed_at": "2012-01-19T15:06:50Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.05503,
+      "lat": 43.01548,
+      "observed_at": "2012-01-04T14:05:56Z",
+      "count": 6,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.25217,
+      "lat": 42.84275,
+      "observed_at": "2012-01-04T13:16:14Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.25226,
+      "lat": 42.83333,
+      "observed_at": "2012-01-04T13:09:22Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.34576,
+      "lat": 42.90534,
+      "observed_at": "2011-12-04T10:21:16Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.22719,
+      "lat": 42.94167,
+      "observed_at": "2011-12-01T11:41:47Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.14728,
+      "lat": 43.08406,
+      "observed_at": "2011-11-22T13:40:02Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.0095,
+      "lat": 42.88666,
+      "observed_at": "2011-11-22T11:40:44Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.06034,
+      "lat": 42.88275,
+      "observed_at": "2011-11-22T11:35:57Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.38216,
+      "lat": 43.07072,
+      "observed_at": "2011-11-22T10:46:41Z",
+      "count": 7,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.236,
+      "lat": 43.08888,
+      "observed_at": "2011-11-08T14:10:32Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.159,
+      "lat": 43.01621,
+      "observed_at": "2011-11-08T13:29:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.14194,
+      "lat": 43.0246,
+      "observed_at": "2011-11-08T13:26:09Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.11951,
+      "lat": 43.01923,
+      "observed_at": "2011-10-12T07:33:01Z",
+      "count": 3,
+      "source": "OBIS (NA)"
+    },
+    {
+      "lon": -69.20563,
+      "lat": 41.75219,
+      "observed_at": "2011-10-08T14:36:59Z",
+      "count": 1,
+      "source": "OBIS (NA)"
+    },
+    {
+      "lon": -69.76074,
+      "lat": 42.72935,
+      "observed_at": "2011-06-08T14:48:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.69453,
+      "lat": 42.58784,
+      "observed_at": "2011-06-08T12:01:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.28005,
+      "lat": 42.66778,
+      "observed_at": "2011-06-07T15:34:41Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.1628,
+      "lat": 42.09462,
+      "observed_at": "2011-05-03T10:29:58Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.87627,
+      "lat": 41.23394,
+      "observed_at": "2011-05-02T12:22:30Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.86769,
+      "lat": 41.23308,
+      "observed_at": "2011-05-02T12:17:43Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.28185,
+      "lat": 41.7841,
+      "observed_at": "2011-04-30T12:01:12Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.85462,
+      "lat": 41.06706,
+      "observed_at": "2011-04-22T13:54:58Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.85912,
+      "lat": 41.07729,
+      "observed_at": "2011-04-22T13:52:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.84758,
+      "lat": 41.06854,
+      "observed_at": "2011-04-22T13:49:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.81302,
+      "lat": 41.05968,
+      "observed_at": "2011-04-22T13:36:16Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.85123,
+      "lat": 41.04592,
+      "observed_at": "2011-04-22T13:27:16Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.92825,
+      "lat": 41.11686,
+      "observed_at": "2011-04-22T12:58:26Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.9789,
+      "lat": 41.14531,
+      "observed_at": "2011-04-22T11:08:48Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.95026,
+      "lat": 41.18775,
+      "observed_at": "2011-04-22T10:49:26Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.95322,
+      "lat": 41.21197,
+      "observed_at": "2011-04-22T10:34:57Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.9446,
+      "lat": 41.21379,
+      "observed_at": "2011-04-22T10:29:49Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.9489,
+      "lat": 41.21947,
+      "observed_at": "2011-04-22T10:23:36Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.99323,
+      "lat": 42.0749,
+      "observed_at": "2011-04-10T12:44:10Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.34429,
+      "lat": 42.14152,
+      "observed_at": "2011-04-10T10:32:23Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.33108,
+      "lat": 42.10135,
+      "observed_at": "2011-04-10T10:08:24Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.45687,
+      "lat": 41.5812,
+      "observed_at": "2011-04-08T14:31:00Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.77913,
+      "lat": 41.68638,
+      "observed_at": "2011-04-08T12:18:59Z",
+      "count": 10,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.82898,
+      "lat": 41.69716,
+      "observed_at": "2011-04-08T11:59:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.8255,
+      "lat": 41.7308,
+      "observed_at": "2011-04-08T11:33:22Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.7653,
+      "lat": 41.01225,
+      "observed_at": "2011-04-07T12:50:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.33406,
+      "lat": 42.27146,
+      "observed_at": "2011-03-17T11:11:29Z",
+      "count": 7,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.32445,
+      "lat": 42.27699,
+      "observed_at": "2011-03-17T10:57:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.31912,
+      "lat": 42.30013,
+      "observed_at": "2011-03-17T10:53:45Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.80003,
+      "lat": 42.8051,
+      "observed_at": "2011-02-16T11:37:12Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.32513,
+      "lat": 42.51352,
+      "observed_at": "2011-01-15T12:50:50Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.09115,
+      "lat": 42.66597,
+      "observed_at": "2010-12-18T14:12:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.07451,
+      "lat": 42.8453,
+      "observed_at": "2010-12-18T12:45:04Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.27121,
+      "lat": 42.97097,
+      "observed_at": "2010-11-29T12:45:39Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.86772,
+      "lat": 43.03596,
+      "observed_at": "2010-11-29T11:13:50Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.13475,
+      "lat": 42.61621,
+      "observed_at": "2010-11-13T13:21:31Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.09534,
+      "lat": 42.84251,
+      "observed_at": "2010-11-13T12:59:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.04029,
+      "lat": 42.63877,
+      "observed_at": "2010-11-13T11:56:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.14109,
+      "lat": 42.9003,
+      "observed_at": "2010-11-13T11:20:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.15166,
+      "lat": 43.044,
+      "observed_at": "2010-10-11T15:03:51Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.1449,
+      "lat": 43.05897,
+      "observed_at": "2010-10-11T14:57:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.0313,
+      "lat": 41.17936,
+      "observed_at": "2010-05-28T12:59:19Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.27735,
+      "lat": 42.44466,
+      "observed_at": "2010-05-22T14:57:28Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.46465,
+      "lat": 42.77981,
+      "observed_at": "2010-05-21T12:23:47Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.51054,
+      "lat": 42.53992,
+      "observed_at": "2010-05-21T12:07:59Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.15101,
+      "lat": 43.18225,
+      "observed_at": "2010-05-05T15:06:50Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.23483,
+      "lat": 41.53583,
+      "observed_at": "2010-05-04T11:40:02Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.45075,
+      "lat": 41.76385,
+      "observed_at": "2010-05-01T15:29:03Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.58739,
+      "lat": 41.84446,
+      "observed_at": "2010-05-01T11:49:08Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.43547,
+      "lat": 41.44408,
+      "observed_at": "2010-04-24T14:25:40Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.8,
+      "lat": 41.09347,
+      "observed_at": "2010-04-20T16:24:48Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.80329,
+      "lat": 41.10173,
+      "observed_at": "2010-04-20T16:24:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.8238,
+      "lat": 41.07033,
+      "observed_at": "2010-04-20T10:54:17Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.56779,
+      "lat": 41.27996,
+      "observed_at": "2010-03-09T12:37:30Z",
+      "count": 4,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.26103,
+      "lat": 41.94289,
+      "observed_at": "2010-03-07T11:55:59Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.12367,
+      "lat": 43.0044,
+      "observed_at": "2010-01-13T10:53:31Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.17471,
+      "lat": 43.11023,
+      "observed_at": "2010-01-05T12:28:40Z",
+      "count": 6,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.93702,
+      "lat": 43.08276,
+      "observed_at": "2009-11-19T11:43:40Z",
+      "count": 5,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.0056,
+      "lat": 42.76171,
+      "observed_at": "2009-11-09T13:20:01Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.04795,
+      "lat": 42.77188,
+      "observed_at": "2009-11-09T13:07:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03378,
+      "lat": 42.86456,
+      "observed_at": "2009-11-09T12:38:26Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.05256,
+      "lat": 42.92876,
+      "observed_at": "2009-11-09T12:34:40Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.055,
+      "lat": 42.91144,
+      "observed_at": "2009-11-09T12:00:06Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.05772,
+      "lat": 42.91203,
+      "observed_at": "2009-11-09T11:56:57Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20918,
+      "lat": 42.98754,
+      "observed_at": "2009-10-27T11:29:13Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.12486,
+      "lat": 42.97195,
+      "observed_at": "2009-10-27T11:25:45Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.10957,
+      "lat": 42.96343,
+      "observed_at": "2009-10-27T11:21:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.16725,
+      "lat": 43.03125,
+      "observed_at": "2009-10-26T14:25:54Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.11649,
+      "lat": 42.67771,
+      "observed_at": "2009-10-26T12:25:55Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.1255,
+      "lat": 42.58113,
+      "observed_at": "2009-10-26T12:09:19Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.17279,
+      "lat": 42.20262,
+      "observed_at": "2009-07-07T11:10:33Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.51609,
+      "lat": 42.76223,
+      "observed_at": "2009-06-13T14:05:25Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.51609,
+      "lat": 42.76223,
+      "observed_at": "2009-06-13T14:05:25Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.48138,
+      "lat": 42.80449,
+      "observed_at": "2009-06-13T13:32:59Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.50076,
+      "lat": 42.77878,
+      "observed_at": "2009-06-13T13:07:51Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.07598,
+      "lat": 41.21677,
+      "observed_at": "2009-05-19T15:33:40Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03292,
+      "lat": 41.21401,
+      "observed_at": "2009-05-19T15:21:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.0638,
+      "lat": 42.74689,
+      "observed_at": "2009-05-12T13:59:42Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.06345,
+      "lat": 42.74651,
+      "observed_at": "2009-05-12T13:58:42Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.27018,
+      "lat": 41.32826,
+      "observed_at": "2009-05-11T13:45:53Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.22793,
+      "lat": 41.34516,
+      "observed_at": "2009-05-11T13:44:34Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.39482,
+      "lat": 42.49268,
+      "observed_at": "2009-05-06T15:33:31Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.08348,
+      "lat": 42.68119,
+      "observed_at": "2009-03-05T14:20:25Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.17979,
+      "lat": 42.99614,
+      "observed_at": "2009-02-10T12:26:08Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.96154,
+      "lat": 42.61352,
+      "observed_at": "2009-02-10T11:10:58Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.16087,
+      "lat": 42.97278,
+      "observed_at": "2009-01-26T13:48:37Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.15803,
+      "lat": 42.9735,
+      "observed_at": "2009-01-26T13:48:32Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.15518,
+      "lat": 42.97423,
+      "observed_at": "2009-01-26T13:48:27Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.18162,
+      "lat": 42.97365,
+      "observed_at": "2009-01-26T12:31:43Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.20201,
+      "lat": 43.00032,
+      "observed_at": "2009-01-26T12:15:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.99618,
+      "lat": 42.60088,
+      "observed_at": "2009-01-26T10:44:13Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.2384,
+      "lat": 42.9575,
+      "observed_at": "2008-12-06T15:07:09Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -70.2849,
+      "lat": 42.931,
+      "observed_at": "2008-11-24T14:11:32Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.3204,
+      "lat": 43.0117,
+      "observed_at": "2008-10-11T11:58:01Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.3511,
+      "lat": 42.9188,
+      "observed_at": "2008-10-11T11:37:32Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.9642,
+      "lat": 43.0045,
+      "observed_at": "2008-10-05T11:19:33Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.25268,
+      "lat": 42.08414,
+      "observed_at": "2008-06-09T11:19:33Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.13446,
+      "lat": 41.35813,
+      "observed_at": "2008-05-30T12:51:52Z",
+      "count": 2,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.04318,
+      "lat": 41.50683,
+      "observed_at": "2008-05-30T11:20:29Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.17268,
+      "lat": 41.42324,
+      "observed_at": "2008-05-30T11:05:20Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.13557,
+      "lat": 41.50155,
+      "observed_at": "2008-05-30T10:55:04Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.14314,
+      "lat": 41.2382,
+      "observed_at": "2008-05-07T14:39:17Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.21725,
+      "lat": 41.35011,
+      "observed_at": "2008-05-07T13:24:36Z",
+      "count": 3,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.03927,
+      "lat": 41.82784,
+      "observed_at": "2008-05-01T15:06:36Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.35068,
+      "lat": 41.53904,
+      "observed_at": "2008-04-25T11:06:19Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    },
+    {
+      "lon": -69.34259,
+      "lat": 41.53713,
+      "observed_at": "2008-04-25T11:00:30Z",
+      "count": 1,
+      "source": "OBIS (NOAA;NMFS;NEFSC)"
+    }
   ]
 }

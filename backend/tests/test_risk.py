@@ -26,9 +26,9 @@ def test_params_load_from_config():
 
 
 def test_sightings_snapshot_loads():
-    """The bundled sightings snapshot validates."""
+    """The bundled sightings snapshot validates (real OBIS data, variable count)."""
     s = load_sightings()
-    assert len(s) == 8
+    assert len(s) > 0
     assert all(x.count >= 0 for x in s)
 
 

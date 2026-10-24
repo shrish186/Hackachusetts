@@ -1,8 +1,10 @@
 {
   "metadata": {
-    "description": "Real NOAA NDBC buoy observations (standard meteorological feed) for Massachusetts Bay / Cape Cod Bay. Latest row with both wave height and wind per station.",
-    "source": "NOAA NDBC realtime2 standard meteorological feed",
-    "source_url": "https://www.ndbc.noaa.gov/data/realtime2/",
+    "description": "Real ocean conditions for the Fathom study area: NOAA NDBC buoy observations plus NWS marine gridpoint forecast samples for study-wide wave and wind coverage.",
+    "source": "NOAA NDBC realtime2 buoy feed + NWS (api.weather.gov) marine gridpoint forecast",
+    "source_url": "https://www.ndbc.noaa.gov/data/realtime2/ ; https://api.weather.gov/",
+    "license": "U.S. Government work / public domain (NOAA, NWS)",
+    "note": "2 real buoy cell(s) + 5 real NWS forecast sample cell(s). Buoy rows are observations; NWS rows are the current forecast. Wind converted to knots.",
     "stations": {
       "44013": {
         "lon": -70.651,
@@ -25,27 +27,72 @@
         "name": "Cape Cod Bay"
       }
     },
-    "fetched_at": "2026-10-24T16:55:58Z",
+    "fetched_at": "2026-10-24T18:22:36Z",
     "synthetic": false
   },
   "conditions": [
     {
       "cell_id": "6_26",
-      "time": "2026-10-24T16:20:00Z",
-      "wave_m": 1.5,
-      "wind_kn": 3.9,
-      "sst_c": 13.6,
+      "time": "2026-10-24T17:50:00Z",
+      "wave_m": 1.7,
+      "wind_kn": 0.0,
+      "sst_c": 13.9,
       "source": "noaa_ndbc_44013",
-      "fetched_at": "2026-10-24T16:55:58Z"
+      "fetched_at": "2026-10-24T18:22:36Z"
     },
     {
       "cell_id": "8_30",
-      "time": "2026-10-24T15:00:00Z",
-      "wave_m": 1.5,
-      "wind_kn": 5.8,
-      "sst_c": 13.4,
+      "time": "2026-10-24T16:00:00Z",
+      "wave_m": 1.6,
+      "wind_kn": 1.9,
+      "sst_c": 13.6,
       "source": "noaa_ndbc_44029",
-      "fetched_at": "2026-10-24T16:55:58Z"
+      "fetched_at": "2026-10-24T18:22:36Z"
+    },
+    {
+      "cell_id": "11_27",
+      "time": "2026-10-24T11:00:00Z",
+      "wave_m": 1.22,
+      "wind_kn": 6.0,
+      "sst_c": null,
+      "source": "nws_marine_forecast",
+      "fetched_at": "2026-10-24T18:22:36Z"
+    },
+    {
+      "cell_id": "15_32",
+      "time": "2026-10-24T11:00:00Z",
+      "wave_m": 1.22,
+      "wind_kn": 6.0,
+      "sst_c": null,
+      "source": "nws_marine_forecast",
+      "fetched_at": "2026-10-24T18:22:36Z"
+    },
+    {
+      "cell_id": "18_22",
+      "time": "2026-10-24T11:00:00Z",
+      "wave_m": 1.22,
+      "wind_kn": 9.0,
+      "sst_c": null,
+      "source": "nws_marine_forecast",
+      "fetched_at": "2026-10-24T18:22:36Z"
+    },
+    {
+      "cell_id": "13_17",
+      "time": "2026-10-24T11:00:00Z",
+      "wave_m": 0.61,
+      "wind_kn": 6.0,
+      "sst_c": null,
+      "source": "nws_marine_forecast",
+      "fetched_at": "2026-10-24T18:22:36Z"
+    },
+    {
+      "cell_id": "28_27",
+      "time": "2026-10-24T11:00:00Z",
+      "wave_m": 1.52,
+      "wind_kn": 11.0,
+      "sst_c": null,
+      "source": "nws_marine_forecast",
+      "fetched_at": "2026-10-24T18:22:36Z"
     }
   ]
 }
