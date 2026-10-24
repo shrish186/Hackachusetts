@@ -135,7 +135,7 @@ Body is `TripRequest`:
 }
 ```
 
-Bounds: `cruise_kn` in (0, 30], `max_hours` in (0, 72], `risk_pref` in [0, 1]. Known ports: `gloucester`, `boston`, `plymouth`, `provincetown`, `new_bedford`, `chatham`. Known grounds: `stellwagen_bank`, `jeffreys_ledge`, `tillies_bank`, `cape_cod_bay`, `great_south_channel`. If `target_ground` is null, `stellwagen_bank` is used. Unknown names return `422`.
+Bounds: `cruise_kn` in (0, 30], `max_hours` in (0, 72], `risk_pref` in [0, 1]. Known ports and grounds come from `config/ports.yaml`: ports `gloucester`, `boston`, `plymouth`, `provincetown`, `new_bedford`; grounds `stellwagen_bank`, `jeffreys_ledge`, `cape_cod_bay`. `max_hours` is the round-trip budget. If `target_ground` is null, `stellwagen_bank` is used. Unknown names return `422`.
 
 Response is `text/event-stream`. Each message is `event: <name>` plus one `data:` line of JSON. At most 8 tool calls.
 
@@ -143,7 +143,7 @@ Response is `text/event-stream`. Each message is `event: <name>` plus one `data:
 |---|---|
 | `tool_call` | `AgentEvent` with `status: "running"`, plus `args` |
 | `tool_result` | `AgentEvent` with `status: "done"` and a one-line `detail`, plus `result` (the tool output that citations point to) |
-| `plans` | `{ "plans": RoutePlan[], "narrative": [{ "text": "...", "citations": ["call_4"] }], "language": "en", "disclaimer": "...", "message": null }` |
+| `plans` | `{ "plans": RoutePlan[], "narrative": [{ "text": "...", "citations": ["call_4"] }], "language": "en", "disclaimer": "...", "message": null, "synthetic": true }`. Each plan also has `round_trip_hours`, `zones_avoided`, `slow_zone_hours`, `estimate: true`. |
 | `done` | `{ "tool_calls": 6 }` |
 | `error` | `{ "error": "short message" }` |
 
@@ -178,30 +178,38 @@ Returns `text/html`: a one-page printable brief with waypoints, zone alerts, the
 ## GET /api/sim/scenarios (Lane D, `backend/app/api/sim.py`)
 
 ```json
-[
-  { "scenario_id": "full_closure", "label": "Full closure of Stellwagen approach", "synthetic": true },
-  { "scenario_id": "dynamic_zone", "label": "Dynamic zone around latest sightings", "synthetic": true },
-  { "scenario_id": "seasonal_speed_limit", "label": "Seasonal 10 kn speed limit (no closure)", "synthetic": true }
-]
+{
+  "count": 3,
+  "scenarios": [
+    { "id": "extend_closure_east", "name": "Extend whale closure east", "description": "Extend the Western Gulf of Maine closure ~20 nm east (full no-entry)." },
+    { "id": "dynamic_zone_sightings", "name": "Dynamic zone around recent sightings", "description": "..." },
+    { "id": "seasonal_speed_limit", "name": "Seasonal 10-knot speed limit (instead of closure)", "description": "..." }
+  ]
+}
 ```
 
 ## POST /api/sim/run (Lane D)
 
-Body: `{ "scenario_ids": ["full_closure", "dynamic_zone"] }` (omit to run all). Returns `ScenarioResult[]`:
+Body: either `{ "scenario_id": "seasonal_speed_limit" }` (runs all preloaded options so the frontier is meaningful) or a custom polygon `{ "polygon": {"type": "Polygon", "coordinates": [...]}, "prohibited": true, "speed_limit_kn": null }`.
+
+Response (fleet of 200 synthetic trips, routed by `app.engine.routing.route_one`):
 
 ```json
-[
-  {
-    "scenario_id": "dynamic_zone",
-    "label": "Dynamic zone around latest sightings",
-    "delta_risk_pct": -54.0,
-    "delta_hours_pct": 5.1,
-    "delta_fuel_pct": 5.6,
-    "delta_effort_access_pct": -9.0,
-    "on_frontier": true,
-    "summary": "Plain-language summary for a board member."
-  }
-]
+{
+  "baseline": { "risk_exposure": 73.93, "steaming_hours": 928.08, "fuel_l": 53723.3, "effort_access": 45.76, "trips": 200 },
+  "options": [
+    {
+      "scenario_id": "extend_closure_east",
+      "name": "Extend whale closure east",
+      "description": "...",
+      "totals": { "risk_exposure": 74.63, "steaming_hours": 923.75, "fuel_l": 53557.6, "effort_access": 45.78, "trips": 200 },
+      "deltas_pct": { "risk": 1.0, "hours": -0.5, "fuel": -0.3, "effort_access": 0.0 },
+      "on_frontier": false,
+      "summary": { "en": "...", "pt": "...", "es": "..." }
+    }
+  ],
+  "fleet": "...", "router": "...", "labels": "...", "requested": "seasonal_speed_limit"
+}
 ```
 
-The simulator can call `app.engine.routing.route_one(..., extra_zones=[Zone])` to re-route each trip around a candidate zone.
+The frontend `ScenarioResult` maps `deltas_pct.risk` -> `delta_risk_pct`, and so on. A cold run takes about 9 to 12 s; repeat runs come from the route cache.
