@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterator, Literal
 
@@ -18,7 +19,7 @@ from app.ingest.conditions import demo_mode
 
 from app.agent.agent import DISCLAIMER, run_agent
 from app.api.layers import snapshot_meta
-from app.engine.routing import ports_config, zone_names
+from app.engine.routing import ground_name, parse_coord, ports_config, zone_names
 from app.models import TripRequest
 
 router = APIRouter(tags=["trip"])
@@ -51,7 +52,8 @@ class TripPlanBody(BaseModel):
     cruise_kn: float = Field(..., gt=0, le=30)
     max_hours: float = Field(..., gt=0, le=72)
     depart_window: tuple[datetime, datetime]
-    target_ground: str | None = Field(None, pattern=_ID)
+    # A named ground, or "lon,lat" inside the study area ("plan to nearest open water").
+    target_ground: str | None = Field(None, max_length=40)
     risk_pref: float = Field(..., ge=0, le=1)
     language: Literal["en", "pt", "es"] = "en"
 
@@ -77,7 +79,12 @@ class TripPlanBody(BaseModel):
     @field_validator("target_ground")
     @classmethod
     def _known_ground(cls, v: str | None) -> str | None:
-        if v is not None and v not in ports_config()["fishing_grounds"]:
+        if v is None:
+            return v
+        if parse_coord(v) is not None:
+            lon, lat = parse_coord(v)
+            return f"{lon:g},{lat:g}"
+        if not re.fullmatch(_ID, v) or v not in ports_config()["fishing_grounds"]:
             raise ValueError("unknown fishing ground")
         return v
 
@@ -186,7 +193,7 @@ def render_brief(body: BriefBody) -> str:
     if body.trip:
         pc = ports_config()
         port = pc["ports"][body.trip.port]["name"]
-        ground = pc["fishing_grounds"].get(body.trip.target_ground or "stellwagen_bank", {}).get("name", "")
+        ground = ground_name(body.trip.target_ground or "stellwagen_bank")
         trip = f"<p>{t['port']}: {e(port)} · {t['ground']}: {e(ground)} · {t['vessel']}: {e(body.trip.vessel)}</p>"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     return f"""<!doctype html>

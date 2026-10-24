@@ -49,16 +49,16 @@ DISCLAIMER = {
 }
 
 PLAN_NAMES = {
-    "en": {"Fastest": "Fastest", "Balanced": "Balanced", "Safest": "Safest", "Alternate track": "Alternate track"},
-    "pt": {"Fastest": "Mais rápida", "Balanced": "Equilibrada", "Safest": "Mais segura", "Alternate track": "Rota alternativa"},
-    "es": {"Fastest": "Más rápida", "Balanced": "Equilibrada", "Safest": "Más segura", "Alternate track": "Ruta alternativa"},
+    "en": {"Fastest": "Fastest", "Balanced": "Balanced", "Safest": "Safest", "Alternative": "Alternative"},
+    "pt": {"Fastest": "Mais rápida", "Balanced": "Equilibrada", "Safest": "Mais segura", "Alternative": "Alternativa"},
+    "es": {"Fastest": "Más rápida", "Balanced": "Equilibrada", "Safest": "Más segura", "Alternative": "Alternativa"},
 }
 
 
 def plan_name(lang: str, name: str) -> str:
-    """Translate a plan name; numbered alternates keep their number ("Alternate track 2")."""
+    """Translate a plan name; numbered alternatives keep their number ("Alternative 2")."""
     base, _, num = name.rpartition(" ")
-    if base == "Alternate track" and num.isdigit():
+    if base == "Alternative" and num.isdigit():
         return f"{PLAN_NAMES[lang][base]} {num}"
     return PLAN_NAMES[lang].get(name, name)
 
@@ -339,12 +339,12 @@ def run_agent(trip_request: dict[str, Any] | TripRequest) -> Iterator[dict[str, 
         return
     lang = trip.language
     labels = LABELS[lang]
-    from app.engine.routing import RoutingError, place_lonlat, ports_config
+    from app.engine.routing import RoutingError, ground_lonlat, ground_name, place_lonlat
 
     ground = trip.target_ground or "stellwagen_bank"
     try:
         origin = place_lonlat("ports", trip.port)
-        dest = place_lonlat("fishing_grounds", ground)
+        dest = ground_lonlat(ground)
     except RoutingError as exc:
         yield _sse("error", {"error": str(exc)})
         return
@@ -375,7 +375,7 @@ def run_agent(trip_request: dict[str, Any] | TripRequest) -> Iterator[dict[str, 
             yield _sse("error", {"error": f"Tool {tool} failed."})
             return
         if tool == "plan_routes":
-            out["ground_name"] = ports_config()["fishing_grounds"][ground]["name"]
+            out["ground_name"] = ground_name(ground)
         results[cid] = out
         yield _sse("tool_result", {"id": cid, "tool": tool, "label": labels[tool], "status": "done",
                                    "detail": _detail(tool, out), "result": out})

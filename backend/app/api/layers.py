@@ -28,7 +28,9 @@ from app.ingest.conditions import demo_mode, get_conditions as ingest_conditions
 from app.ingest.config import data_path
 from app.ingest.grid import default_grid, land_mask_array
 from app.ingest.zones import default_zones, is_active, restriction_summary, zone_shape
-from app.engine.risk import load_sightings, risk_breakdown
+import numpy as np
+
+from app.engine.risk import load_sightings
 
 router = APIRouter(tags=["layers"])
 
@@ -220,35 +222,35 @@ def _sightings():
 
 
 def risk_items(bounds: BBox | None, when: datetime, speed_kn: float) -> list[dict[str, Any]]:
+    """Risk cells from the cached surface in app.engine.routing (30-minute buckets)."""
+    from app.engine.routing import risk_surface
+
     g = default_grid()
     mask = land_mask()
-    sightings = _sightings()
+    surf = risk_surface(when, speed_kn)
+    w = surf.whale
+    leth = round(surf.lethality, 4)
     items = []
-    for iy in range(g.ny):
-        for ix in range(g.nx):
-            if mask[iy, ix]:
-                continue
-            lon, lat = g.center(ix, iy)
-            if not in_bbox(lon, lat, bounds):
-                continue
-            b = risk_breakdown(g.cell_id(ix, iy), lon, lat, when, speed_kn, sightings)
-            if b.risk < MIN_RISK_REPORTED:
-                continue
-            items.append(
-                {
-                    "cell_id": b.cell_id,
-                    "lon": round(lon, 4),
-                    "lat": round(lat, 4),
-                    "risk": round(b.risk, 4),
-                    "factors": {
-                        "presence": round(b.presence, 4),
-                        "recency": round(b.recency, 4),
-                        "lethality": round(b.lethality, 4),
-                    },
-                    "cached": True,
-                    "synthetic": True,
-                }
-            )
+    iys, ixs = np.nonzero((surf.risk >= MIN_RISK_REPORTED) & ~mask)
+    for iy, ix in zip(iys.tolist(), ixs.tolist()):
+        lon, lat = g.center(ix, iy)
+        if not in_bbox(lon, lat, bounds):
+            continue
+        items.append(
+            {
+                "cell_id": g.cell_id(ix, iy),
+                "lon": round(lon, 4),
+                "lat": round(lat, 4),
+                "risk": round(float(surf.risk[iy, ix]), 4),
+                "factors": {
+                    "presence": round(float(w.presence[iy, ix]), 4),
+                    "recency": round(float(w.recency[iy, ix]), 4),
+                    "lethality": leth,
+                },
+                "cached": True,
+                "synthetic": True,
+            }
+        )
     return items
 
 

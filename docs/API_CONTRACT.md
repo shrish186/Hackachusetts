@@ -179,7 +179,15 @@ Every narrative sentence ends with `[tool:call_N]`. Numbers and zone names are i
 
 ### Plan fields added in the QA round
 
-- `plans[]` are ranked for the requester's `risk_pref` (`rank` 1 = best). Names describe the measured numbers: `Fastest` (least time), `Safest` (lowest whale-risk exposure, only if lower than Fastest's), `Balanced` (less risk than Fastest, less time than Safest), and `Alternate track N` (a genuinely different track that is not better on either measure). Each plan carries `risk_weight` (0.1 / 0.5 / 0.9), `method` (`risk_weight`, or `corridor` when a cost on earlier tracks was needed to find a different one), `vs_fastest {extra_hours, risk_change}`, `max_wind_kn` and `origin_adjusted_nm` (how far the port was moved off a coastal land cell, at most 3 cells).
+- `plans[]` are **sorted by `eta_hours` ascending**, so Fastest comes first and `rank` 1..n follows that order. `recommended: true` marks the single plan that best fits the requester's `risk_pref`. Names describe the measured numbers:
+  - `Fastest`: least time.
+  - `Safest`: the **minimum** whale-risk exposure among the returned plans, and only if that is below Fastest's. No other plan is ever called Safest.
+  - `Balanced`: less risk than Fastest and less time than Safest (at most one plan).
+  - `Alternative`, or `Alternative 1`, `Alternative 2` when there are several: a different track that is not better on either measure. Translated as `Alternativa` in Portuguese and Spanish.
+
+  Each plan also carries `risk_weight` (0.1 / 0.5 / 0.9), `method` (`risk_weight`, or `corridor` when a cost on earlier tracks was needed to find a different one), `vs_fastest {extra_hours, risk_change}`, `max_wind_kn` and `origin_adjusted_nm` (how far the port was moved off a coastal land cell, at most 3 cells).
+- `target_ground` may be a named ground or `"lon,lat"` inside the study area. The frontend's "plan to nearest open water" button sends `nearest_open` this way. Anything else returns 422 with `fields: ["target_ground"]`.
+- Whale risk is cached per 30-minute time bucket (evaluated at the bucket middle), and the risk layer per (bucket, speed to 0.1 kn). Startup warm-up runs one plan per port and vessel for the replay date (2026-03-15T13:00Z) and for the current time, so plans are fast once `/api/ready` returns 200.
 - Two tracks are duplicates when more than 90 % of each lies within one grid cell (0.05°) of the other. If only one distinct track exists, `single_route_reason` explains why and the narrative says "All weightings give the same route because ...".
 - `waypoints` are dense: the cell-centre track simplified only to a 0.5-cell tolerance, and never across land.
 - All displayed numbers use one rounding helper (`app.engine.routing.rnd`): m and kn to 1 decimal, hours to 2, liters to 1, risk to 3, exposure to 4. The narrative's per-plan wave and wind values are the plan card's values.
@@ -201,6 +209,8 @@ The router never moves a destination. If the target ground (or the departure por
 ```
 
 `endpoint` is `destination` or `origin`. `code` is one of `closed_zone`, `land`, `outside` or `no_water`. `nearest_open` is the closest cell that is neither land nor closed, and it may be null. The SSE `plans` event repeats it as `access_lost`, and `message` gives the plain-language version. The simulator counts such trips as lost access (`access_lost_trips`) instead of as shorter trips.
+
+**Baseline access loss is expected.** On the simulator's baseline date (2026-03-15), 57 of the 200 synthetic fleet trips report `access_lost`. Every one of them is a trip to Jeffreys Ledge (-70.25, 42.90). That point lies inside the Western Gulf of Maine Seasonal Closure (`closure_western_gom`, prohibited, active 2026-02-01 to 2026-04-30). None of the trips fail because of a land cell: all three fishing grounds sit in water cells. This is the correct result for the closure window, not a bug; outside the window the same trips route normally. `backend/tests/test_latency_order.py::test_baseline_access_lost_is_only_closed_jeffreys_ledge` checks this. Note for Lane D: the baseline explanation text in `engine/simulator.py` also names the Vineyard Wind construction exclusion, but no fleet ground is inside it, so that part of the sentence can be dropped.
 
 ### Validation (422)
 

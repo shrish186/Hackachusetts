@@ -280,3 +280,56 @@ def load_sightings(path=None) -> list[Sighting]:
         payload = json.load(fh)
     raw = payload.get("sightings", payload) if isinstance(payload, dict) else payload
     return [Sighting.model_validate(s) for s in raw]
+
+
+# ---------------------------------------------------------------------------
+# Vectorized fields (same formulas as presence_at / recency_at / p_whale above)
+# ---------------------------------------------------------------------------
+
+
+def _haversine_km_grid(lons: np.ndarray, lats: np.ndarray, lon: float, lat: float) -> np.ndarray:
+    """Great-circle distance (km) from every grid point to one point."""
+    rlat1, rlat2 = np.radians(lats), math.radians(lat)
+    dlat = rlat2 - rlat1
+    dlon = math.radians(lon) - np.radians(lons)
+    a = np.sin(dlat / 2) ** 2 + np.cos(rlat1) * math.cos(rlat2) * np.sin(dlon / 2) ** 2
+    return 2 * _EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(a, 0.0, 1.0)))
+
+
+def presence_field(lons: np.ndarray, lats: np.ndarray, sightings: Sequence[Sighting],
+                   params: RiskParams | None = None) -> np.ndarray:
+    """:func:`presence_at` for every grid point at once (time-independent)."""
+    p = params or load_risk_params()
+    bw2 = 2.0 * p.presence_kernel_km ** 2
+    density = np.zeros(np.shape(lons))
+    for s in sightings:
+        d = _haversine_km_grid(lons, lats, s.lon, s.lat)
+        density += max(s.count, 0) * np.exp(-(d * d) / bw2)
+    return 1.0 - np.exp(-density / p.presence_scale)
+
+
+def recency_field(lons: np.ndarray, lats: np.ndarray, when: datetime, sightings: Sequence[Sighting],
+                  params: RiskParams | None = None) -> np.ndarray:
+    """:func:`recency_at` for every grid point at once."""
+    p = params or load_risk_params()
+    when = _as_utc(when)
+    prod = np.ones(np.shape(lons))
+    for s in sightings:
+        d = _haversine_km_grid(lons, lats, s.lon, s.lat)
+        age_days = max((when - _as_utc(s.observed_at)).total_seconds() / 86400.0, 0.0)
+        contrib = np.clip(math.exp(-age_days / p.tau_days) * np.exp(-d / p.rho_km), 0.0, 1.0)
+        prod *= np.where(d > p.radius_km, 1.0, 1.0 - contrib)
+    return 1.0 - prod
+
+
+def p_whale_field(lons: np.ndarray, lats: np.ndarray, when: datetime, sightings: Sequence[Sighting],
+                  params: RiskParams | None = None, presence: np.ndarray | None = None) -> np.ndarray:
+    """:func:`p_whale` for every grid point at once, clipped to [0, 1].
+
+    Pass a precomputed ``presence`` (from :func:`presence_field`) to skip the
+    time-independent part.
+    """
+    p = params or load_risk_params()
+    pres = presence if presence is not None else presence_field(lons, lats, sightings, p)
+    rec = recency_field(lons, lats, when, sightings, p)
+    return np.clip(p.alpha * pres + (1.0 - p.alpha) * rec, 0.0, 1.0)

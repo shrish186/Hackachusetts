@@ -42,7 +42,7 @@
 
 ### Startup
 
-On boot the app answers `/api/health` right away. A background thread then loads the snapshots, builds the grid and risk surfaces, and runs one demo plan. `/api/ready` returns 200 when that is done, which took about 0.5 s locally. The Render health check stays on `/api/health`, so a slow warm-up can never fail a deploy.
+On boot the app answers `/api/health` right away. A background thread then loads the snapshots, builds the grid and whale-risk surfaces (30-minute buckets for the replay day and the next 24 hours), and runs one plan for each of the 5 ports and 3 vessels at the form defaults, for both the replay date (2026-03-15T13:00Z) and the current time. `/api/ready` returns 200 when that is done. Locally this takes about 2.5 s; expect a few times longer on Render's free CPU. The Render health check stays on `/api/health`, so a slow warm-up can never fail a deploy. After `/api/ready` is 200, a plan takes under 0.2 s locally.
 
 ## Frontend on Vercel
 

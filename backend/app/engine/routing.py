@@ -10,8 +10,8 @@ Edge cost (hours-equivalent) for moving into cell c at effective speed v:
 * Land cells are impassable, and diagonal moves may not cut a land corner.
 * Waves: no penalty below the vessel's comfort height, a steep quadratic
   penalty up to its hard limit, impassable above it (config/vessels.yaml).
-* Time dependence: risk and waves are looked up in the 3-hour slice of the
-  estimated arrival time at each cell.
+* Time dependence: whale risk is looked up in the 30-minute bucket of the
+  estimated arrival time at each cell (cached per bucket).
 
 Inputs are bundled snapshots only (Lane A's ingest + risk model), so routing is
 deterministic and works offline. Fuel, ETA and waves are ESTIMATES: the wave
@@ -27,6 +27,7 @@ from __future__ import annotations
 import heapq
 import json
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -39,7 +40,7 @@ from shapely.geometry import LineString, Point, shape
 from shapely.prepared import prep
 
 from app.engine.effort import effort_at
-from app.engine.risk import lethality, load_risk_params, load_sightings, p_whale
+from app.engine.risk import lethality, load_risk_params, load_sightings, presence_field
 from app.ingest.conditions import get_conditions as ingest_conditions
 from app.ingest.config import config_path, load_yaml
 from app.ingest.grid import GridSpec, default_grid, land_mask_array
@@ -81,6 +82,34 @@ def ports_config() -> dict[str, Any]:
     return load_yaml(config_path("ports.yaml"))
 
 
+_COORD_RE = re.compile(r"^\s*(-?\d{1,3}(?:\.\d{1,6})?)\s*,\s*(-?\d{1,2}(?:\.\d{1,6})?)\s*$")
+
+
+def parse_coord(text: str | None) -> LonLat | None:
+    """Parse a "lon,lat" ground (the frontend's "plan to nearest open water")."""
+    m = _COORD_RE.match(text or "")
+    if not m:
+        return None
+    lon, lat = float(m.group(1)), float(m.group(2))
+    g = default_grid()
+    if not (g.min_lon <= lon <= g.max_lon and g.min_lat <= lat <= g.max_lat):
+        return None
+    return (lon, lat)
+
+
+def ground_lonlat(ground: str) -> LonLat:
+    """A named fishing ground or a "lon,lat" point inside the study area."""
+    c = parse_coord(ground)
+    return c if c is not None else place_lonlat("fishing_grounds", ground)
+
+
+def ground_name(ground: str) -> str:
+    c = parse_coord(ground)
+    if c is not None:
+        return f"open water at {c[1]:g}, {c[0]:g}"
+    return ports_config()["fishing_grounds"][ground]["name"]
+
+
 def place_lonlat(kind: str, name: str) -> LonLat:
     """Look up a port ('ports') or ground ('fishing_grounds') by id."""
     table = ports_config().get(kind, {})
@@ -111,9 +140,19 @@ def _as_utc(dt: datetime) -> datetime:
     return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 
 
-def _slice_start(dt: datetime) -> datetime:
+#: Risk surfaces are cached per 30-minute time bucket (evaluated at the bucket middle).
+RISK_BUCKET_MIN = 30
+
+
+def risk_bucket(dt: datetime) -> datetime:
+    """Start of the 30-minute bucket containing ``dt`` (UTC)."""
     dt = _as_utc(dt)
-    return dt.replace(hour=dt.hour - dt.hour % SLICE_HOURS, minute=0, second=0, microsecond=0)
+    return dt.replace(minute=dt.minute - dt.minute % RISK_BUCKET_MIN, second=0, microsecond=0)
+
+
+def _slice_start(dt: datetime) -> datetime:
+    """Kept for callers of the old 3-hour API; now the 30-minute risk bucket."""
+    return risk_bucket(dt)
 
 
 @lru_cache(maxsize=1)
@@ -121,21 +160,99 @@ def _sightings():
     return tuple(load_sightings())
 
 
-@lru_cache(maxsize=64)
-def _p_whale_grid(slice_start: datetime) -> np.ndarray:
-    """p_whale per cell for one 3-hour slice (0 on land). Speed applied later."""
-    g = default_grid()
-    land = _land()
+@lru_cache(maxsize=1)
+def _presence_grid() -> np.ndarray:
+    """Time-independent presence prior per cell (0 on land)."""
+    lons, lats = _centers()
+    return np.where(_land(), 0.0, presence_field(lons, lats, _sightings(), load_risk_params()))
+
+
+@dataclass(frozen=True)
+class WhaleSurface:
+    """Per-cell presence, recency and p_whale for one 30-minute bucket (0 on land)."""
+
+    bucket: datetime
+    presence: np.ndarray
+    recency: np.ndarray
+    p_whale: np.ndarray
+
+
+@lru_cache(maxsize=1)
+def _recency_terms() -> tuple[tuple[datetime, np.ndarray, np.ndarray], ...]:
+    """Per sighting: (observed_at, exp(-dist/rho) grid, in-radius mask). Time-independent."""
+    lons, lats = _centers()
+    p = load_risk_params()
+    out = []
+    for sg in _sightings():
+        d = _dist_grid_km(sg.lon, sg.lat)
+        out.append((_as_utc(sg.observed_at), np.exp(-d / p.rho_km), d <= p.radius_km))
+    return tuple(out)
+
+
+def _dist_grid_km(lon: float, lat: float) -> np.ndarray:
+    from app.engine.risk import _haversine_km_grid
+
+    lons, lats = _centers()
+    return _haversine_km_grid(lons, lats, lon, lat)
+
+
+def _recency_grid(when: datetime) -> np.ndarray:
+    """Same formula as app.engine.risk.recency_field, reusing cached distance terms."""
+    tau = load_risk_params().tau_days
+    when = _as_utc(when)
+    prod = np.ones(_land().shape)
+    for observed, decay, inside in _recency_terms():
+        age_days = max((when - observed).total_seconds() / 86400.0, 0.0)
+        contrib = np.clip(math.exp(-age_days / tau) * decay, 0.0, 1.0)
+        prod *= np.where(inside, 1.0 - contrib, 1.0)
+    return 1.0 - prod
+
+
+@lru_cache(maxsize=1024)
+def whale_surface(bucket: datetime) -> WhaleSurface:
+    """Speed-independent whale fields for a bucket (vectorized, about 1 ms warm)."""
     params = load_risk_params()
-    s = _sightings()
-    out = np.zeros((g.ny, g.nx))
-    mid = slice_start + timedelta(hours=SLICE_HOURS / 2)
-    for iy in range(g.ny):
-        for ix in range(g.nx):
-            if not land[iy, ix]:
-                lon, lat = g.center(ix, iy)
-                out[iy, ix] = p_whale(lon, lat, mid, s, params)
-    return out
+    mid = bucket + timedelta(minutes=RISK_BUCKET_MIN / 2)
+    land = _land()
+    pres = _presence_grid()
+    rec = np.where(land, 0.0, _recency_grid(mid))
+    pw = np.where(land, 0.0, np.clip(params.alpha * pres + (1.0 - params.alpha) * rec, 0.0, 1.0))
+    for arr in (rec, pw):
+        arr.setflags(write=False)
+    return WhaleSurface(bucket, pres, rec, pw)
+
+
+def _p_whale_grid(bucket: datetime) -> np.ndarray:
+    return whale_surface(risk_bucket(bucket)).p_whale
+
+
+@dataclass(frozen=True)
+class RiskSurface:
+    """Whale risk per cell at one speed: risk = p_whale * lethality(speed)."""
+
+    whale: WhaleSurface
+    speed_kn: float
+    lethality: float
+    risk: np.ndarray
+
+
+@lru_cache(maxsize=512)
+def _risk_surface(bucket: datetime, speed_kn: float) -> RiskSurface:
+    w = whale_surface(bucket)
+    leth = lethality(speed_kn)
+    risk = np.clip(w.p_whale * leth, 0.0, 1.0)
+    risk.setflags(write=False)
+    return RiskSurface(w, speed_kn, leth, risk)
+
+
+def risk_surface(when: datetime, speed_kn: float) -> RiskSurface:
+    """Cached risk surface per (30-minute bucket, speed).
+
+    Speed is cached at 0.1 kn rather than 1 kn so the layer's numbers match the
+    plan's lethality at the captain's exact cruise speed; the expensive,
+    speed-independent part is shared through :func:`whale_surface`.
+    """
+    return _risk_surface(risk_bucket(when), round(float(speed_kn), 1))
 
 
 @dataclass(frozen=True)
@@ -659,7 +776,7 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
     window = _field(trip_request, "depart_window")
     depart = _parse_dt(window[0])
     origin = place_lonlat("ports", port)
-    dest = place_lonlat("fishing_grounds", ground)
+    dest = ground_lonlat(ground)
 
     rd = _readings()
     data = {"source": rd.source, "fetched_at": rd.fetched_at, "synthetic": rd.synthetic}
@@ -718,20 +835,23 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
             single_reason = ("All weightings give the same route because the open water between the port and the "
                              "ground leaves no meaningfully different track.")
 
-    # Names follow the measured numbers, not the weight that produced a track:
-    # a slower-and-riskier backup is never called "Safest" or "Balanced".
-    fastest = min((c[3] for c in chosen), key=lambda r: (r["eta_hours"], r["risk_exposure"]))
+    # Order by ETA (Fastest first). Names follow the measured numbers, not the
+    # weight that produced a track: "Safest" only for the minimum-risk plan.
+    chosen.sort(key=lambda c: (c[3]["eta_hours"], c[3]["risk_exposure"]))
+    fastest = chosen[0][3]
     names = name_plans([c[3] for c in chosen], fastest)
     chosen = [(names[i], w, m, r) for i, (_, w, m, r) in enumerate(chosen)]
     min_eta = min(c[3]["eta_hours"] for c in chosen) or 1.0
     max_risk = max(c[3]["risk_exposure"] for c in chosen) or 1.0
-    chosen.sort(key=lambda c: (1 - pref) * c[3]["eta_hours"] / min_eta + pref * c[3]["risk_exposure"] / max_risk)
+    scores = [(1 - pref) * c[3]["eta_hours"] / min_eta + pref * c[3]["risk_exposure"] / max_risk for c in chosen]
+    recommended = scores.index(min(scores))
     effort = rnd(effort_at(*dest), "effort")
     plans = []
     for rank, (name, w, method, r) in enumerate(chosen, start=1):
         p = {k: v for k, v in r.items() if k not in ("ok", "reason", "cells", "access_lost")}
         p["name"] = name
         p["rank"] = rank
+        p["recommended"] = rank - 1 == recommended
         p["risk_weight"] = w
         p["method"] = method
         p["effort_proxy"] = effort
@@ -750,11 +870,12 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
 
 
 def name_plans(routes: Sequence[dict[str, Any]], fastest: dict[str, Any]) -> list[str]:
-    """Fastest = least time; Safest = lowest whale-risk exposure (if below Fastest's);
-    Balanced = a trade-off track (less risk than Fastest, less time than Safest);
-    Alternate track = a different track that is not better on either measure."""
+    """Fastest = least time. Safest = the minimum whale-risk exposure, and only if
+    it is below Fastest's. Balanced = less risk than Fastest and less time than
+    Safest. Alternative = a different track that is not better on either measure."""
+    min_risk = min(r["risk_exposure"] for r in routes)
     safest = min(routes, key=lambda r: (r["risk_exposure"], r["eta_hours"]))
-    if safest is fastest or safest["risk_exposure"] >= fastest["risk_exposure"]:
+    if safest is fastest or safest["risk_exposure"] >= fastest["risk_exposure"] or safest["risk_exposure"] != min_risk:
         safest = None
     out = []
     for r in routes:
@@ -765,19 +886,25 @@ def name_plans(routes: Sequence[dict[str, Any]], fastest: dict[str, Any]) -> lis
         elif r["risk_exposure"] < fastest["risk_exposure"] and (safest is None or r["eta_hours"] < safest["eta_hours"]):
             out.append("Balanced")
         else:
-            out.append("Alternate track")
-    if out.count("Alternate track") > 1:
+            out.append("Alternative")
+    if out.count("Balanced") > 1:  # keep one Balanced: the quickest of them
+        first = out.index("Balanced")
+        out = [n if (n != "Balanced" or i == first) else "Alternative" for i, n in enumerate(out)]
+    if out.count("Alternative") > 1:
         n = 0
         for i, name in enumerate(out):
-            if name == "Alternate track":
+            if name == "Alternative":
                 n += 1
-                out[i] = f"Alternate track {n}"
+                out[i] = f"Alternative {n}"
     return out
 
 
 def explain_access_lost(info: dict[str, Any], ground: str) -> str:
     """Plain message for an access_lost result (Lane D and the agent both use it)."""
-    name = ports_config().get("fishing_grounds", {}).get(ground, {}).get("name", ground)
+    try:
+        name = ground_name(ground)
+    except KeyError:
+        name = ground
     where = f"The target ground {name}" if info["endpoint"] == "destination" else "The departure port"
     msg = f"{where} {info['reason']}"
     if info.get("zone_active_to"):

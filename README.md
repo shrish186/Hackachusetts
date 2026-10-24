@@ -24,6 +24,22 @@ Live demo: https://fathom-six-vert.vercel.app (API: https://hackachusetts.onrend
 
 Demo mode is on, and there is no login.
 
+## Judge quickstart
+
+1. Open https://fathom-six-vert.vercel.app. If nothing loads at first, wait up to a minute while the free API server wakes.
+2. Click **Try the demo trip** (Gloucester, small boat, 9 kn, whale-season replay on 15 March 2026).
+3. Compare the plan cards, sorted Fastest, Balanced, Safest. Open one card's "why" drawer to see zones, weather and citations.
+4. Switch to **Manager**, run a preset scenario, and read the risk-versus-cost trade-off.
+5. Switch the language to **PT**, then **ES**. The numbers and zone names stay the same.
+
+## Known limitations
+
+- **Zone shapes are hand-drawn approximations** of the official NOAA and BOEM areas. The dates and rules come from the official sources, but the polygons are not survey-accurate. Do not use them for navigation.
+- **Whale data is 60 real historical sightings** from OBIS, for January to May inside the study area. They are not live detections, so the risk layer is a screening estimate, not a measured strike probability.
+- **Advisory only.** Fathom does not replace official notices, VHF warnings, or a captain's judgment. Fuel, the effort proxy and the fleet are estimates or synthetic, and are labelled that way.
+- **Free-tier cold start.** The API runs on Render's free plan, which sleeps when idle. The first request after a pause can take up to a minute. After `/api/ready` returns 200, plans are fast.
+- **Jeffreys Ledge is closed in the replay.** On 15 March 2026 it sits inside the Western Gulf of Maine seasonal closure, so trips there show "access lost" with the nearest open water.
+
 ## How to test (for judges)
 
 1. Open https://fathom-six-vert.vercel.app. If the first load is slow, the free API server is waking up; wait up to a minute.
