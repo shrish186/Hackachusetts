@@ -234,11 +234,47 @@ class FleetTrip:
     synthetic: bool = True
 
 
-def build_synthetic_fleet(size: int = 200, seed: str = "fathom-fleet-v1") -> list[FleetTrip]:
-    """Generate a deterministic synthetic fleet of ``size`` trips.
+def _try_anant_fleet(size: int) -> list[FleetTrip] | None:
+    """Adapt Anant's real fleet (``engine.fleet.build_fleet``) if available.
 
-    Reproducible (hash-seeded), anonymized ids, every trip flagged synthetic.
+    Anant's ``Trip`` carries ``origin_lon/lat``, ``target_lon/lat``, ``vessel``
+    and ``cruise_kn``. We project it onto our :class:`FleetTrip`. Returns None if
+    the fleet module / its config (ports.yaml, vessels.yaml) is not usable, so
+    the deterministic in-module fallback can take over.
     """
+    try:  # pragma: no cover - depends on cross-lane config being present
+        from app.engine.fleet import build_fleet
+
+        raw = build_fleet(n=size)
+        if not raw:
+            return None
+        trips: list[FleetTrip] = []
+        for i, t in enumerate(raw):
+            trips.append(
+                FleetTrip(
+                    trip_id=getattr(t, "id", f"synthetic-{i:04d}"),
+                    origin=(float(t.origin_lon), float(t.origin_lat)),
+                    dest=(float(t.target_lon), float(t.target_lat)),
+                    vessel=str(t.vessel),
+                    cruise_kn=float(t.cruise_kn),
+                    # Anant's Trip has no risk preference; sweep deterministically.
+                    risk_pref=round(_stable_unit("anant-risk", i), 2),
+                )
+            )
+        return trips
+    except Exception:
+        return None
+
+
+def build_synthetic_fleet(size: int = 200, seed: str = "fathom-fleet-v1") -> list[FleetTrip]:
+    """Build the fleet: prefer Anant's real builder, else a seeded fallback.
+
+    Both paths are deterministic, anonymized, and flagged synthetic. The
+    fallback is used only when ``engine.fleet`` / its config is unavailable.
+    """
+    anant = _try_anant_fleet(size)
+    if anant:
+        return anant
     trips: list[FleetTrip] = []
     for i in range(size):
         u = lambda tag: _stable_unit(seed, i, tag)  # noqa: E731 - local helper
@@ -515,7 +551,17 @@ class Simulator:
         """
         self.router: RouterFn = router or _try_import_real_router() or synthetic_route_one
         self.using_real_router = router is None and _try_import_real_router() is not None
-        self.fleet: list[FleetTrip] = list(fleet) if fleet is not None else build_synthetic_fleet(fleet_size)
+        if fleet is not None:
+            self.fleet = list(fleet)
+            self.fleet_source = "injected"
+        else:
+            anant = _try_anant_fleet(fleet_size)
+            if anant:
+                self.fleet = anant
+                self.fleet_source = "synthetic (engine.fleet.build_fleet, seeded from config/ports.yaml)"
+            else:
+                self.fleet = build_synthetic_fleet(fleet_size)
+                self.fleet_source = "synthetic (seeded from in-module Massachusetts port list)"
         self.current_zones = current_zones or []
         self._baseline_cache: FleetTotals | None = None
 
@@ -562,7 +608,7 @@ class Simulator:
             "fleet": {
                 "size": len(self.fleet),
                 "synthetic": True,
-                "source": "synthetic (seeded from Massachusetts port list)",
+                "source": self.fleet_source,
             },
             "router": "real" if self.using_real_router else "synthetic-fallback",
             "labels": {
