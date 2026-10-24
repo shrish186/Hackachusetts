@@ -42,18 +42,61 @@ SECURITY_HEADERS: list[tuple[bytes, bytes]] = [
     (b"referrer-policy", b"no-referrer"),
     (b"x-frame-options", b"DENY"),
 ]
+API_CSP = b"default-src 'none'; frame-ancestors 'none'"
+HSTS = b"max-age=31536000; includeSubDomains"
+CORS_METHODS = ["GET", "POST", "OPTIONS"]
+CORS_HEADERS = ["content-type"]
+
+
+def _env_true(name: str, default: str = "false") -> bool:
+    return os.getenv(name, default).strip().lower() in {"1", "true", "yes"}
 
 
 def allowed_origins() -> list[str]:
-    """CORS origins from FATHOM_ALLOWED_ORIGINS (comma-separated)."""
+    """CORS origins from FATHOM_ALLOWED_ORIGINS: comma-separated, trimmed, no trailing slash."""
     raw = os.getenv("FATHOM_ALLOWED_ORIGINS", "http://localhost:5173")
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    out: list[str] = []
+    for o in raw.split(","):
+        o = o.strip().strip('"').strip("'").rstrip("/")
+        if o and o not in out:
+            out.append(o)
+    return out
+
+
+def docs_enabled() -> bool:
+    """Interactive docs and openapi.json are off unless FATHOM_ENABLE_DOCS=true."""
+    return _env_true("FATHOM_ENABLE_DOCS")
+
+
+def _is_https(scope: Scope) -> bool:
+    """True if the client connection is HTTPS (directly or via a trusted proxy)."""
+    if scope.get("scheme") == "https":
+        return True
+    if _env_true("FATHOM_TRUST_PROXY"):
+        for name, value in scope.get("headers") or []:
+            if name == b"x-forwarded-proto":
+                return value.decode("latin-1").split(",")[-1].strip().lower() == "https"
+    return False
+
+
+def _response_headers(scope: Scope, existing: list[tuple[bytes, bytes]]) -> list[tuple[bytes, bytes]]:
+    """Security headers added to every response (existing values win)."""
+    have = {k.lower() for k, _ in existing}
+    add = [h for h in SECURITY_HEADERS if h[0] not in have]
+    if b"content-security-policy" not in have:
+        add.append((b"content-security-policy", API_CSP))
+    if scope.get("method") == "POST" or scope.get("path", "").startswith("/api/trip/"):
+        if b"cache-control" not in have:
+            add.append((b"cache-control", b"no-store"))
+    if _is_https(scope):
+        add.append((b"strict-transport-security", HSTS))
+    return list(existing) + add
 
 
 async def _send_json(send: Send, status: int, body: dict[str, Any], extra: list[tuple[bytes, bytes]] | None = None) -> None:
     payload = json.dumps(body).encode()
     headers = [(b"content-type", b"application/json"), (b"content-length", str(len(payload)).encode())]
-    headers += SECURITY_HEADERS + (extra or [])
+    headers += SECURITY_HEADERS + [(b"content-security-policy", API_CSP), (b"cache-control", b"no-store")] + (extra or [])
     await send({"type": "http.response.start", "status": status, "headers": headers})
     await send({"type": "http.response.body", "body": payload})
 
@@ -110,7 +153,9 @@ class HardeningMiddleware:
             return
 
         path = scope.get("path", "")
-        if path != "/api/health" and scope.get("method") != "OPTIONS":
+        if scope.get("method") == "OPTIONS" and await self._bare_options(scope, send):
+            return
+        if path not in ("/api/health", "/api/ready") and scope.get("method") != "OPTIONS":
             if not self.limiter.allow(_client_ip(scope)):
                 await _send_json(send, 429, {"error": "Too many requests. Try again in a minute."}, [(b"retry-after", b"60")])
                 return
@@ -144,7 +189,7 @@ class HardeningMiddleware:
             if msg["type"] == "http.response.start":
                 started = True
                 msg = dict(msg)
-                msg["headers"] = list(msg.get("headers", [])) + SECURITY_HEADERS
+                msg["headers"] = _response_headers(scope, list(msg.get("headers", [])))
             await send(msg)
 
         try:
@@ -162,8 +207,40 @@ class HardeningMiddleware:
                 await _send_json(send, 500, {"error": "Internal error."})
 
 
+    async def _bare_options(self, scope: Scope, send: Send) -> bool:
+        """Answer OPTIONS requests that are not full CORS preflights.
+
+        CORSMiddleware only handles OPTIONS carrying Access-Control-Request-Method;
+        anything else fell through to the router and got 405 with no CORS
+        headers. Reply 204 here, with Allow-Origin only for allowed origins.
+        """
+        headers = dict(scope.get("headers") or [])
+        if b"access-control-request-method" in headers:
+            return False  # real preflight: CORSMiddleware handles it
+        origin = headers.get(b"origin", b"").decode("latin-1").rstrip("/")
+        out = [(b"allow", b"GET, POST, OPTIONS"), (b"content-length", b"0"), (b"vary", b"Origin")]
+        if origin and origin in allowed_origins():
+            out += [(b"access-control-allow-origin", origin.encode("latin-1")),
+                    (b"access-control-allow-methods", ", ".join(CORS_METHODS).encode()),
+                    (b"access-control-allow-headers", ", ".join(CORS_HEADERS).encode()),
+                    (b"access-control-max-age", b"600")]
+        await send({"type": "http.response.start", "status": 204, "headers": _response_headers(scope, out)})
+        await send({"type": "http.response.body", "body": b""})
+        return True
+
+
 class _BodyTooLarge(Exception):
     pass
+
+
+def _field_name(err: dict[str, Any]) -> str:
+    """Dotted field path for a validation error; "body" for unparseable JSON."""
+    if err.get("type") in {"json_invalid", "missing"} and len(err.get("loc", ())) <= 1:
+        return "body"
+    if err.get("type") == "json_invalid":
+        return "body"
+    parts = [str(p) for p in err.get("loc", [])[1:] if not isinstance(p, int)]
+    return ".".join(parts) or "body"
 
 
 def install_error_handlers(app: FastAPI) -> None:
@@ -171,7 +248,7 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
-        fields = sorted({".".join(str(p) for p in e.get("loc", [])[1:]) or "body" for e in exc.errors()})
+        fields = sorted({_field_name(e) for e in exc.errors()})
         return JSONResponse({"error": "Invalid input.", "fields": fields}, status_code=422)
 
     @app.exception_handler(StarletteHTTPException)

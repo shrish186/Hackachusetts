@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import html
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Iterator, Literal
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.ingest.conditions import demo_mode
 
 from app.agent.agent import DISCLAIMER, run_agent
 from app.api.layers import snapshot_meta
@@ -22,6 +24,21 @@ from app.models import TripRequest
 router = APIRouter(tags=["trip"])
 
 _ID = r"^[a-z0-9_]{1,40}$"
+MAX_WINDOW = timedelta(days=14)
+MAX_PAST = timedelta(days=7)
+#: Bundled demo data is from mid-March 2026; demo-mode trips may depart from then on.
+DEMO_EPOCH = datetime(2026, 3, 14, tzinfo=timezone.utc)
+
+
+def _utc(dt: datetime) -> datetime:
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
+
+def earliest_departure(now: datetime | None = None) -> datetime:
+    """Oldest allowed departure: 7 days before now (or before the demo data in demo mode)."""
+    now = _utc(now or datetime.now(timezone.utc))
+    anchor = min(now, DEMO_EPOCH) if demo_mode() else now
+    return anchor - MAX_PAST
 
 
 class TripPlanBody(BaseModel):
@@ -37,6 +54,18 @@ class TripPlanBody(BaseModel):
     target_ground: str | None = Field(None, pattern=_ID)
     risk_pref: float = Field(..., ge=0, le=1)
     language: Literal["en", "pt", "es"] = "en"
+
+    @field_validator("depart_window")
+    @classmethod
+    def _window(cls, v: tuple[datetime, datetime]) -> tuple[datetime, datetime]:
+        start, end = _utc(v[0]), _utc(v[1])
+        if end < start:
+            raise ValueError("depart_window start must not be after end")
+        if end - start > MAX_WINDOW:
+            raise ValueError("depart_window must be at most 14 days long")
+        if start < earliest_departure():
+            raise ValueError("depart_window start is more than 7 days in the past")
+        return (start, end)
 
     @field_validator("port")
     @classmethod
@@ -70,7 +99,7 @@ def trip_plan(body: TripPlanBody) -> StreamingResponse:
     return StreamingResponse(
         _sse_lines(run_agent(body.to_trip())),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )
 
 
@@ -193,4 +222,5 @@ table {{ border-collapse: collapse; width: 100%; font-size: 11px; }} td, th {{ b
 @router.post("/trip/brief", response_class=HTMLResponse)
 def trip_brief(body: BriefBody) -> HTMLResponse:
     """Printable one-page brief (Req 8.1)."""
-    return HTMLResponse(render_brief(body), headers={"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'"})
+    return HTMLResponse(render_brief(body), headers={"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+                                                       "Cache-Control": "no-store"})

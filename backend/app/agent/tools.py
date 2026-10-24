@@ -105,7 +105,8 @@ def plan_routes(trip_request: dict[str, Any]) -> dict[str, Any]:
         # Fuel/vessel parameters are estimates (config/vessels.yaml synthetic: true).
         "synthetic": True,
         "estimate": True,
-        **{k: out[k] for k in ("ok", "plans", "message", "origin", "dest", "depart", "port", "ground")},
+        **{k: out[k] for k in ("ok", "plans", "message", "origin", "dest", "depart", "port", "ground",
+                               "access_lost", "single_route", "single_route_reason")},
         "zone_names": routing.zone_names(),
     }
 

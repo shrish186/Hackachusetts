@@ -32,8 +32,10 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Any, Iterable, Sequence
 
+from itertools import pairwise
+
 import numpy as np
-from shapely.geometry import Point, shape
+from shapely.geometry import LineString, Point, shape
 from shapely.prepared import prep
 
 from app.engine.effort import effort_at
@@ -46,16 +48,17 @@ from app.ingest.zones import default_zones
 LonLat = tuple[float, float]
 SLICE_HOURS = 3
 RISK_PREF_SWEEP = (0.1, 0.5, 0.9)
-PLAN_NAMES = {0.1: "Fastest", 0.5: "Balanced", 0.9: "Safest", 1.0: "Wide berth", -1.0: "Alternate track"}
-#: Extra hours-equivalent per hour in cells used by an earlier plan (path diversity).
-REUSE_PENALTY = 0.6
-#: Extra risk-weight multipliers tried when the sweep yields fewer than 2 distinct routes.
-WIDE_BERTH_SCALES = (4.0, 12.0)
+PLAN_ORDER = ("Fastest", "Balanced", "Safest")
+#: Corridor costs (hours-equivalent per hour) on earlier tracks, tried in order for diversity.
+DIVERSITY_PENALTIES = (0.4, 1.0, 2.5)
+#: Tracks overlapping more than this share within DEDUPE_BUFFER_CELLS are duplicates.
+DEDUPE_OVERLAP = 0.90
+DEDUPE_BUFFER_CELLS = 1.0
+#: Stronger whale-risk weights tried when an option duplicates an earlier track.
+WIDE_BERTH_SCALES = (3.0, 8.0)
 #: Hours-equivalent weights. lam_risk scales with risk_pref; lam_wx is fixed.
 LAM_RISK_MAX = 40.0
 LAM_WX = 3.0
-#: Routes whose cell sets overlap more than this (Jaccard) are duplicates.
-DEDUPE_JACCARD = 0.85
 _NEIGHBORS = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
 
 
@@ -252,8 +255,25 @@ def _zone_set(extra_zones: Iterable[Any] | None) -> list[RZone]:
 
 
 # ---------------------------------------------------------------------------
+# Rounding (one helper for every number the API and narrative show)
+# ---------------------------------------------------------------------------
+
+#: Decimal places per unit. Every user-visible number goes through :func:`rnd`
+#: once, at the source, so plan cards, narrative and brief show the same value.
+DECIMALS = {"m": 1, "kn": 1, "h": 2, "l": 1, "nm": 1, "risk": 3, "exposure": 4, "deg": 4, "effort": 3}
+
+
+def rnd(value: float, unit: str) -> float:
+    """Round ``value`` for display in ``unit`` (see DECIMALS)."""
+    return round(float(value), DECIMALS[unit])
+
+
+# ---------------------------------------------------------------------------
 # A*
 # ---------------------------------------------------------------------------
+
+#: A port may sit in a coastal land cell; it is moved to water at most this many cells away.
+MAX_ORIGIN_SNAP_CELLS = 3
 
 
 def _step_nm(g: GridSpec, ix: int, iy: int, dx: int, dy: int) -> float:
@@ -261,17 +281,20 @@ def _step_nm(g: GridSpec, ix: int, iy: int, dx: int, dy: int) -> float:
     return 60.0 * g.cell_deg * math.hypot(dx * math.cos(math.radians(lat)), dy)
 
 
-def _nearest_water(g: GridSpec, lonlat: LonLat, blocked: np.ndarray) -> tuple[int, int] | None:
-    """Closest passable cell to a point (ports sit on the coast, often in land cells)."""
+def _dist_nm(a: LonLat, b: LonLat) -> float:
+    return 60.0 * math.hypot((b[0] - a[0]) * math.cos(math.radians((a[1] + b[1]) / 2)), b[1] - a[1])
+
+
+def _nearest_open(g: GridSpec, lonlat: LonLat, blocked: np.ndarray, max_r: int = 40) -> tuple[int, int] | None:
+    """Closest unblocked cell to a point, searching square rings out to ``max_r`` cells."""
     ix0, iy0 = g.index_of(*lonlat)
     best, best_d = None, float("inf")
-    for r in range(0, 12):
+    for r in range(0, max_r + 1):
         for iy in range(max(iy0 - r, 0), min(iy0 + r, g.ny - 1) + 1):
             for ix in range(max(ix0 - r, 0), min(ix0 + r, g.nx - 1) + 1):
                 if max(abs(ix - ix0), abs(iy - iy0)) != r or blocked[iy, ix]:
                     continue
-                lon, lat = g.center(ix, iy)
-                d = (lon - lonlat[0]) ** 2 + (lat - lonlat[1]) ** 2
+                d = _dist_nm(lonlat, g.center(ix, iy))
                 if d < best_d:
                     best, best_d = (ix, iy), d
         if best is not None:
@@ -279,16 +302,32 @@ def _nearest_water(g: GridSpec, lonlat: LonLat, blocked: np.ndarray) -> tuple[in
     return None
 
 
-def _simplify(cells: list[tuple[int, int]]) -> list[tuple[int, int]]:
-    """Drop cells in the middle of straight runs (same step direction)."""
-    if len(cells) <= 2:
-        return cells
-    out = [cells[0]]
-    for a, b, c in zip(cells, cells[1:], cells[2:]):
-        if (b[0] - a[0], b[1] - a[1]) != (c[0] - b[0], c[1] - b[1]):
-            out.append(b)
-    out.append(cells[-1])
-    return out
+def _in_grid(g: GridSpec, lonlat: LonLat) -> bool:
+    return g.min_lon <= lonlat[0] <= g.max_lon and g.min_lat <= lonlat[1] <= g.max_lat
+
+
+def _segment_clear(g: GridSpec, a: LonLat, b: LonLat, blocked: np.ndarray) -> bool:
+    """True if the straight segment a-b only passes over unblocked cells."""
+    n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / (0.25 * g.cell_deg)) + 1)
+    for i in range(n + 1):
+        t = i / n
+        ix, iy = g.index_of(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        if blocked[iy, ix]:
+            return False
+    return True
+
+
+def _dense_waypoints(g: GridSpec, path: list[tuple[int, int]], blocked: np.ndarray) -> list[tuple[float, float]]:
+    """Cell-centre track simplified only to a 0.5 cell tolerance.
+
+    Falls back to every cell centre if simplification would cut over a blocked cell.
+    """
+    pts = [g.center(ix, iy) for ix, iy in path]
+    if len(pts) > 2:
+        simple = list(LineString(pts).simplify(0.5 * g.cell_deg, preserve_topology=False).coords)
+        if all(_segment_clear(g, a, b, blocked) for a, b in pairwise(simple)):
+            pts = simple
+    return [(rnd(lon, "deg"), rnd(lat, "deg")) for lon, lat in pts]
 
 
 _ROUTE_CACHE: dict[tuple, dict[str, Any]] = {}
@@ -320,6 +359,47 @@ def _cache_key(origin_lonlat, dest_lonlat, speed_kn, vessel, when, risk_pref, ex
             float(risk_pref), zones, tuple(sorted((k, v if not isinstance(v, frozenset) else tuple(sorted(v))) for k, v in kw.items())))
 
 
+def _empty(reason: str, **extra: Any) -> dict[str, Any]:
+    return {"ok": False, "reason": reason, "access_lost": None, "waypoints": [], "eta_hours": 0.0,
+            "fuel_est_l": 0.0, "zones_crossed": [], "zones_avoided": [], "max_wave_m": 0.0, "max_wind_kn": 0.0,
+            "risk_exposure": 0.0, "slow_zone_hours": 0.0, "origin_adjusted_nm": 0.0, "cells": [], **extra}
+
+
+def _access_lost(g: GridSpec, which: str, point: LonLat, reason: str, zone: RZone | None,
+                 open_mask: np.ndarray) -> dict[str, Any]:
+    """Explicit 'cannot reach this point' result with the nearest open alternative."""
+    alt = _nearest_open(g, point, open_mask)
+    nearest = None
+    if alt is not None:
+        lon, lat = g.center(*alt)
+        nearest = {"lon": rnd(lon, "deg"), "lat": rnd(lat, "deg"), "distance_nm": rnd(_dist_nm(point, (lon, lat)), "nm")}
+    code = "closed_zone" if zone else ("land" if "land" in reason else ("outside" if "outside" in reason else "no_water"))
+    info = {
+        "endpoint": which,
+        "code": code,
+        "reason": reason,
+        "zone_id": zone.id if zone else None,
+        "zone_name": zone.name if zone else None,
+        "zone_active_to": zone.active_to.isoformat().replace("+00:00", "Z") if zone and zone.active_to else None,
+        "nearest_open": nearest,
+    }
+    return _empty(f"{which} {reason}", access_lost=info)
+
+
+def _zone_at(g: GridSpec, lonlat: LonLat, zones: list[RZone]) -> RZone | None:
+    """First active prohibited zone whose polygon covers the point (exact test)."""
+    pt = Point(*lonlat)
+    for z in zones:
+        if z.prohibited and _zone_prep(z.geom_key).covers(pt):
+            return z
+    return None
+
+
+@lru_cache(maxsize=256)
+def _zone_prep(geom_key: str):
+    return prep(shape(json.loads(geom_key)))
+
+
 def _route_one(
     origin_lonlat: LonLat,
     dest_lonlat: LonLat,
@@ -333,6 +413,7 @@ def _route_one(
     ignore_wave_limit: bool = False,
     lam_scale: float = 1.0,
     avoid_cells: frozenset[str] = frozenset(),
+    avoid_penalty: float = 0.0,
 ) -> dict[str, Any]:
     """Route one leg on the water grid. All outputs are estimates.
 
@@ -344,12 +425,20 @@ def _route_one(
         risk_pref: 0 = fastest, 1 = safest.
         extra_zones: candidate zones (Zone models or dicts) added to the snapshot zones.
         ignore_prohibited, ignore_wave_limit: used only to explain "no legal route".
+        lam_scale: multiplier on the whale-risk weight.
+        avoid_cells, avoid_penalty: extra cost per hour in these cells (route diversity).
 
     Returns:
         dict with ok, waypoints [(lon, lat)], eta_hours, fuel_est_l, zones_crossed
         (active zone ids), zones_avoided (active prohibited zone ids not entered),
         max_wave_m, max_wind_kn, risk_exposure (sum risk*hours), slow_zone_hours,
-        cells, and reason (when ok is False).
+        origin_adjusted_nm, cells, reason (when ok is False) and access_lost.
+
+        ``access_lost`` is None unless the destination (or origin) is on land,
+        outside the study area, or inside an active closed zone. The router never
+        moves a destination: it returns ok=False with ``access_lost = {endpoint,
+        reason, zone_id, zone_name, zone_active_to, nearest_open: {lon, lat,
+        distance_nm}}``.
     """
     if vessel not in vessels_config():
         raise RoutingError(f"unknown vessel '{vessel}'")
@@ -375,28 +464,42 @@ def _route_one(
             prohibited |= m
         if z.speed_limit_kn is not None:
             speed_cap = np.where(m, np.minimum(speed_cap, z.speed_limit_kn), speed_cap)
-    blocked = land.copy()
-    if not ignore_prohibited:
-        blocked |= prohibited
-    if not ignore_wave_limit:
-        blocked |= wave > hard
+    closed = land | (prohibited if not ignore_prohibited else np.zeros_like(land))
+    blocked = closed | (wave > hard if not ignore_wave_limit else np.zeros_like(land))
     wave_pen = np.clip((wave - comfort) / max(hard - comfort, 1e-6), 0.0, None) ** 2
+    closed_zones = [] if ignore_prohibited else [z for z in active if z.prohibited]
 
-    def fail(reason: str) -> dict[str, Any]:
-        return {"ok": False, "reason": reason, "waypoints": [], "eta_hours": 0.0, "fuel_est_l": 0.0,
-                "zones_crossed": [], "zones_avoided": [], "max_wave_m": 0.0, "max_wind_kn": 0.0,
-                "risk_exposure": 0.0, "slow_zone_hours": 0.0, "cells": []}
+    # Destination: never relocate. Report access_lost instead.
+    if not _in_grid(g, dest_lonlat):
+        return _access_lost(g, "destination", dest_lonlat, "is outside the study area", None, closed)
+    dz = _zone_at(g, dest_lonlat, closed_zones)
+    if dz is not None:
+        return _access_lost(g, "destination", dest_lonlat, f"is inside active closed zone {dz.name}", dz, closed)
+    goal = g.index_of(*dest_lonlat)
+    if land[goal[1], goal[0]]:
+        return _access_lost(g, "destination", dest_lonlat, "is on land", None, closed)
+    if closed[goal[1], goal[0]]:
+        zc = next((z for z in closed_zones if _zone_mask(z.geom_key)[goal[1], goal[0]]), None)
+        return _access_lost(g, "destination", dest_lonlat, f"is inside active closed zone {zc.name if zc else ''}".strip(), zc, closed)
+    if blocked[goal[1], goal[0]]:
+        return _empty(f"waves at the destination exceed the {hard:g} m limit for this vessel")
 
-    start = _nearest_water(g, origin_lonlat, blocked)
-    goal = _nearest_water(g, dest_lonlat, blocked)
-    if start is None or goal is None:
-        return fail("origin or destination has no reachable water nearby")
+    # Origin: a harbour may fall in a coastal land cell; move it to water nearby, and say so.
+    if not _in_grid(g, origin_lonlat):
+        return _access_lost(g, "origin", origin_lonlat, "is outside the study area", None, closed)
+    oz = _zone_at(g, origin_lonlat, closed_zones)
+    if oz is not None:
+        return _access_lost(g, "origin", origin_lonlat, f"is inside active closed zone {oz.name}", oz, closed)
+    start = _nearest_open(g, origin_lonlat, blocked, max_r=MAX_ORIGIN_SNAP_CELLS)
+    if start is None:
+        return _access_lost(g, "origin", origin_lonlat, "has no open water nearby", None, closed)
+    origin_adjusted = rnd(_dist_nm(origin_lonlat, g.center(*start)), "nm")
 
     lam_risk = LAM_RISK_MAX * risk_pref * lam_scale
     reuse = np.zeros(land.shape)
     for cid in avoid_cells:
         ax_, ay_ = (int(p) for p in cid.split("_"))
-        reuse[ay_, ax_] = REUSE_PENALTY
+        reuse[ay_, ax_] = avoid_penalty
     leth_cache: dict[float, float] = {}
 
     def leth(v: float) -> float:
@@ -417,16 +520,17 @@ def _route_one(
     t_at: dict[tuple[int, int], float] = {start: 0.0}
     parent: dict[tuple[int, int], tuple[int, int]] = {}
     heap = [(h(*start), 0.0, start)]
-    closed: set[tuple[int, int]] = set()
+    done: set[tuple[int, int]] = set()
     while heap:
         _, cost, node = heapq.heappop(heap)
-        if node in closed:
+        if node in done:
             continue
         if node == goal:
             break
-        closed.add(node)
+        done.add(node)
         ix, iy = node
         t0 = t_at[node]
+        pw_grid = _p_whale_grid(_slice_start(when + timedelta(hours=t0)))
         for dx, dy in _NEIGHBORS:
             nx_, ny_ = ix + dx, iy + dy
             if not (0 <= nx_ < g.nx and 0 <= ny_ < g.ny) or blocked[ny_, nx_]:
@@ -435,15 +539,14 @@ def _route_one(
                 continue  # no corner cutting past land or closed cells
             v = float(speed_cap[ny_, nx_])
             dt = _step_nm(g, ix, iy, dx, dy) / v
-            pw = _p_whale_grid(_slice_start(when + timedelta(hours=t0)))[ny_, nx_]
-            step = dt * (1.0 + lam_risk * pw * leth(v) + LAM_WX * wave_pen[ny_, nx_] + reuse[ny_, nx_])
+            step = dt * (1.0 + lam_risk * pw_grid[ny_, nx_] * leth(v) + LAM_WX * wave_pen[ny_, nx_] + reuse[ny_, nx_])
             nc = cost + step
             nb = (nx_, ny_)
             if nc < best.get(nb, float("inf")):
                 best[nb], t_at[nb], parent[nb] = nc, t0 + dt, node
                 heapq.heappush(heap, (nc + h(nx_, ny_), nc, nb))
     if goal not in best:
-        return fail("no water path avoids land, closed zones and wave limits")
+        return _empty("no water path avoids land, closed zones and wave limits", origin_adjusted_nm=origin_adjusted)
 
     path = [goal]
     while path[-1] != start:
@@ -451,8 +554,7 @@ def _route_one(
     path.reverse()
 
     eta = risk_exp = fuel = slow_h = 0.0
-    max_wave = max_wind = 0.0
-    for (ax, ay), (bx, by) in zip(path, path[1:]):
+    for (ax, ay), (bx, by) in pairwise(path):
         v = float(speed_cap[by, bx])
         dt = _step_nm(g, ax, ay, bx - ax, by - ay) / v
         pw = _p_whale_grid(_slice_start(when + timedelta(hours=eta)))[by, bx]
@@ -461,9 +563,8 @@ def _route_one(
         if v < speed_kn:
             slow_h += dt
         eta += dt
-    for ix, iy in path:
-        max_wave = max(max_wave, float(wave[iy, ix]))
-        max_wind = max(max_wind, float(wind[iy, ix]))
+    max_wave = max(float(wave[iy, ix]) for ix, iy in path)
+    max_wind = max(float(wind[iy, ix]) for ix, iy in path)
     on_path = set(path)
     crossed, avoided = [], []
     for z in active:
@@ -476,15 +577,17 @@ def _route_one(
     return {
         "ok": True,
         "reason": None,
-        "waypoints": [tuple(round(c, 4) for c in g.center(ix, iy)) for ix, iy in _simplify(path)],
-        "eta_hours": round(eta, 2),
-        "fuel_est_l": round(fuel, 1),
+        "access_lost": None,
+        "waypoints": _dense_waypoints(g, path, blocked),
+        "eta_hours": rnd(eta, "h"),
+        "fuel_est_l": rnd(fuel, "l"),
         "zones_crossed": crossed,
         "zones_avoided": avoided,
-        "max_wave_m": round(max_wave, 2),
-        "max_wind_kn": round(max_wind, 1),
-        "risk_exposure": round(float(risk_exp), 4),
-        "slow_zone_hours": round(slow_h, 2),
+        "max_wave_m": rnd(max_wave, "m"),
+        "max_wind_kn": rnd(max_wind, "kn"),
+        "risk_exposure": rnd(risk_exp, "exposure"),
+        "slow_zone_hours": rnd(slow_h, "h"),
+        "origin_adjusted_nm": origin_adjusted,
         "cells": [g.cell_id(ix, iy) for ix, iy in path],
     }
 
@@ -498,9 +601,37 @@ def _field(req: Any, name: str, default: Any = None) -> Any:
     return req.get(name, default) if isinstance(req, dict) else getattr(req, name, default)
 
 
-def _jaccard(a: Sequence[str], b: Sequence[str]) -> float:
-    sa, sb = set(a), set(b)
-    return len(sa & sb) / max(len(sa | sb), 1)
+def _track(r: dict[str, Any]) -> LineString:
+    g = default_grid()
+    pts = [g.center(*(int(p) for p in c.split("_"))) for c in r["cells"]]
+    return LineString(pts if len(pts) > 1 else pts * 2)
+
+
+def track_overlap(a: dict[str, Any], b: dict[str, Any]) -> float:
+    """Share of the tracks lying within one cell of each other (min of both directions)."""
+    ta, tb = _track(a), _track(b)
+    buf = DEDUPE_BUFFER_CELLS * default_grid().cell_deg
+    if ta.length == 0 or tb.length == 0:
+        return 1.0
+    return min(tb.intersection(ta.buffer(buf)).length / tb.length, ta.intersection(tb.buffer(buf)).length / ta.length)
+
+
+def _distinct(r: dict[str, Any], others: Sequence[dict[str, Any]]) -> bool:
+    return all(track_overlap(r, o) <= DEDUPE_OVERLAP for o in others)
+
+
+def _near_cells(routes: Sequence[dict[str, Any]], radius: int = 1) -> frozenset[str]:
+    """Cells within ``radius`` cells of any of the routes' interior cells."""
+    g = default_grid()
+    out: set[str] = set()
+    for r in routes:
+        for c in r["cells"][2:-2]:
+            ix, iy = (int(p) for p in c.split("_"))
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    if 0 <= ix + dx < g.nx and 0 <= iy + dy < g.ny:
+                        out.add(g.cell_id(ix + dx, iy + dy))
+    return frozenset(out)
 
 
 def zone_names() -> dict[str, str]:
@@ -508,13 +639,16 @@ def zone_names() -> dict[str, str]:
 
 
 def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> dict[str, Any]:
-    """2-3 alternates by sweeping risk_pref 0.1/0.5/0.9, de-duplicated (Req 5.3, 5.4).
+    """Fastest / Balanced / Safest alternates (Req 4.1, 5.3, 5.4).
+
+    Each option uses a whale-risk weight (0.1, 0.5, 0.9). An option whose track
+    overlaps an earlier one by more than 90 % (1-cell buffer) is a duplicate; we
+    then retry with a stronger risk weight, and finally with a cost on the
+    earlier tracks' corridor, so captains get 2-3 different tracks whenever the
+    geometry allows. ``single_route_reason`` explains when it does not.
 
     ``max_hours`` is the out-and-back budget, so a plan needs 2 * eta <= max_hours.
     Plans are ranked for the requester's own ``risk_pref``.
-
-    Returns {"ok", "plans": [...], "message", "origin", "dest", "depart",
-    "data": {source, fetched_at, synthetic}}.
     """
     port = _field(trip_request, "port")
     ground = _field(trip_request, "target_ground") or "stellwagen_bank"
@@ -527,52 +661,83 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
     origin = place_lonlat("ports", port)
     dest = place_lonlat("fishing_grounds", ground)
 
-    raw = []
-    for rp in RISK_PREF_SWEEP:
-        r = route_one(origin, dest, cruise, vessel, depart, rp, extra_zones)
-        if r["ok"]:
-            raw.append((rp, r))
-
-    unique: list[tuple[float, dict[str, Any]]] = []
-    for rp, r in raw:
-        if all(_jaccard(r["cells"], u["cells"]) < DEDUPE_JACCARD for _, u in unique):
-            unique.append((rp, r))
-    # The sweep often converges on one path; try a wider whale-risk berth so the
-    # captain still gets a real alternative (Req 4.1: 2-3 plans).
-    for scale in WIDE_BERTH_SCALES:
-        if len(unique) >= 2 or not raw:
-            break
-        r = route_one(origin, dest, cruise, vessel, depart, 1.0, extra_zones, lam_scale=scale)
-        if r["ok"] and all(_jaccard(r["cells"], u["cells"]) < DEDUPE_JACCARD for _, u in unique):
-            unique.append((1.0, r))
-    # Still one corridor: route again with a cost on cells already used.
-    if len(unique) == 1:
-        used = frozenset(c for c in unique[0][1]["cells"][1:-1])
-        r = route_one(origin, dest, cruise, vessel, depart, 0.5, extra_zones, avoid_cells=used)
-        if r["ok"] and _jaccard(r["cells"], unique[0][1]["cells"]) < DEDUPE_JACCARD:
-            unique.append((-1.0, r))
-    legal = [(rp, r) for rp, r in unique if 2 * r["eta_hours"] <= max_hours]
-
     rd = _readings()
     data = {"source": rd.source, "fetched_at": rd.fetched_at, "synthetic": rd.synthetic}
     base = {"origin": origin, "dest": dest, "depart": depart.isoformat().replace("+00:00", "Z"),
-            "port": port, "ground": ground, "data": data}
+            "port": port, "ground": ground, "data": data, "access_lost": None, "single_route_reason": None,
+            "single_route": None}
 
-    if not legal:
+    def route(w: float, **kw: Any) -> dict[str, Any]:
+        return route_one(origin, dest, cruise, vessel, depart, w, extra_zones, **kw)
+
+    first = route(RISK_PREF_SWEEP[0])
+    if first.get("access_lost"):
+        return {**base, "ok": False, "plans": [], "access_lost": first["access_lost"],
+                "message": explain_access_lost(first["access_lost"], ground)}
+
+    chosen: list[tuple[str, float, str, dict[str, Any]]] = []  # name, weight, method, route
+    attempts: list[dict[str, Any]] = []
+    for w, name in zip(RISK_PREF_SWEEP, PLAN_ORDER):
+        def candidates(w: float = w, name: str = name):
+            if name == "Fastest":
+                yield "risk_weight", first
+                return
+            yield "risk_weight", route(w)
+            for s in WIDE_BERTH_SCALES:
+                yield "risk_weight", route(w, lam_scale=s)
+            near = _near_cells([c[3] for c in chosen])
+            for pen in DIVERSITY_PENALTIES:
+                yield "corridor", route(w, avoid_cells=near, avoid_penalty=pen)
+
+        for method, r in candidates():
+            if not r["ok"]:
+                continue
+            attempts.append(r)
+            if 2 * r["eta_hours"] > max_hours:
+                continue
+            if _distinct(r, [c[3] for c in chosen]):
+                chosen.append((name, w, method, r))
+                break
+
+    if not chosen:
+        ok_runs = [(0.0, r) for r in attempts]
         return {**base, "ok": False, "plans": [], "message": explain_no_route(
-            origin, dest, cruise, vessel, depart, max_hours, raw, extra_zones)}
+            origin, dest, cruise, vessel, depart, max_hours, ok_runs, extra_zones)}
 
-    min_eta = min(r["eta_hours"] for _, r in legal) or 1.0
-    max_risk = max(r["risk_exposure"] for _, r in legal) or 1.0
-    legal.sort(key=lambda x: (1 - pref) * x[1]["eta_hours"] / min_eta + pref * x[1]["risk_exposure"] / max_risk)
-    effort = round(effort_at(*dest), 3)
+    single_reason = None
+    single_route = None
+    if len(chosen) == 1:
+        longer = [r for r in attempts if 2 * r["eta_hours"] > max_hours and _distinct(r, [chosen[0][3]])]
+        if longer:
+            need = rnd(2 * min(r["eta_hours"] for r in longer), "h")
+            single_route = {"code": "over_budget", "need_hours": need, "max_hours": max_hours}
+            single_reason = (f"All weightings give the same route because every different track needs about "
+                             f"{need:g} h round trip, more than the {max_hours:g} h limit.")
+        else:
+            single_route = {"code": "same_corridor"}
+            single_reason = ("All weightings give the same route because the open water between the port and the "
+                             "ground leaves no meaningfully different track.")
+
+    # Names follow the measured numbers, not the weight that produced a track:
+    # a slower-and-riskier backup is never called "Safest" or "Balanced".
+    fastest = min((c[3] for c in chosen), key=lambda r: (r["eta_hours"], r["risk_exposure"]))
+    names = name_plans([c[3] for c in chosen], fastest)
+    chosen = [(names[i], w, m, r) for i, (_, w, m, r) in enumerate(chosen)]
+    min_eta = min(c[3]["eta_hours"] for c in chosen) or 1.0
+    max_risk = max(c[3]["risk_exposure"] for c in chosen) or 1.0
+    chosen.sort(key=lambda c: (1 - pref) * c[3]["eta_hours"] / min_eta + pref * c[3]["risk_exposure"] / max_risk)
+    effort = rnd(effort_at(*dest), "effort")
     plans = []
-    for rp, r in legal:
-        p = {k: v for k, v in r.items() if k not in ("ok", "reason", "cells")}
-        p["name"] = PLAN_NAMES[rp]
-        p["risk_pref"] = rp if rp >= 0 else 0.5
+    for rank, (name, w, method, r) in enumerate(chosen, start=1):
+        p = {k: v for k, v in r.items() if k not in ("ok", "reason", "cells", "access_lost")}
+        p["name"] = name
+        p["rank"] = rank
+        p["risk_weight"] = w
+        p["method"] = method
         p["effort_proxy"] = effort
-        p["round_trip_hours"] = round(2 * r["eta_hours"], 2)
+        p["round_trip_hours"] = rnd(2 * r["eta_hours"], "h")
+        p["vs_fastest"] = {"extra_hours": rnd(r["eta_hours"] - fastest["eta_hours"], "h"),
+                           "risk_change": rnd(r["risk_exposure"] - fastest["risk_exposure"], "exposure")}
         p["weather_window"] = {
             "from": base["depart"],
             "to": (depart + timedelta(hours=2 * r["eta_hours"])).isoformat().replace("+00:00", "Z"),
@@ -580,14 +745,56 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
             "max_wind_kn": r["max_wind_kn"],
         }
         plans.append(p)
-    return {**base, "ok": True, "plans": plans, "message": None}
+    return {**base, "ok": True, "plans": plans, "message": None, "single_route_reason": single_reason,
+            "single_route": single_route}
+
+
+def name_plans(routes: Sequence[dict[str, Any]], fastest: dict[str, Any]) -> list[str]:
+    """Fastest = least time; Safest = lowest whale-risk exposure (if below Fastest's);
+    Balanced = a trade-off track (less risk than Fastest, less time than Safest);
+    Alternate track = a different track that is not better on either measure."""
+    safest = min(routes, key=lambda r: (r["risk_exposure"], r["eta_hours"]))
+    if safest is fastest or safest["risk_exposure"] >= fastest["risk_exposure"]:
+        safest = None
+    out = []
+    for r in routes:
+        if r is fastest:
+            out.append("Fastest")
+        elif r is safest:
+            out.append("Safest")
+        elif r["risk_exposure"] < fastest["risk_exposure"] and (safest is None or r["eta_hours"] < safest["eta_hours"]):
+            out.append("Balanced")
+        else:
+            out.append("Alternate track")
+    if out.count("Alternate track") > 1:
+        n = 0
+        for i, name in enumerate(out):
+            if name == "Alternate track":
+                n += 1
+                out[i] = f"Alternate track {n}"
+    return out
+
+
+def explain_access_lost(info: dict[str, Any], ground: str) -> str:
+    """Plain message for an access_lost result (Lane D and the agent both use it)."""
+    name = ports_config().get("fishing_grounds", {}).get(ground, {}).get("name", ground)
+    where = f"The target ground {name}" if info["endpoint"] == "destination" else "The departure port"
+    msg = f"{where} {info['reason']}"
+    if info.get("zone_active_to"):
+        msg += f" until {info['zone_active_to'][:10]}"
+    msg += "."
+    alt = info.get("nearest_open")
+    if alt:
+        msg += (f" Nearest open water is {alt['distance_nm']:g} nm away at {alt['lat']:g}, {alt['lon']:g}."
+                " Relax: target ground or departure time.")
+    return msg
 
 
 def explain_no_route(origin: LonLat, dest: LonLat, cruise: float, vessel: str, depart: datetime,
                      max_hours: float, raw: list, extra_zones: Sequence[Any] | None) -> str:
     """Name the binding constraint and what to relax (Req 5.4)."""
     if raw:
-        need = round(2 * min(r["eta_hours"] for _, r in raw), 1)
+        need = rnd(2 * min(r["eta_hours"] for _, r in raw), "h")
         return f"No legal route within {max_hours:g} h. Relax: max_hours (the shortest legal round trip needs about {need:g} h)."
     if route_one(origin, dest, cruise, vessel, depart, 0.1, extra_zones, ignore_wave_limit=True)["ok"]:
         limit = vessels_config()[vessel]["hard_wave_limit_m"]

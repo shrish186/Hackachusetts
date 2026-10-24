@@ -49,10 +49,18 @@ DISCLAIMER = {
 }
 
 PLAN_NAMES = {
-    "en": {"Fastest": "Fastest", "Balanced": "Balanced", "Safest": "Safest", "Wide berth": "Wide berth", "Alternate track": "Alternate track"},
-    "pt": {"Fastest": "Mais rápida", "Balanced": "Equilibrada", "Safest": "Mais segura", "Wide berth": "Distância ampla", "Alternate track": "Rota alternativa"},
-    "es": {"Fastest": "Más rápida", "Balanced": "Equilibrada", "Safest": "Más segura", "Wide berth": "Margen amplio", "Alternate track": "Ruta alternativa"},
+    "en": {"Fastest": "Fastest", "Balanced": "Balanced", "Safest": "Safest", "Alternate track": "Alternate track"},
+    "pt": {"Fastest": "Mais rápida", "Balanced": "Equilibrada", "Safest": "Mais segura", "Alternate track": "Rota alternativa"},
+    "es": {"Fastest": "Más rápida", "Balanced": "Equilibrada", "Safest": "Más segura", "Alternate track": "Ruta alternativa"},
 }
+
+
+def plan_name(lang: str, name: str) -> str:
+    """Translate a plan name; numbered alternates keep their number ("Alternate track 2")."""
+    base, _, num = name.rpartition(" ")
+    if base == "Alternate track" and num.isdigit():
+        return f"{PLAN_NAMES[lang][base]} {num}"
+    return PLAN_NAMES[lang].get(name, name)
 
 # Templates. {c} is the citation tag. Numbers/zone names are inserted verbatim.
 T = {
@@ -60,7 +68,7 @@ T = {
         "zones_active": "{n} known zones are active at departure: {names} {c}.",
         "zones_none": "No known zones are active at departure {c}.",
         "zones_synthetic": "Some zone shapes are hand-drawn demo data (synthetic), so check official charts {c}.",
-        "conditions": "Latest readings show waves up to {wave} m and wind up to {wind} kn {c}.",
+        "conditions": "The highest buoy reading in the area is {wave} m waves and {wind} kn wind {c}.",
         "conditions_none": "No sea-state readings are available for this area {c}.",
         "risk": "At {speed} kn the highest whale risk in the area is {risk} on a 0 to 1 scale {c}.",
         "plan": "{name}: about {eta} h each way ({rt} h round trip), estimated fuel {fuel} L {c}.",
@@ -68,7 +76,15 @@ T = {
         "crossed_none": "{name} passes through no known zones {c}.",
         "slow": "Speed limits there add about {slow} h to the trip {c}.",
         "avoided": "{name} avoids these known closed areas: {zones} {c}.",
-        "exposure": "{name} whale risk exposure is {exp} (risk times hours) and max wave on the track is about {wave} m {c}.",
+        "exposure": "On the {name} track waves reach about {wave} m and wind about {wind} kn; whale risk exposure is {exp} (risk times hours) {c}.",
+        "single_same": "All weightings give the same route because the open water between the port and the ground leaves no meaningfully different track {c}.",
+        "single_budget": "All weightings give the same route because every different track needs about {need} h round trip, more than the {max} h limit {c}.",
+        "lost_closed_zone": "The target ground {ground} is inside the active closed zone {zone}{until}, so it cannot be reached {c}.",
+        "lost_land": "The target point for {ground} is on land, so it cannot be reached {c}.",
+        "lost_outside": "The target ground {ground} is outside the study area {c}.",
+        "lost_no_water": "The departure port has no open water nearby {c}.",
+        "lost_until": " until {date}",
+        "lost_alt": "The nearest open water is {nm} nm away at {lat}, {lon}. Relax: target ground or departure time {c}.",
         "effort": "The fishing effort estimate at {ground} is {effort} on a 0 to 1 scale, an estimate and not catch or revenue {c}.",
         "no_route": "{message} {c}",
         "window_note": "Based on the latest bundled readings; conditions can change.",
@@ -77,7 +93,7 @@ T = {
         "zones_active": "{n} zonas conhecidas estão ativas na saída: {names} {c}.",
         "zones_none": "Nenhuma zona conhecida está ativa na saída {c}.",
         "zones_synthetic": "Algumas zonas são dados de demonstração desenhados à mão (sintéticos), confira as cartas oficiais {c}.",
-        "conditions": "As leituras mais recentes mostram ondas de até {wave} m e vento de até {wind} kn {c}.",
+        "conditions": "A maior leitura de boia na área é de {wave} m de onda e {wind} kn de vento {c}.",
         "conditions_none": "Não há leituras do estado do mar para esta área {c}.",
         "risk": "A {speed} kn o maior risco de baleia na área é {risk} numa escala de 0 a 1 {c}.",
         "plan": "{name}: cerca de {eta} h por trecho ({rt} h ida e volta), combustível estimado {fuel} L {c}.",
@@ -85,7 +101,15 @@ T = {
         "crossed_none": "{name} não passa por nenhuma zona conhecida {c}.",
         "slow": "Os limites de velocidade ali somam cerca de {slow} h à viagem {c}.",
         "avoided": "{name} evita estas áreas fechadas conhecidas: {zones} {c}.",
-        "exposure": "{name} tem exposição ao risco de baleia de {exp} (risco vezes horas) e onda máxima na rota de cerca de {wave} m {c}.",
+        "exposure": "Na rota {name} as ondas chegam a cerca de {wave} m e o vento a cerca de {wind} kn; a exposição ao risco de baleia é {exp} (risco vezes horas) {c}.",
+        "single_same": "Todos os pesos dão a mesma rota porque a água aberta entre o porto e o pesqueiro não deixa outra rota realmente diferente {c}.",
+        "single_budget": "Todos os pesos dão a mesma rota porque qualquer rota diferente precisa de cerca de {need} h ida e volta, mais que o limite de {max} h {c}.",
+        "lost_closed_zone": "O pesqueiro {ground} está dentro da zona fechada ativa {zone}{until}, então não pode ser alcançado {c}.",
+        "lost_land": "O ponto de destino de {ground} está em terra, então não pode ser alcançado {c}.",
+        "lost_outside": "O pesqueiro {ground} está fora da área de estudo {c}.",
+        "lost_no_water": "O porto de saída não tem água aberta por perto {c}.",
+        "lost_until": " até {date}",
+        "lost_alt": "A água aberta mais próxima fica a {nm} nm, em {lat}, {lon}. Ajuste: pesqueiro ou horário de saída {c}.",
         "effort": "A estimativa de esforço de pesca em {ground} é {effort} numa escala de 0 a 1, uma estimativa e não captura ou receita {c}.",
         "no_route": "{message} {c}",
         "window_note": "Com base nas leituras mais recentes incluídas; as condições podem mudar.",
@@ -94,7 +118,7 @@ T = {
         "zones_active": "{n} zonas conocidas están activas a la salida: {names} {c}.",
         "zones_none": "Ninguna zona conocida está activa a la salida {c}.",
         "zones_synthetic": "Algunas zonas son datos de demostración dibujados a mano (sintéticos), revise las cartas oficiales {c}.",
-        "conditions": "Las lecturas más recientes muestran olas de hasta {wave} m y viento de hasta {wind} kn {c}.",
+        "conditions": "La lectura de boya más alta en la zona es de {wave} m de ola y {wind} kn de viento {c}.",
         "conditions_none": "No hay lecturas del estado del mar para esta área {c}.",
         "risk": "A {speed} kn el mayor riesgo de ballena en la zona es {risk} en una escala de 0 a 1 {c}.",
         "plan": "{name}: unas {eta} h por trayecto ({rt} h ida y vuelta), combustible estimado {fuel} L {c}.",
@@ -102,7 +126,15 @@ T = {
         "crossed_none": "{name} no pasa por ninguna zona conocida {c}.",
         "slow": "Los límites de velocidad allí suman unas {slow} h al viaje {c}.",
         "avoided": "{name} evita estas áreas cerradas conocidas: {zones} {c}.",
-        "exposure": "{name} tiene una exposición al riesgo de ballena de {exp} (riesgo por horas) y ola máxima en la ruta de unos {wave} m {c}.",
+        "exposure": "En la ruta {name} las olas llegan a unos {wave} m y el viento a unos {wind} kn; la exposición al riesgo de ballena es {exp} (riesgo por horas) {c}.",
+        "single_same": "Todos los pesos dan la misma ruta porque el agua abierta entre el puerto y el caladero no deja otra ruta realmente distinta {c}.",
+        "single_budget": "Todos los pesos dan la misma ruta porque cualquier ruta distinta necesita unas {need} h ida y vuelta, más que el límite de {max} h {c}.",
+        "lost_closed_zone": "El caladero {ground} está dentro de la zona cerrada activa {zone}{until}, así que no se puede alcanzar {c}.",
+        "lost_land": "El punto de destino de {ground} está en tierra, así que no se puede alcanzar {c}.",
+        "lost_outside": "El caladero {ground} está fuera del área de estudio {c}.",
+        "lost_no_water": "El puerto de salida no tiene agua abierta cerca {c}.",
+        "lost_until": " hasta {date}",
+        "lost_alt": "El agua abierta más cercana está a {nm} nm, en {lat}, {lon}. Ajuste: caladero u hora de salida {c}.",
         "effort": "La estimación de esfuerzo pesquero en {ground} es {effort} en una escala de 0 a 1, una estimación y no captura ni ingresos {c}.",
         "no_route": "{message} {c}",
         "window_note": "Según las lecturas más recientes incluidas; las condiciones pueden cambiar.",
@@ -231,11 +263,25 @@ def _template_narrative(lang: str, ids: dict[str, str], res: dict[str, Any], tri
     plan = res[ids["plan_routes"]]
     c4 = _cite(ids["plan_routes"])
     zn = plan["zone_names"]
+    if plan.get("access_lost"):
+        info = plan["access_lost"]
+        until = t["lost_until"].format(date=info["zone_active_to"][:10]) if info.get("zone_active_to") else ""
+        out.append(t["lost_" + info["code"]].format(ground=plan["ground_name"], zone=info.get("zone_name") or "",
+                                                    until=until, c=c4))
+        alt = info.get("nearest_open")
+        if alt:
+            out.append(t["lost_alt"].format(nm=fmt(alt["distance_nm"]), lat=fmt(alt["lat"]), lon=fmt(alt["lon"]), c=c4))
+        return out
     if not plan["ok"]:
         out.append(t["no_route"].format(message=plan["message"], c=c4))
         return out
+    single = plan.get("single_route")
+    if single and single["code"] == "over_budget":
+        out.append(t["single_budget"].format(need=fmt(single["need_hours"]), max=fmt(single["max_hours"]), c=c4))
+    elif single:
+        out.append(t["single_same"].format(c=c4))
     for p in plan["plans"]:
-        name = PLAN_NAMES[lang].get(p["name"], p["name"])
+        name = plan_name(lang, p["name"])
         out.append(t["plan"].format(name=name, eta=fmt(p["eta_hours"]), rt=fmt(p["round_trip_hours"]), fuel=fmt(p["fuel_est_l"]), c=c4))
         if p["zones_crossed"]:
             out.append(t["crossed"].format(name=name, zones="; ".join(zn.get(z, z) for z in p["zones_crossed"]), c=c4))
@@ -245,7 +291,8 @@ def _template_narrative(lang: str, ids: dict[str, str], res: dict[str, Any], tri
             out.append(t["crossed_none"].format(name=name, c=c4))
         if p["zones_avoided"]:
             out.append(t["avoided"].format(name=name, zones="; ".join(zn.get(z, z) for z in p["zones_avoided"]), c=c4))
-        out.append(t["exposure"].format(name=name, exp=fmt(p["risk_exposure"]), wave=fmt(p["max_wave_m"]), c=c4))
+        out.append(t["exposure"].format(name=name, exp=fmt(p["risk_exposure"]), wave=fmt(p["max_wave_m"]),
+                                        wind=fmt(p["max_wind_kn"]), c=c4))
     if "get_effort_proxy" in ids:
         ground_val = plan["plans"][0]["effort_proxy"]
         out.append(t["effort"].format(ground=plan["ground_name"], effort=fmt(ground_val),
@@ -349,6 +396,8 @@ def run_agent(trip_request: dict[str, Any] | TripRequest) -> Iterator[dict[str, 
         "language": lang,
         "disclaimer": DISCLAIMER[lang],
         "message": results[ids["plan_routes"]]["message"],
+        "access_lost": results[ids["plan_routes"]].get("access_lost"),
+        "single_route_reason": results[ids["plan_routes"]].get("single_route_reason"),
         "synthetic": any(r.get("synthetic") for r in results.values()),
     })
     yield _sse("done", {"tool_calls": len(results)})
@@ -379,7 +428,7 @@ def _route_plans(lang: str, ids: dict[str, str], res: dict[str, Any]) -> list[di
     plan_synth = bool(res[plan_cid].get("synthetic"))
     out = []
     for p in plan["plans"]:
-        name = PLAN_NAMES[lang].get(p["name"], p["name"])
+        name = plan_name(lang, p["name"])
         cites = [
             _citation(plan_cid, "plan_routes",
                       f"eta_hours {fmt(p['eta_hours'])}, fuel_est_l {fmt(p['fuel_est_l'])}, risk_exposure {fmt(p['risk_exposure'])}",
@@ -406,6 +455,11 @@ def _route_plans(lang: str, ids: dict[str, str], res: dict[str, Any]) -> list[di
             "zones_avoided": p["zones_avoided"],
             "slow_zone_hours": p["slow_zone_hours"],
             "max_wave_m": p["max_wave_m"],
+            "max_wind_kn": p["max_wind_kn"],
+            "rank": p["rank"],
+            "method": p["method"],
+            "vs_fastest": p["vs_fastest"],
+            "origin_adjusted_nm": p["origin_adjusted_nm"],
             "risk_exposure": p["risk_exposure"],
             "effort_proxy": p["effort_proxy"],
             "weather_window": {**p["weather_window"], "note": T[lang]["window_note"]},

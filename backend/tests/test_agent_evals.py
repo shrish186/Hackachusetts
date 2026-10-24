@@ -72,7 +72,10 @@ def test_req4_every_number_traces_to_a_tool_result(prompt: dict) -> None:
             assert c["tool_call_id"] in results
             assert _nums(c["claim"]) <= _numbers(results[c["tool_call_id"]])
 
-    if prompt["max_hours"] == 1:
+    if plans.get("access_lost"):
+        # Ground inside an active closure: explicit access_lost, never a relocated route.
+        assert plans["plans"] == [] and plans["access_lost"]["nearest_open"]
+    elif prompt["max_hours"] == 1:
         assert plans["plans"] == [] and "Relax" in plans["message"]
     else:
         assert 1 <= len(plans["plans"]) <= 3

@@ -80,7 +80,7 @@ def test_req5_2_slow_zone_caps_speed_and_adds_time() -> None:
 
 
 def test_req5_4_no_legal_route_names_constraint() -> None:
-    out = plan_routes(_trip(max_hours=0.5, target_ground="jeffreys_ledge"))
+    out = plan_routes(_trip(max_hours=0.5, target_ground="stellwagen_bank"))
     assert out["ok"] is False and out["plans"] == []
     assert "Relax: max_hours" in out["message"]
 
