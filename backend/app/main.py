@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health, meta
+from app.api import health, layers, meta
 
 # Frontend dev server (Vite). Add deployed origins here as needed.
 ALLOWED_ORIGINS = [
@@ -31,3 +31,4 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
+app.include_router(layers.router, prefix="/api")
