@@ -174,7 +174,12 @@ export function MapView({ routes, onError }: MapViewProps) {
 
   return (
     <div className="absolute inset-0">
-      <div ref={containerRef} className="absolute inset-0" />
+      {/*
+        The container must size itself even though MapLibre forces
+        `position: relative` on it (which cancels `inset-0`). Use explicit
+        h-full/w-full against the absolutely-positioned full-size wrapper.
+      */}
+      <div ref={containerRef} className="h-full w-full" />
       {hoverRisk && cursor && <RiskTooltip cell={hoverRisk} x={cursor.x} y={cursor.y} />}
       {selectedZone && (
         <ZonePopup
