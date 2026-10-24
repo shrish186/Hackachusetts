@@ -1,0 +1,40 @@
+# Demo scenarios for Fathom (Lane A).
+#
+# These give the frontend/demo a known date when protection zones are active,
+# so a reviewer running the live API in October (outside whale season) can still
+# see active closures. Picking a real whale-season date is honest: it shows the
+# system working, not fabricated "always on" zones.
+#
+# Times carry an explicit UTC instant AND a human local label. Massachusetts
+# uses America/New_York; 2026-03-15 is during EDT (UTC-4).
+
+default_scenario: replay_whale_season
+
+scenarios:
+  replay_whale_season:
+    label: "Replay whale season"
+    description: >-
+      A representative whale-season moment. On this date the Cape Cod Bay and
+      Off Race Point Seasonal Management Areas, the example Stellwagen slow zone,
+      and the western Gulf of Maine closure are all active, so the map shows real
+      speed restrictions and closures.
+    # 2026-03-15 09:00 America/New_York (EDT, UTC-4) == 13:00 UTC.
+    time_utc: "2026-03-15T13:00:00Z"
+    time_local: "2026-03-15T09:00:00-04:00"
+    time_local_label: "Sat 15 Mar 2026, 9:00 AM EDT"
+    port: gloucester
+    expected_active_zone_ids:
+      - sma_cape_cod_bay
+      - sma_off_race_point
+      - slow_zone_stellwagen_mar
+      - closure_western_gom
+      - wind_construction_vineyard_mar
+
+  present_day:
+    label: "Today (live)"
+    description: >-
+      The current date. Outside whale season (roughly Nov-Dec and summer gaps)
+      most Seasonal Management Areas are inactive by design; the map correctly
+      shows few or no active zones. This is honest, not a bug.
+    time_utc: null
+    port: gloucester

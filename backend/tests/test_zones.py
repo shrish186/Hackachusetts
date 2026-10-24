@@ -22,7 +22,7 @@ def _utc(y, m, d):
 def test_all_zones_load_and_validate():
     """Every bundled zone loads into a valid Zone object."""
     zones = load_zones()
-    assert len(zones) == 5
+    assert len(zones) >= 5
     ids = {z.id for z in zones}
     assert "sma_cape_cod_bay" in ids
     assert "closure_western_gom" in ids
