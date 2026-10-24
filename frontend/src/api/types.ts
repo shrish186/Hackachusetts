@@ -159,8 +159,11 @@ export interface MetaResponse {
 
 /** A selectable scenario from GET /api/sim/scenarios (Manager mode). */
 export interface ScenarioListItem {
+  /** Stable scenario id (contract field: `id`). */
   scenario_id: string;
+  /** Display name. */
   label: string;
+  description?: string;
   synthetic?: boolean;
 }
 
@@ -173,6 +176,7 @@ export interface ScenarioResult {
   delta_fuel_pct: number;
   delta_effort_access_pct: number;
   on_frontier: boolean;
+  /** Plain-language summary in the user's language (already localized). */
   summary: string;
 }
 

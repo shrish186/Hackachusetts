@@ -54,6 +54,16 @@ interface Strings {
   tryDemoHint: string;
   summary: string;
   printBrief: string;
+  // plan card clarity (task 10)
+  fastestLabel: string;
+  balancedLabel: string;
+  safestLabel: string;
+  advisoryShort: string;
+  bundledDemoData: string;
+  singleRouteNote: string;
+  vsFastest: string; // "vs fastest"
+  lessRisk: string; // "less whale risk"
+  moreRisk: string; // "more whale risk"
   // manager mode
   simTitle: string;
   simIntro: string;
@@ -64,6 +74,13 @@ interface Strings {
   drawHint: string;
   runSim: string;
   running: string;
+  cancel: string;
+  simProgress: string;
+  simTimeout: string;
+  simBusy: string;
+  simSlow: string;
+  simError: string;
+  retry: string;
   efficient: string;
   riskReduced: string;
   fleetCost: string;
@@ -118,9 +135,18 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Try the demo trip',
-    tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, morning departure, safest',
+    tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, departure soon, safest',
     summary: 'Summary',
     printBrief: 'Print brief',
+    fastestLabel: 'Fastest',
+    balancedLabel: 'Balanced',
+    safestLabel: 'Safest',
+    advisoryShort: 'Advisory only',
+    bundledDemoData: 'bundled demo data',
+    singleRouteNote: 'Only one safe, legal route fits these limits. Relax max hours or the risk setting to see alternatives.',
+    vsFastest: 'vs fastest',
+    lessRisk: 'less whale risk',
+    moreRisk: 'more whale risk',
     simTitle: 'What-if simulator',
     simIntro: 'Compare candidate protection zones: whale strikes removed vs. the cost to the fleet. Highlighted options are on the efficient frontier.',
     scenarios: 'Scenarios',
@@ -130,6 +156,13 @@ const STRINGS: Record<Language, Strings> = {
     drawHint: 'Click the map to add corners. Finish when you have 3+.',
     runSim: 'Run simulation',
     running: 'Re-routing fleet…',
+    cancel: 'Cancel',
+    simProgress: 'Re-routing ~200 trips (can take up to a minute)…',
+    simTimeout: 'The simulation took too long. The free server may be busy — try again.',
+    simBusy: 'Server busy — retry shortly.',
+    simSlow: 'The server timed out. Try again in a moment.',
+    simError: 'Could not run the simulation. Showing sample numbers.',
+    retry: 'Retry',
     efficient: 'efficient',
     riskReduced: 'Risk removed',
     fleetCost: 'Fleet cost',
@@ -180,9 +213,18 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Testar viagem demo',
-    tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, partida de manhã, mais seguro',
+    tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, partida em breve, mais seguro',
     summary: 'Resumo',
     printBrief: 'Imprimir resumo',
+    fastestLabel: 'Mais rápida',
+    balancedLabel: 'Equilibrada',
+    safestLabel: 'Mais segura',
+    advisoryShort: 'Apenas informativo',
+    bundledDemoData: 'dados demo incluídos',
+    singleRouteNote: 'Só uma rota segura e legal cabe nestes limites. Aumente as horas máximas ou ajuste o risco para ver alternativas.',
+    vsFastest: 'vs. mais rápida',
+    lessRisk: 'menos risco de baleia',
+    moreRisk: 'mais risco de baleia',
     simTitle: 'Simulador hipotético',
     simIntro: 'Compare zonas de proteção candidatas: colisões com baleias evitadas vs. o custo para a frota. As opções destacadas estão na fronteira eficiente.',
     scenarios: 'Cenários',
@@ -192,6 +234,13 @@ const STRINGS: Record<Language, Strings> = {
     drawHint: 'Clique no mapa para adicionar cantos. Conclua com 3 ou mais.',
     runSim: 'Executar simulação',
     running: 'Redirecionando a frota…',
+    cancel: 'Cancelar',
+    simProgress: 'Redirecionando ~200 viagens (pode levar até um minuto)…',
+    simTimeout: 'A simulação demorou demais. O servidor gratuito pode estar ocupado — tente de novo.',
+    simBusy: 'Servidor ocupado — tente novamente em breve.',
+    simSlow: 'O servidor expirou. Tente novamente em instantes.',
+    simError: 'Não foi possível executar a simulação. Mostrando números de exemplo.',
+    retry: 'Tentar novamente',
     efficient: 'eficiente',
     riskReduced: 'Risco removido',
     fleetCost: 'Custo da frota',
@@ -242,9 +291,18 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Probar viaje demo',
-    tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, salida por la mañana, más seguro',
+    tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, salida pronto, más seguro',
     summary: 'Resumen',
     printBrief: 'Imprimir resumen',
+    fastestLabel: 'Más rápida',
+    balancedLabel: 'Equilibrada',
+    safestLabel: 'Más segura',
+    advisoryShort: 'Solo informativo',
+    bundledDemoData: 'datos demo incluidos',
+    singleRouteNote: 'Solo una ruta segura y legal cabe en estos límites. Aumenta las horas máximas o ajusta el riesgo para ver alternativas.',
+    vsFastest: 'vs. más rápida',
+    lessRisk: 'menos riesgo de ballena',
+    moreRisk: 'más riesgo de ballena',
     simTitle: 'Simulador hipotético',
     simIntro: 'Compara zonas de protección candidatas: choques con ballenas evitados vs. el costo para la flota. Las opciones resaltadas están en la frontera eficiente.',
     scenarios: 'Escenarios',
@@ -254,6 +312,13 @@ const STRINGS: Record<Language, Strings> = {
     drawHint: 'Haz clic en el mapa para añadir esquinas. Finaliza con 3 o más.',
     runSim: 'Ejecutar simulación',
     running: 'Redirigiendo la flota…',
+    cancel: 'Cancelar',
+    simProgress: 'Redirigiendo ~200 viajes (puede tardar hasta un minuto)…',
+    simTimeout: 'La simulación tardó demasiado. El servidor gratuito puede estar ocupado — inténtalo de nuevo.',
+    simBusy: 'Servidor ocupado — reintenta en breve.',
+    simSlow: 'El servidor expiró. Inténtalo de nuevo en un momento.',
+    simError: 'No se pudo ejecutar la simulación. Mostrando números de ejemplo.',
+    retry: 'Reintentar',
     efficient: 'eficiente',
     riskReduced: 'Riesgo eliminado',
     fleetCost: 'Costo de flota',
@@ -280,6 +345,32 @@ export function riskLevelWord(lang: Language, exposure: number): string {
   if (exposure < 0.2) return s.riskLevelLow;
   if (exposure < 0.4) return s.riskLevelModerate;
   return s.riskLevelHigh;
+}
+
+/** Plain plan-class label (Fastest / Balanced / Safest). */
+export function planClassLabel(lang: Language, cls: 'fastest' | 'balanced' | 'safest'): string {
+  const s = STRINGS[lang];
+  if (cls === 'fastest') return s.fastestLabel;
+  if (cls === 'safest') return s.safestLabel;
+  return s.balancedLabel;
+}
+
+/**
+ * One-line trade-off vs the fastest plan, e.g. "+40 min, 55% less whale risk"
+ * (task 10). Numbers are language-neutral; only words translate.
+ */
+export function tradeoffLine(
+  lang: Language,
+  deltaMinutes: number,
+  riskChangePct: number,
+): string {
+  const s = STRINGS[lang];
+  const timePart =
+    deltaMinutes <= 0 ? '' : `+${Math.round(deltaMinutes)} min`;
+  const absRisk = Math.abs(Math.round(riskChangePct));
+  const riskWord = riskChangePct <= 0 ? s.lessRisk : s.moreRisk;
+  const riskPart = `${absRisk}% ${riskWord}`;
+  return timePart ? `${timePart}, ${riskPart}` : riskPart;
 }
 
 /** Advisory-only disclaimer, per language (requirements.md Req 9.1). */

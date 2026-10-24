@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { api } from '@/api/client';
+import { useEffect, useRef, useState } from 'react';
+import { api, ApiError } from '@/api/client';
+import * as mock from '@/mocks';
 import type { ScenarioListItem, ScenarioResult } from '@/api/types';
 import { useAppState } from '@/state/AppState';
 import { useConn } from '@/hooks/useConn';
@@ -7,13 +8,14 @@ import { t } from '@/lib/i18n';
 import { TradeoffChart } from './TradeoffChart';
 
 /**
- * Manager mode panel (tasks.md task 4).
+ * Manager mode panel (tasks.md task 4 + task 9).
  *
  * - Polygon draw tool (vertices placed on the map; finish/clear here)
  * - Scenario list from GET /api/sim/scenarios
- * - Run button -> POST /api/sim/run (with the drawn polygon if any)
- * - SVG trade-off chart (risk reduced vs fleet cost) with the efficient
- *   frontier highlighted
+ * - Run button -> POST /api/sim/run (drawn polygon as candidate zone if any),
+ *   with a progress state, 60 s client timeout, and a Cancel button
+ *   (AbortController). Handles 429 / 504 with friendly messages and a retry.
+ * - SVG trade-off chart with the efficient frontier highlighted
  * - Plain-language summary in the selected language
  * Falls back to realistic mock numbers (labeled demo) when offline.
  */
@@ -27,6 +29,8 @@ export function ManagerPanel() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Load the selectable scenario list once.
   useEffect(() => {
@@ -41,25 +45,54 @@ export function ManagerPanel() {
     };
   }, []);
 
+  // Cancel any in-flight run on unmount.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  function applyResults(res: ScenarioResult[]) {
+    setResults(res);
+    const firstFrontier = res.find((r) => r.on_frontier) ?? res[0];
+    setSelectedId(firstFrontier?.scenario_id ?? null);
+  }
+
   async function run() {
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     setRunning(true);
+    setError(null);
     try {
       const res = await api.runScenario({
         polygon: drawnPolygon.length >= 3 ? drawnPolygon : undefined,
+        scenarioId: 'seasonal_speed_limit',
+        language,
+        signal: ac.signal,
+        timeoutMs: 60_000,
       });
-      setResults(res);
-      // Pick the first efficient option (or the first result) as selected.
-      const firstFrontier = res.find((r) => r.on_frontier) ?? res[0];
-      setSelectedId(firstFrontier?.scenario_id ?? null);
+      if (ac.signal.aborted) return;
+      applyResults(res.length ? res : mock.scenarios);
+    } catch (err) {
+      if (ac.signal.aborted) return; // user cancelled; stay quiet
+      // Friendly messages for the documented error codes; always recover with
+      // sample numbers so the view is never empty.
+      if (err instanceof ApiError && err.status === 429) setError(s.simBusy);
+      else if (err instanceof ApiError && (err.status === 504)) setError(s.simSlow);
+      else if (err instanceof DOMException && err.name === 'AbortError') setError(s.simTimeout);
+      else setError(s.simError);
+      applyResults(mock.scenarios);
     } finally {
-      setRunning(false);
+      if (!ac.signal.aborted) setRunning(false);
     }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
+    setRunning(false);
   }
 
   const selected = results.find((r) => r.scenario_id === selectedId) ?? null;
 
   return (
-    <aside className="pointer-events-auto flex max-h-[calc(100vh-10rem)] w-80 max-w-[88vw] flex-col gap-3 overflow-y-auto rounded-2xl border border-depth bg-deep/85 p-4 backdrop-blur">
+    <aside className="pointer-events-auto flex w-80 max-w-[88vw] flex-col gap-3 rounded-2xl border border-depth bg-deep/85 p-4 backdrop-blur">
       <h2 className="text-sm font-bold text-foam">{s.simTitle}</h2>
       <p className="text-xs leading-snug text-mist">{s.simIntro}</p>
 
@@ -70,7 +103,7 @@ export function ManagerPanel() {
             onClick={() => setDrawing((d) => !d)}
             aria-pressed={drawing}
             className={[
-              'min-h-9 flex-1 rounded-lg px-3 text-xs font-semibold transition-colors',
+              'min-h-9 flex-1 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-surf',
               drawing ? 'bg-surf text-abyss' : 'bg-tide text-foam hover:bg-surf',
             ].join(' ')}
           >
@@ -82,7 +115,7 @@ export function ManagerPanel() {
               setDrawing(false);
             }}
             disabled={drawnPolygon.length === 0}
-            className="min-h-9 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam disabled:opacity-50"
+            className="min-h-9 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-surf"
           >
             {s.clearZone}
           </button>
@@ -106,7 +139,7 @@ export function ManagerPanel() {
           <ul className="space-y-1 text-xs text-mist">
             {list.map((it) => (
               <li key={it.scenario_id} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-tide" />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-tide" />
                 {it.label}
               </li>
             ))}
@@ -114,13 +147,46 @@ export function ManagerPanel() {
         )}
       </div>
 
-      <button
-        onClick={run}
-        disabled={running}
-        className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-60"
-      >
-        {running ? s.running : s.runSim}
-      </button>
+      {running ? (
+        <div className="flex items-center gap-2">
+          <button
+            disabled
+            className="min-h-11 flex-1 rounded-lg bg-tide/60 font-semibold text-foam/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-foam/70 border-t-transparent" />
+              {s.running}
+            </span>
+          </button>
+          <button
+            onClick={cancel}
+            className="min-h-11 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
+          >
+            {s.cancel}
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={run}
+          className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf focus-visible:ring-2 focus-visible:ring-surf"
+        >
+          {s.runSim}
+        </button>
+      )}
+
+      {running && <p className="text-[11px] leading-snug text-mist">{s.simProgress}</p>}
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-coral/50 bg-coral/10 p-2 text-[11px] text-coral" role="status">
+          <span className="min-w-0 flex-1">{error}</span>
+          <button
+            onClick={run}
+            className="shrink-0 rounded-md border border-coral/60 px-2 py-1 font-bold transition-colors hover:bg-coral/20 focus-visible:ring-2 focus-visible:ring-coral"
+          >
+            {s.retry}
+          </button>
+        </div>
+      )}
 
       {/* Results */}
       {results.length > 0 && (
@@ -151,7 +217,7 @@ export function ManagerPanel() {
           </div>
 
           {/* Plain-language summary of the selected option */}
-          {selected && (
+          {selected && selected.summary && (
             <div className="rounded-xl border border-kelp/40 bg-kelp/10 p-3">
               <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wide text-kelp">
                 {s.summary}
@@ -162,9 +228,9 @@ export function ManagerPanel() {
         </>
       )}
 
-      <p className="pointer-events-none text-[10px] leading-snug text-mist/80">
+      <p className="text-[10px] leading-snug text-mist/80">
         {s.effortNote}
-        {conn === 'offline' && ' · Demo numbers (offline).'}
+        {conn !== 'online' && ' · Demo numbers (offline).'}
       </p>
     </aside>
   );
@@ -195,7 +261,7 @@ function ScenarioCard({
     <button
       onClick={onSelect}
       className={[
-        'rounded-xl border p-3 text-left transition-colors',
+        'rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-surf',
         selected
           ? 'border-surf bg-surf/10'
           : r.on_frontier

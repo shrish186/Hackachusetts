@@ -47,7 +47,7 @@ const BBOX = STUDY_AREA.bbox.join(',');
 /* Connection status (observable, for the "Offline demo data" badge)          */
 /* -------------------------------------------------------------------------- */
 
-export type ConnState = 'unknown' | 'online' | 'offline';
+export type ConnState = 'unknown' | 'online' | 'waking' | 'offline';
 
 let connState: ConnState = 'unknown';
 const listeners = new Set<(s: ConnState) => void>();
@@ -67,9 +67,48 @@ function setConn(next: ConnState) {
   listeners.forEach((fn) => fn(next));
 }
 
+/** Mark that we are waiting on a possibly-cold free-tier server. */
+export function setWaking(): void {
+  // Only move to "waking" from a not-yet-online state.
+  if (connState !== 'online') setConn('waking');
+}
+
+/**
+ * Probe GET /api/health to decide if the backend is reachable. Resolves true
+ * on a real 200 response. Used by the offline banner's Retry / auto-retry.
+ * `timeoutMs` is generous to allow a free-tier cold start.
+ */
+export async function pingHealth(timeoutMs = 60000): Promise<boolean> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  setWaking();
+  try {
+    const res = await fetch(`${API_URL}/api/health`, { signal: ac.signal });
+    if (!res.ok) throw new Error(`health -> ${res.status}`);
+    await res.json().catch(() => ({}));
+    setConn('online');
+    return true;
+  } catch {
+    setConn('offline');
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Low-level fetch with timeout                                               */
 /* -------------------------------------------------------------------------- */
+
+/** Error carrying the HTTP status so callers can show 429/504 messages. */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
 
 async function fetchJson<T>(
   path: string,
@@ -85,12 +124,16 @@ async function fetchJson<T>(
   }
   try {
     const res = await fetch(`${API_URL}${path}`, { ...init, signal: ac.signal });
-    if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+    if (!res.ok) {
+      // The server did respond, so the connection is up (helps 429/504 flows).
+      setConn('online');
+      throw new ApiError(res.status, `${path} -> ${res.status}`);
+    }
     const json = (await res.json()) as T;
     setConn('online');
     return json;
   } catch (err) {
-    setConn('offline');
+    if (!(err instanceof ApiError)) setConn('offline');
     throw err;
   } finally {
     clearTimeout(timer);
@@ -167,6 +210,35 @@ function adaptZones(raw: unknown): Zone[] {
 
 function adaptConditions(raw: unknown): Conditions[] {
   return items(raw) as unknown as Conditions[];
+}
+
+/**
+ * Map the /api/sim/run response `{ baseline, options:[...] }` into the flat
+ * ScenarioResult[] the UI uses. `deltas_pct.{risk,hours,fuel,effort_access}`
+ * map to delta_* fields; the localized summary is picked by language.
+ */
+function adaptScenarioRun(raw: unknown, language: Language): ScenarioResult[] {
+  const options = (raw as { options?: unknown[] }).options ?? [];
+  if (!Array.isArray(options)) return [];
+  return options.map((o) => {
+    const opt = o as Record<string, unknown>;
+    const d = (opt.deltas_pct ?? {}) as Record<string, number>;
+    const summary = opt.summary as Record<string, string> | string | undefined;
+    const summaryText =
+      typeof summary === 'string'
+        ? summary
+        : (summary?.[language] ?? summary?.en ?? '');
+    return {
+      scenario_id: String(opt.scenario_id ?? opt.id ?? ''),
+      label: String(opt.name ?? opt.label ?? opt.scenario_id ?? ''),
+      delta_risk_pct: Number(d.risk ?? 0),
+      delta_hours_pct: Number(d.hours ?? 0),
+      delta_fuel_pct: Number(d.fuel ?? 0),
+      delta_effort_access_pct: Number(d.effort_access ?? 0),
+      on_frontier: Boolean(opt.on_frontier),
+      summary: summaryText,
+    };
+  });
 }
 
 function adaptRisk(raw: unknown): RiskCell[] {
@@ -342,9 +414,10 @@ export const api = {
   async planTripStream(req: TripRequest, cb: PlanStreamCallbacks): Promise<PlanResult> {
     try {
       const ac = new AbortController();
-      // Only time out the initial response; the stream itself may run longer.
-      const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+      // Allow a free-tier cold start: wait up to 60 s for the first byte.
+      const timer = setTimeout(() => ac.abort(), 60_000);
       if (cb.signal) cb.signal.addEventListener('abort', () => ac.abort(), { once: true });
+      setWaking();
 
       const res = await fetch(`${API_URL}/api/trip/plan`, {
         method: 'POST',
@@ -362,42 +435,78 @@ export const api = {
     }
   },
 
-  /** List selectable scenarios (GET /api/sim/scenarios). */
+  /**
+   * List selectable scenarios (GET /api/sim/scenarios). The contract returns
+   * `{ scenarios: [{ id, name, description }] }`; map to ScenarioListItem.
+   */
   async getScenarios(): Promise<ScenarioListItem[]> {
     return withFallback(
       async () => {
         const raw = await fetchJson<unknown>('/api/sim/scenarios');
-        const arr = (Array.isArray(raw) ? raw : (raw as { scenarios?: unknown[] }).scenarios ?? []) as ScenarioListItem[];
-        return arr.length ? arr : mock.scenarioList;
+        const arr = (Array.isArray(raw)
+          ? raw
+          : (raw as { scenarios?: unknown[] }).scenarios ?? []) as Record<string, unknown>[];
+        const mapped = arr.map((o) => ({
+          scenario_id: String(o.id ?? o.scenario_id ?? ''),
+          label: String(o.name ?? o.label ?? o.id ?? ''),
+          description: (o.description as string | undefined) ?? undefined,
+          synthetic: true,
+        }));
+        return mapped.length ? mapped : mock.scenarioList;
       },
       () => mock.scenarioList,
     );
   },
 
   /**
-   * Run the fleet re-route simulation (POST /api/sim/run). Pass scenario ids
-   * to run a subset; pass a drawn polygon so the backend can treat it as a
-   * candidate zone. Returns ScenarioResult[]; falls back to mock numbers.
+   * Run the fleet re-route simulation (POST /api/sim/run). Pass a scenario id
+   * (the backend runs all preloaded options so the frontier is meaningful), or
+   * a custom drawn polygon as a candidate zone. Returns localized
+   * ScenarioResult[]. Can time out / be cancelled via the caller's signal;
+   * throws ApiError on 429/504 so the UI can show friendly messages.
    */
   async runScenario(opts?: {
-    scenarioIds?: string[];
+    scenarioId?: string;
     polygon?: Array<[number, number]>;
+    language?: Language;
+    signal?: AbortSignal;
+    timeoutMs?: number;
   }): Promise<ScenarioResult[]> {
-    return withFallback(
-      async () => {
-        const body: Record<string, unknown> = {};
-        if (opts?.scenarioIds) body.scenario_ids = opts.scenarioIds;
-        if (opts?.polygon) body.polygon = opts.polygon;
-        const raw = await fetchJson<unknown>('/api/sim/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const arr = (Array.isArray(raw) ? raw : (raw as { results?: unknown[] }).results ?? []) as ScenarioResult[];
-        return arr.length ? arr : mock.scenarios;
-      },
-      () => mock.scenarios,
-    );
+    const language = opts?.language ?? 'en';
+    const body: Record<string, unknown> = {};
+    if (opts?.polygon && opts.polygon.length >= 3) {
+      // Candidate polygon as a GeoJSON ring (closed).
+      body.polygon = {
+        type: 'Polygon',
+        coordinates: [[...opts.polygon, opts.polygon[0]]],
+      };
+      body.prohibited = true;
+      body.speed_limit_kn = null;
+    } else if (opts?.scenarioId) {
+      body.scenario_id = opts.scenarioId;
+    }
+    const raw = await fetchJson<unknown>('/api/sim/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: opts?.signal,
+      timeoutMs: opts?.timeoutMs ?? 60_000,
+    });
+    return adaptScenarioRun(raw, language);
+  },
+
+  /** Like runScenario, but returns mock numbers on any failure. */
+  async runScenarioOrMock(opts?: {
+    scenarioId?: string;
+    polygon?: Array<[number, number]>;
+    language?: Language;
+    signal?: AbortSignal;
+  }): Promise<ScenarioResult[]> {
+    try {
+      return await api.runScenario(opts);
+    } catch {
+      return mock.scenarios;
+    }
   },
 
   /**

@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import type { NarrativeLine } from '@/api/client';
 import type { Language, RoutePlan, TripRequest } from '@/api/types';
-import { t, riskLevelWord, DISCLAIMER } from '@/lib/i18n';
+import { t, riskLevelWord, DISCLAIMER, planClassLabel, tradeoffLine } from '@/lib/i18n';
+import type { PlanClass } from '@/lib/recommend';
 import { formatLocalShort } from '@/lib/time';
 import { openBrief } from '@/lib/brief';
 
 interface PlanCardProps {
   plan: RoutePlan;
-  rank: number;
+  /** Fastest / Balanced / Safest label (task 10). */
+  planClass: PlanClass;
+  /** True when this is the scored recommendation (task 5). */
+  recommended: boolean;
+  /** All plans in the set, for trade-off vs the fastest option. */
+  plans: RoutePlan[];
   language: Language;
   selected: boolean;
   onSelect: () => void;
@@ -20,14 +26,17 @@ interface PlanCardProps {
 }
 
 /**
- * A ranked trip plan card (requirements.md Req 4.1/4.2). Selecting it draws the
- * route on the map. The "Why" drawer shows zones crossed, a risk summary, the
- * weather window, and citations (tasks.md 2.9). The advisory disclaimer shows
- * on every plan (Req 9.1).
+ * A ranked trip plan card (requirements.md Req 4.1/4.2; tasks 8 + 10).
+ * Shows a plain label (Fastest/Balanced/Safest), a one-line trade-off, and an
+ * "Advisory only" line. Selecting it draws the route on the map. The "Why"
+ * drawer shows zones crossed, a risk summary, the weather window, and every
+ * claim's citation (null source_url → "bundled demo data", never an empty link).
  */
 export function PlanCard({
   plan,
-  rank,
+  planClass,
+  recommended,
+  plans,
   language,
   selected,
   onSelect,
@@ -37,6 +46,15 @@ export function PlanCard({
 }: PlanCardProps) {
   const [open, setOpen] = useState(false);
   const s = t(language);
+
+  // Trade-off vs the fastest plan (lowest ETA).
+  const fastest = plans.reduce((a, b) => (b.eta_hours < a.eta_hours ? b : a), plans[0]);
+  const deltaMin = (plan.eta_hours - fastest.eta_hours) * 60;
+  const riskChangePct =
+    fastest.risk_exposure > 0
+      ? ((plan.risk_exposure - fastest.risk_exposure) / fastest.risk_exposure) * 100
+      : 0;
+  const showTradeoff = plans.length > 1 && plan !== fastest;
 
   return (
     <div
@@ -48,12 +66,12 @@ export function PlanCard({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <span className="text-sm font-bold text-foam">
-            {s.option} {rank}
+            {planClassLabel(language, planClass)}
           </span>
           {plan.name && (
             <span className="ml-2 text-[11px] text-mist">{plan.name}</span>
           )}
-          {rank === 1 && (
+          {recommended && (
             <span className="ml-2 rounded-full bg-kelp/20 px-2 py-0.5 text-[10px] font-bold text-kelp">
               {s.recommended}
             </span>
@@ -64,6 +82,13 @@ export function PlanCard({
         </span>
       </div>
 
+      {/* Trade-off one-liner (task 10) */}
+      {showTradeoff && (
+        <p className="mt-1 text-[11px] text-mist">
+          {tradeoffLine(language, deltaMin, riskChangePct)} {s.vsFastest}
+        </p>
+      )}
+
       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-mist">
         <Stat label={s.eta} value={`${plan.eta_hours.toFixed(1)} ${s.hours}`} />
         <Stat label={s.fuelEst} value={`${plan.fuel_est_l.toFixed(0)} ${s.liters}`} />
@@ -71,14 +96,17 @@ export function PlanCard({
         <Stat label={s.effortEst} value={plan.effort_proxy.toFixed(2)} />
       </dl>
 
+      {/* Advisory-only line on every option (task 10 / Req 9.1) */}
+      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-mist/70">
+        {s.advisoryShort}
+      </p>
+
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={onSelect}
           className={[
-            'min-h-9 flex-1 rounded-lg px-3 text-xs font-semibold transition-colors',
-            selected
-              ? 'bg-surf text-abyss'
-              : 'bg-tide text-foam hover:bg-surf',
+            'min-h-9 flex-1 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-surf',
+            selected ? 'bg-surf text-abyss' : 'bg-tide text-foam hover:bg-surf',
           ].join(' ')}
         >
           {selected ? s.shownOnMap : s.showOnMap}
@@ -86,7 +114,7 @@ export function PlanCard({
         <button
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="min-h-9 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam"
+          className="min-h-9 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
         >
           {open ? s.hide : s.why}
         </button>
@@ -143,19 +171,20 @@ export function PlanCard({
             </section>
           )}
 
-          {/* Citations */}
+          {/* Citations — every claim shows its source; null url -> demo text */}
           <section>
             <h4 className="mb-1 font-bold text-foam">{s.citations}</h4>
-            <ul className="space-y-1 text-mist">
-              {plan.citations.map((c) => (
-                <li key={c.tool_call_id}>
-                  <code className="rounded bg-current/40 px-1 py-0.5 text-[10px] text-surf">
-                    [tool:{c.tool}]
-                  </code>{' '}
-                  <span>{c.claim}</span>
-                  {c.source_url ? (
-                    <>
-                      {' '}
+            {plan.citations.length === 0 ? (
+              <p className="text-mist">{s.bundledDemoData}</p>
+            ) : (
+              <ul className="space-y-1 text-mist">
+                {plan.citations.map((c) => (
+                  <li key={c.tool_call_id}>
+                    <code className="rounded bg-current/40 px-1 py-0.5 text-[10px] text-surf">
+                      [tool:{c.tool}]
+                    </code>{' '}
+                    <span>{c.claim}</span>{' '}
+                    {c.source_url ? (
                       <a
                         href={c.source_url}
                         target="_blank"
@@ -164,17 +193,19 @@ export function PlanCard({
                       >
                         ↗
                       </a>
-                    </>
-                  ) : (
-                    c.source_label && <span className="italic text-mist/70"> — {c.source_label}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+                    ) : c.source_label ? (
+                      <span className="italic text-mist/70">— {c.source_label}</span>
+                    ) : (
+                      <span className="italic text-mist/70">({s.bundledDemoData})</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           {/* Agent narrative (plain-language, cited) */}
-          {narrative && narrative.length > 0 && rank === 1 && (
+          {narrative && narrative.length > 0 && recommended && (
             <section>
               <h4 className="mb-1 font-bold text-foam">{s.summary}</h4>
               <ul className="space-y-1 text-mist">
@@ -188,7 +219,7 @@ export function PlanCard({
           {/* Print brief (Task 5) */}
           <button
             onClick={() => openBrief(plan, language, { zoneName, trip })}
-            className="min-h-9 w-full rounded-lg border border-surf/60 px-3 text-xs font-semibold text-surf transition-colors hover:bg-surf/15"
+            className="min-h-9 w-full rounded-lg border border-surf/60 px-3 text-xs font-semibold text-surf transition-colors hover:bg-surf/15 focus-visible:ring-2 focus-visible:ring-surf"
           >
             {s.printBrief}
           </button>
