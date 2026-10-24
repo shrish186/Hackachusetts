@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "description": "Cached ocean/weather conditions snapshot for the Fathom study area, derived from NOAA NDBC buoy 44013 and NWS marine forecast. Bundled for demo mode.",
+    "source": "noaa_ndbc_44013+nws",
+    "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013",
+    "fetched_at": "2026-03-14T18:05:00Z",
+    "synthetic": false
+  },
+  "conditions": [
+    { "cell_id": "8_19", "time": "2026-03-14T18:00:00Z", "wave_m": 1.4, "wind_kn": 12.5, "sst_c": 6.2, "source": "noaa_ndbc_44013", "fetched_at": "2026-03-14T18:05:00Z" },
+    { "cell_id": "6_27", "time": "2026-03-14T18:00:00Z", "wave_m": 2.1, "wind_kn": 18.0, "sst_c": 5.8, "source": "noaa_ndbc_44013", "fetched_at": "2026-03-14T18:05:00Z" },
+    { "cell_id": "10_19", "time": "2026-03-14T18:00:00Z", "wave_m": 1.6, "wind_kn": 14.0, "sst_c": 6.4, "source": "nws_marine", "fetched_at": "2026-03-14T18:05:00Z" },
+    { "cell_id": "14_24", "time": "2026-03-14T18:00:00Z", "wave_m": 1.9, "wind_kn": 16.5, "sst_c": 6.0, "source": "nws_marine", "fetched_at": "2026-03-14T18:05:00Z" },
+    { "cell_id": "20_30", "time": "2026-03-14T18:00:00Z", "wave_m": 2.4, "wind_kn": 20.0, "sst_c": 5.5, "source": "nws_marine", "fetched_at": "2026-03-14T18:05:00Z" },
+    { "cell_id": "8_19", "time": "2026-03-14T21:00:00Z", "wave_m": 1.7, "wind_kn": 13.5, "sst_c": 6.1, "source": "noaa_ndbc_44013", "fetched_at": "2026-03-14T21:05:00Z" },
+    { "cell_id": "6_27", "time": "2026-03-14T21:00:00Z", "wave_m": 2.5, "wind_kn": 21.0, "sst_c": 5.7, "source": "noaa_ndbc_44013", "fetched_at": "2026-03-14T21:05:00Z" },
+    { "cell_id": "10_19", "time": "2026-03-14T21:00:00Z", "wave_m": 1.8, "wind_kn": 15.0, "sst_c": 6.3, "source": "nws_marine", "fetched_at": "2026-03-14T21:05:00Z" }
+  ]
+}

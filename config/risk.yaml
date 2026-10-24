@@ -1,0 +1,45 @@
+# Whale encounter risk model parameters (Lane A, Task 1.4, design.md section 5).
+#
+# These live here (not in code) so they are explainable and tweakable during
+# the demo. All distances in kilometers, times in days, speeds in knots.
+#
+# risk(c, t, v) = p_whale(c, t) * lethality(v)
+#   p_whale = clip(alpha * presence + (1 - alpha) * recency, 0, 1)
+#   lethality(v) = 1 / (1 + exp(-(v - v50) / k))
+
+presence:
+  # Weight on the seasonal presence prior vs. recent-sighting recency.
+  # alpha in [0, 1]: higher = lean on the seasonal prior.
+  alpha: 0.6
+  # Kernel bandwidth (km) for smoothing historical sighting density into a
+  # presence field. Larger = smoother / more spread out.
+  presence_kernel_km: 15.0
+  # Fixed density scale for the saturating presence map 1 - exp(-density/scale).
+  # Using a constant (not a data-dependent max) keeps presence per-cell and
+  # monotonic non-decreasing as sightings are added. Tune for demo contrast.
+  presence_scale: 4.0
+
+recency:
+  # Age decay time constant tau (days): a sighting's contribution decays as
+  # exp(-age_days / tau).
+  tau_days: 7.0
+  # Distance decay length rho (km): contribution decays as exp(-dist_km / rho).
+  rho_km: 10.0
+  # Only sightings within this radius (km) of a cell affect its recency term.
+  radius_km: 30.0
+
+lethality:
+  # Vessel-speed vs. lethal-injury logistic curve for large whales.
+  # Shape from the published vessel-speed / lethal-injury relationship
+  # (Vanderlaan & Taggart, 2007).
+  #
+  # TODO-VERIFY: confirm v50 and k against the paper before putting these
+  # numbers on a slide or in the pitch. Current values are the design.md
+  # section 5 placeholders and are NOT yet source-verified.
+  v50_kn: 11.8   # TODO-VERIFY: speed (kn) at 50% lethality  (design.md placeholder)
+  k: 2.0         # TODO-VERIFY: logistic steepness            (design.md placeholder)
+
+bounds:
+  # Risk is always clipped to this closed interval.
+  risk_min: 0.0
+  risk_max: 1.0

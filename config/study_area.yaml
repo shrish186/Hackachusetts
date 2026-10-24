@@ -1,0 +1,21 @@
+# Study area and grid definition (Lane A).
+#
+# Massachusetts Bay, Cape Cod Bay, and the approaches
+# (design.md section 4: roughly 41N-43.5N, 71W-69W).
+# This is the single source of truth for the grid; the frontend mirrors it in
+# frontend/src/config/studyArea.ts. Keep the two in sync.
+
+# Bounding box in WGS84 decimal degrees: [min_lon, min_lat, max_lon, max_lat].
+bbox:
+  min_lon: -71.0
+  min_lat: 41.0
+  max_lon: -69.0
+  max_lat: 43.5
+
+# Grid resolution in degrees per cell (requirements.md glossary: 0.05 x 0.05).
+cell_deg: 0.05
+
+# GeoJSON of simplified land polygons for the study area, used to build the
+# land mask. Hand-digitized from published coastline maps -> synthetic flag.
+# Bundled so demo mode works with the network off.
+land_geojson: data/snapshots/land_mask.geojson

@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "description": "Whale sighting sample for the Fathom study area, seeded from published seasonal patterns. Synthetic aggregate; no individual vessel identity.",
+    "synthetic": true,
+    "source_url": null,
+    "fetched_at": "2026-03-14T00:00:00Z"
+  },
+  "sightings": [
+    { "lon": -70.28, "lat": 41.98, "observed_at": "2026-03-14T15:30:00Z", "count": 3, "source": "synthetic" },
+    { "lon": -70.35, "lat": 42.05, "observed_at": "2026-03-14T11:10:00Z", "count": 1, "source": "synthetic" },
+    { "lon": -70.22, "lat": 42.30, "observed_at": "2026-03-13T16:45:00Z", "count": 2, "source": "synthetic" },
+    { "lon": -70.40, "lat": 42.38, "observed_at": "2026-03-12T09:20:00Z", "count": 4, "source": "synthetic" },
+    { "lon": -70.10, "lat": 42.12, "observed_at": "2026-03-14T08:00:00Z", "count": 1, "source": "synthetic" },
+    { "lon": -70.48, "lat": 41.88, "observed_at": "2026-03-11T14:05:00Z", "count": 2, "source": "synthetic" },
+    { "lon": -70.18, "lat": 42.45, "observed_at": "2026-03-10T17:30:00Z", "count": 1, "source": "synthetic" },
+    { "lon": -70.33, "lat": 42.22, "observed_at": "2026-03-14T13:50:00Z", "count": 5, "source": "synthetic" }
+  ]
+}
