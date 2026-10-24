@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fathom-mcp"
+version = "0.1.0"
+description = "Fathom MCP server: eight data/risk/route tools exposed over the Model Context Protocol."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.2.0",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+# Console-script alias; the canonical entry point is `python -m fathom_mcp`
+# (matches .kiro/settings/mcp.json).
+fathom-mcp = "fathom_mcp.server:main"
+
+[tool.setuptools]
+packages = ["fathom_mcp"]
