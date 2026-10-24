@@ -155,8 +155,11 @@ def refresh_sightings() -> bool:
         return False
 
     now = _now_iso()
-    # Keep the most recent 400 to bound file size while staying representative.
-    rows = rows[:400]
+    # Keep the most recent records: enough to be representative of the seasonal
+    # pattern, few enough that the per-cell risk model stays fast for routing
+    # (Req 5.3 regenerates routes in < 3 s). OBIS has thousands in-bbox; the
+    # demo retains a recent sample.
+    rows = rows[:60]
     sightings = [
         {
             "lon": round(r.lon, 5),
