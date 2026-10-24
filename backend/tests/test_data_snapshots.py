@@ -112,3 +112,24 @@ def test_validate_snapshots_script_passes():
     spec.loader.exec_module(mod)
     errors = mod.validate_all()
     assert errors == [], "snapshot validation errors:\n" + "\n".join(errors)
+
+
+def test_meta_sources_every_layer_is_fully_described():
+    """Task 1: /api/meta/sources gives every layer name, url, fetched_at,
+    license, synthetic flag, and an honest note -- and names no placeholder."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    body = TestClient(app).get("/api/meta/sources").json()
+    layers = {s["layer"] for s in body["sources"]}
+    assert {"conditions", "zones", "sightings", "risk", "land_mask"} <= layers
+    for s in body["sources"]:
+        for field in ("name", "fetched_at", "cached", "synthetic", "license", "note"):
+            assert field in s, f"{s['layer']} missing {field}"
+        assert s["name"] and "TODO" not in str(s["name"]).upper()
+        assert s["license"] and s["note"]
+        assert isinstance(s["synthetic"], bool)
+        # A layer flagged real must cite where it came from.
+        if s["synthetic"] is False:
+            assert s["source_url"], f"real layer {s['layer']} needs a source_url"
