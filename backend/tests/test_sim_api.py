@@ -39,8 +39,10 @@ def test_req6_preset_is_fast_and_precomputed() -> None:
     body = r.json()
     assert body["served_from"] == "precomputed"
     assert "computed_at" in body
-    assert len(body["options"]) == 3
-    assert len(body["pareto"]) == 3
+    # All preloaded scenarios are returned so the frontier is meaningful.
+    n_presets = client.get("/api/sim/scenarios").json()["count"]
+    assert len(body["options"]) == n_presets
+    assert len(body["pareto"]) == n_presets
 
 
 def test_req6_all_presets_served() -> None:

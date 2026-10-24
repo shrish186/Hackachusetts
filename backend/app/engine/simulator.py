@@ -325,17 +325,39 @@ def _rect_polygon(min_lon: float, min_lat: float, max_lon: float, max_lat: float
 
 
 def preloaded_scenarios() -> list[Scenario]:
-    """The three preloaded what-if scenarios (design.md section 8, task brief)."""
+    """The preloaded what-if scenarios (design.md section 8, Req 6).
+
+    Polygons are sized against the real synthetic fleet so each scenario has an
+    explainable effect (see the diagnostic in docs/kiro-evidence/LOG-vidhaan.md):
+
+    * ``extend_closure_east`` closes the Stellwagen/Gulf-of-Maine approaches just
+      west of the existing Western Gulf of Maine closure — the water the fleet's
+      northern trips actually use — so it removes real risk and real access.
+    * ``dynamic_zone_sightings`` closes the Stellwagen Bank cluster (kept).
+    * ``seasonal_speed_limit`` is a broad 10 kn cap. The fleet already cruises
+      ~9-10.5 kn, so a 10 kn cap barely moves risk — an honest "little effect"
+      finding that the summary states plainly.
+    * ``seasonal_speed_limit_8kn`` is a broad 8 kn cap for all vessels. Because
+      the lethality curve is steep near 8-12 kn (P_lethal 0.50 at 11.8 kn, 0.21
+      at 8.6 kn; config/risk.yaml), capping at 8 kn cuts risk across the fleet.
+    """
     return [
         Scenario(
             id="extend_closure_east",
             name="Extend whale closure east",
-            description="Extend the Western Gulf of Maine closure ~20 nm east (full no-entry).",
+            description=(
+                "Extend the Western Gulf of Maine closure west along the "
+                "Stellwagen approaches (full no-entry over the water the fleet uses)."
+            ),
             extra_zones=[{
                 "id": "cand_extend_closure_east",
-                "name": "Closure extension (east)",
+                "name": "Closure extension (Stellwagen approaches)",
                 "kind": "fishing_closure",
-                "geometry": _rect_polygon(-69.7, 42.6, -69.3, 43.1),
+                # Covers the eastern Stellwagen Bank approaches the fleet reaches
+                # (its reachable eastern ground is at ~-70.25, 42.35). Sized to
+                # contain that ground + its offshore shoulder so the closure
+                # removes real risk and real access on the trips that use it.
+                "geometry": _rect_polygon(-70.3, 42.25, -70.05, 42.6),
                 "prohibited": True,
                 "speed_limit_kn": None,
                 "synthetic": True,
@@ -366,6 +388,24 @@ def preloaded_scenarios() -> list[Scenario]:
                 "geometry": _rect_polygon(-70.5, 42.0, -69.8, 43.0),
                 "prohibited": False,
                 "speed_limit_kn": 10.0,
+                "synthetic": True,
+            }],
+        ),
+        Scenario(
+            id="seasonal_speed_limit_8kn",
+            name="Seasonal 8-knot speed limit (all vessels)",
+            description=(
+                "A broad 8 kn speed cap for every vessel over the approaches. "
+                "The strike-lethality curve is steep near 8-12 kn, so an 8 kn cap "
+                "cuts whale risk where a 10 kn cap barely does."
+            ),
+            extra_zones=[{
+                "id": "cand_seasonal_speed_limit_8kn",
+                "name": "Seasonal 8 kn speed area",
+                "kind": "whale_sma",
+                "geometry": _rect_polygon(-70.5, 42.0, -69.8, 43.0),
+                "prohibited": False,
+                "speed_limit_kn": 8.0,
                 "synthetic": True,
             }],
         ),
@@ -547,12 +587,12 @@ def _pareto_points(options: list[OptionResult]) -> list[dict[str, Any]]:
 def baseline_access_explanation(access_lost: int, total_trips: int) -> dict[str, str]:
     """Plain-language note on baseline access loss, in en/pt/es (identical numbers).
 
-    Even before any new scenario, some fleet trips target grounds that sit
-    inside today's *already-active* closed zones (notably the Western Gulf of
-    Maine Seasonal Closure and the Vineyard Wind construction exclusion). The
-    router does not relocate those trips — it reports them as lost access
-    (confirmed with Shrish's routing finding in docs/API_CONTRACT.md). This
-    explains why the baseline shows ``access_lost`` > 0 with no scenario applied.
+    Even before any new scenario, some fleet trips target a ground that sits
+    inside today's *already-active* Western Gulf of Maine Seasonal Closure
+    (Jeffreys Ledge). The router does not relocate those trips — it reports them
+    as lost access (confirmed with Shrish's routing finding in
+    docs/API_CONTRACT.md). This explains why the baseline shows ``access_lost``
+    > 0 with no scenario applied.
 
     Exposed as a module function so the API layer can attach the same text to a
     precomputed preset result without re-running the simulator.
@@ -561,24 +601,21 @@ def baseline_access_explanation(access_lost: int, total_trips: int) -> dict[str,
     total = total_trips
     return {
         "en": (
-            f"Before any new rule, {n} of {total} fleet trips already target "
-            f"fishing grounds inside today's active closed zones (mainly the "
-            f"Western Gulf of Maine closure and the Vineyard Wind construction "
-            f"exclusion), so they are counted as lost access, not re-routed."
+            f"Before any new rule, {n} of {total} fleet trips already target a "
+            f"fishing ground (Jeffreys Ledge) inside today's active Western Gulf "
+            f"of Maine closure, so they are counted as lost access, not re-routed."
         ),
         "pt": (
             f"Antes de qualquer nova regra, {n} de {total} viagens da frota já "
-            f"têm como destino pesqueiros dentro das zonas fechadas ativas de "
-            f"hoje (principalmente o fecho do oeste do Golfo do Maine e a "
-            f"exclusão de construção do Vineyard Wind), por isso são contadas "
-            f"como acesso perdido, e não realocadas."
+            f"têm como destino um pesqueiro (Jeffreys Ledge) dentro do fecho "
+            f"ativo do oeste do Golfo do Maine, por isso são contadas como acesso "
+            f"perdido, e não realocadas."
         ),
         "es": (
-            f"Antes de cualquier nueva norma, {n} de {total} viajes de la flota "
-            f"ya se dirigen a caladeros dentro de las zonas cerradas activas de "
-            f"hoy (sobre todo el cierre del oeste del Golfo de Maine y la "
-            f"exclusión de construcción de Vineyard Wind), por lo que se cuentan "
-            f"como acceso perdido, no reubicados."
+            f"Antes de cualquier norma nueva, {n} de {total} viajes de la flota "
+            f"ya se dirigen a un caladero (Jeffreys Ledge) dentro del cierre "
+            f"activo del oeste del Golfo de Maine, por lo que se cuentan como "
+            f"acceso perdido, no reubicados."
         ),
     }
 
@@ -598,24 +635,32 @@ def _summaries(option: OptionResult) -> dict[str, str]:
     acc_dir = {"en": "less" if option.delta_effort_access_pct <= 0 else "more",
                "pt": "menos" if option.delta_effort_access_pct <= 0 else "mais",
                "es": "menos" if option.delta_effort_access_pct <= 0 else "más"}
+    # Honest "little effect" note: a speed cap at or above the fleet's cruise
+    # does almost nothing, because most of the fleet already runs at that speed.
+    neutral = abs(option.delta_risk_pct) < 1.0
+    note = {
+        "en": " This rule changes little here: most of the fleet already cruises at 10 knots or below." if neutral else "",
+        "pt": " Esta regra muda pouco aqui: a maior parte da frota já navega a 10 nós ou menos." if neutral else "",
+        "es": " Esta norma cambia poco aquí: la mayoría de la flota ya navega a 10 nudos o menos." if neutral else "",
+    }
     return {
         "en": (
             f"\"{option.name}\": the fleet is exposed to {risk} {risk_dir['en']} "
             f"whale risk, spends {hours} more steaming time, and has {access} "
             f"{acc_dir['en']} access to fishing grounds (effort is an estimate, "
-            f"not revenue)."
+            f"not revenue).{note['en']}"
         ),
         "pt": (
             f"\"{option.name}\": a frota fica exposta a {risk} {risk_dir['pt']} "
             f"risco de baleias, gasta {hours} mais tempo de navegação e tem "
             f"{access} {acc_dir['pt']} acesso aos pesqueiros (o esforço é uma "
-            f"estimativa, não receita)."
+            f"estimativa, não receita).{note['pt']}"
         ),
         "es": (
             f"\"{option.name}\": la flota queda expuesta a {risk} {risk_dir['es']} "
             f"riesgo de ballenas, dedica {hours} más de tiempo de navegación y "
             f"tiene {access} {acc_dir['es']} acceso a los caladeros (el esfuerzo "
-            f"es una estimación, no ingresos)."
+            f"es una estimación, no ingresos).{note['es']}"
         ),
     }
 

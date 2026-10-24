@@ -56,21 +56,22 @@ def _sim() -> Simulator:
 # --- Example tests ------------------------------------------------------------
 
 def test_req6_scenarios_endpoint_lists_three() -> None:
-    """There are exactly three preloaded scenarios with stable ids."""
+    """There are exactly four preloaded scenarios with stable ids."""
     scen = preloaded_scenarios()
-    assert len(scen) == 3
+    assert len(scen) == 4
     assert {s.id for s in scen} == {
         "extend_closure_east",
         "dynamic_zone_sightings",
         "seasonal_speed_limit",
+        "seasonal_speed_limit_8kn",
     }
 
 
 def test_req6_run_all_shape_and_frontier_present() -> None:
-    """run_all returns baseline, 3 options, and at least one frontier option."""
+    """run_all returns a baseline, all options, and at least one frontier option."""
     result = _sim().run_all()
     assert set(result["baseline"]) >= {"risk_exposure", "steaming_hours", "fuel_l", "effort_access"}
-    assert len(result["options"]) == 3
+    assert len(result["options"]) == len(preloaded_scenarios())
     assert any(o["on_frontier"] for o in result["options"])
     # Effort is labelled an estimate, not revenue (Req 6.4).
     assert "estimate" in result["labels"]["effort_access"].lower()
@@ -286,3 +287,62 @@ def test_req6_prohibited_zone_never_increases_risk_and_always_costs_the_fleet(zo
     # When access is lost, effort access must drop (grounds removed).
     if lost_access:
         assert opt.totals.effort_access <= base.effort_access + tol
+
+
+# --- Preset effectiveness on the REAL fleet + zones (task 3) -----------------
+#
+# These use the real router and the real current zones (no injected fake), so
+# they validate the actual preset polygons against the deployed 200-trip fleet.
+# Exactly one preset is allowed to be "neutral" (< 3% risk change):
+#   seasonal_speed_limit (10 kn) — most of the fleet already cruises <= 10 kn,
+#   so a 10 kn cap barely moves risk. This is an honest finding, kept on purpose
+#   and called out in the summary text; the 8 kn variant provides the real cut.
+
+_ALLOWED_NEUTRAL = {"seasonal_speed_limit"}
+
+
+def _real_run() -> dict:
+    """run_all with the real router over the real current zones (demo mode)."""
+    import os
+
+    os.environ.setdefault("FATHOM_DEMO_MODE", "true")
+    from app.api.sim import _current_zones
+
+    return Simulator(current_zones=_current_zones()).run_all()
+
+
+def test_req6_each_preset_changes_risk_at_least_3pct_except_documented_neutral() -> None:
+    """Every preset moves whale risk >= 3% vs baseline, except the one documented
+    neutral speed-limit scenario (10 kn, which the fleet already meets)."""
+    result = _real_run()
+    for o in result["options"]:
+        sid = o["scenario_id"]
+        risk = abs(o["deltas_pct"]["risk"])
+        if sid in _ALLOWED_NEUTRAL:
+            # Honest no-op: assert it really is near-neutral so the exception is justified.
+            assert risk < 3.0, f"{sid} was expected to be neutral but moved risk {risk}%"
+        else:
+            assert risk >= 3.0, f"{sid} changed risk only {risk}% (< 3% threshold)"
+
+
+def test_req6_frontier_has_at_least_two_efficient_options_real() -> None:
+    """The Pareto frontier has at least two efficient options on the real data."""
+    result = _real_run()
+    frontier = [o for o in result["options"] if o["on_frontier"]]
+    assert len(frontier) >= 2, f"only {len(frontier)} efficient option(s)"
+
+
+def test_req6_neutral_speed_limit_summary_explains_no_effect() -> None:
+    """The neutral 10 kn preset says plainly that most of the fleet already
+    cruises at or below 10 kn (in all three languages)."""
+    result = _real_run()
+    ten = next(o for o in result["options"] if o["scenario_id"] == "seasonal_speed_limit")
+    for lang, needle in (("en", "10 knots or below"), ("pt", "10 nós ou menos"), ("es", "10 nudos o menos")):
+        assert needle in ten["summary"][lang], f"{lang} summary missing the no-effect note"
+
+
+def test_req6_8kn_speed_limit_cuts_risk_more_than_10kn() -> None:
+    """The 8 kn cap reduces whale risk more than the 10 kn cap (lethality curve)."""
+    result = _real_run()
+    by_id = {o["scenario_id"]: o for o in result["options"]}
+    assert by_id["seasonal_speed_limit_8kn"]["deltas_pct"]["risk"] < by_id["seasonal_speed_limit"]["deltas_pct"]["risk"]

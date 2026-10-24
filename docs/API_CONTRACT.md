@@ -238,7 +238,7 @@ The router never moves a destination. If the target ground (or the departure por
 
 `endpoint` is `destination` or `origin`. `code` is one of `closed_zone`, `land`, `outside` or `no_water`. `nearest_open` is the closest cell that is neither land nor closed, and it may be null. The SSE `plans` event repeats it as `access_lost`, and `message` gives the plain-language version. The simulator counts such trips as lost access (`access_lost_trips`) instead of as shorter trips.
 
-**Baseline access loss is expected.** On the simulator's baseline date (2026-03-15), 57 of the 200 synthetic fleet trips report `access_lost`. Every one of them is a trip to Jeffreys Ledge (-70.25, 42.90). That point lies inside the Western Gulf of Maine Seasonal Closure (`closure_western_gom`, prohibited, active 2026-02-01 to 2026-04-30). None of the trips fail because of a land cell: all three fishing grounds sit in water cells. This is the correct result for the closure window, not a bug; outside the window the same trips route normally. `backend/tests/test_latency_order.py::test_baseline_access_lost_is_only_closed_jeffreys_ledge` checks this. Note for Lane D: the baseline explanation text in `engine/simulator.py` also names the Vineyard Wind construction exclusion, but no fleet ground is inside it, so that part of the sentence can be dropped.
+**Baseline access loss is expected.** On the simulator's baseline date (2026-03-15), 57 of the 200 synthetic fleet trips report `access_lost`. Every one of them is a trip to Jeffreys Ledge (-70.25, 42.90). That point lies inside the Western Gulf of Maine Seasonal Closure (`closure_western_gom`, prohibited, active 2026-02-01 to 2026-04-30). None of the trips fail because of a land cell: all three fishing grounds sit in water cells. This is the correct result for the closure window, not a bug; outside the window the same trips route normally. `backend/tests/test_latency_order.py::test_baseline_access_lost_is_only_closed_jeffreys_ledge` checks this. (Resolved: the baseline explanation text in `engine/simulator.py` now names only Jeffreys Ledge / the Western Gulf of Maine closure — the Vineyard Wind mention was dropped as no fleet ground is inside it.)
 
 ### Validation (422)
 
@@ -267,39 +267,50 @@ Returns `text/html`: a one-page printable brief with waypoints, zone alerts, the
 
 ## GET /api/sim/scenarios (Lane D, `backend/app/api/sim.py`)
 
+There are **four** preset scenarios (the frontend reads this list dynamically, so a new preset appears automatically):
+
 ```json
 {
-  "count": 3,
+  "count": 4,
   "scenarios": [
-    { "id": "extend_closure_east", "name": "Extend whale closure east", "description": "Extend the Western Gulf of Maine closure ~20 nm east (full no-entry)." },
-    { "id": "dynamic_zone_sightings", "name": "Dynamic zone around recent sightings", "description": "..." },
-    { "id": "seasonal_speed_limit", "name": "Seasonal 10-knot speed limit (instead of closure)", "description": "..." }
+    { "id": "extend_closure_east", "name": "Extend whale closure east", "description": "Extend the Western Gulf of Maine closure west along the Stellwagen approaches (full no-entry over the water the fleet uses)." },
+    { "id": "dynamic_zone_sightings", "name": "Dynamic zone around recent sightings", "description": "A smaller dynamic no-entry zone placed over the latest sighting cluster." },
+    { "id": "seasonal_speed_limit", "name": "Seasonal 10-knot speed limit (instead of closure)", "description": "A broad 10 kn speed cap over the approaches rather than a closure." },
+    { "id": "seasonal_speed_limit_8kn", "name": "Seasonal 8-knot speed limit (all vessels)", "description": "A broad 8 kn speed cap for every vessel over the approaches." }
   ]
 }
 ```
 
 ## POST /api/sim/run (Lane D)
 
-Body: either `{ "scenario_id": "seasonal_speed_limit" }` (runs all preloaded options so the frontier is meaningful) or a custom polygon `{ "polygon": {"type": "Polygon", "coordinates": [...]}, "prohibited": true, "speed_limit_kn": null }`.
+Body: either `{ "scenario_id": "seasonal_speed_limit" }` (runs **all** preloaded options so the frontier is meaningful) or a custom polygon `{ "polygon": {"type": "Polygon", "coordinates": [...]}, "prohibited": true, "speed_limit_kn": null }`.
 
-Response (fleet of 200 synthetic trips, routed by `app.engine.routing.route_one`):
+Presets are **precomputed** at build time into `data/snapshots/sim_results.json` (`scripts/precompute_sim.py`) and served from there in **under 300 ms** (`served_from: "precomputed"`); only custom polygons run the live router. The response shape is unchanged; it also carries `pareto`, `baseline_explanation`, `computed_at`, `provenance`, and `served_from`.
+
+Response (fleet of 200 synthetic trips; preset values below are the committed snapshot on the 2026-03-15 baseline):
 
 ```json
 {
-  "baseline": { "risk_exposure": 73.93, "steaming_hours": 928.08, "fuel_l": 53723.3, "effort_access": 45.76, "trips": 200 },
+  "baseline": { "risk_exposure": 60.48, "steaming_hours": 578.45, "fuel_l": 34099.9, "effort_access": 35.65, "trips": 200, "access_lost": 57 },
   "options": [
     {
       "scenario_id": "extend_closure_east",
       "name": "Extend whale closure east",
-      "description": "...",
-      "totals": { "risk_exposure": 74.63, "steaming_hours": 923.75, "fuel_l": 53557.6, "effort_access": 45.78, "trips": 200 },
-      "deltas_pct": { "risk": 1.0, "hours": -0.5, "fuel": -0.3, "effort_access": 0.0 },
-      "on_frontier": false,
+      "totals": { "risk_exposure": 40.28, "steaming_hours": 262.47, "fuel_l": 14050.5, "effort_access": 22.16, "trips": 200, "access_lost": 120 },
+      "deltas_pct": { "risk": -33.4, "hours": -54.6, "fuel": -58.8, "effort_access": -37.8 },
+      "cost_breakdown": { "access_lost_trips": 120, "steaming_hours": 262.47, "fuel_l": 14050.5 },
+      "on_frontier": true,
       "summary": { "en": "...", "pt": "...", "es": "..." }
-    }
+    },
+    { "scenario_id": "dynamic_zone_sightings", "deltas_pct": { "risk": -35.0, "hours": -50.3, "fuel": -53.0, "effort_access": -39.2 }, "on_frontier": true },
+    { "scenario_id": "seasonal_speed_limit", "deltas_pct": { "risk": 0.3, "hours": -0.3, "fuel": -0.9, "effort_access": 0.1 }, "on_frontier": true },
+    { "scenario_id": "seasonal_speed_limit_8kn", "deltas_pct": { "risk": -7.9, "hours": 3.1, "fuel": -13.1, "effort_access": -3.6 }, "on_frontier": true }
   ],
-  "fleet": "...", "router": "...", "labels": "...", "requested": "seasonal_speed_limit"
+  "pareto": [ { "scenario_id": "extend_closure_east", "risk_reduced": 33.4, "fleet_cost": -8.4, "on_frontier": true }, "..." ],
+  "fleet": "...", "router": "...", "labels": "...", "baseline_explanation": "...", "requested": "seasonal_speed_limit", "served_from": "precomputed"
 }
 ```
 
-The frontend `ScenarioResult` maps `deltas_pct.risk` -> `delta_risk_pct`, and so on. A cold run takes about 9 to 12 s; repeat runs come from the route cache.
+The frontend `ScenarioResult` maps `deltas_pct.risk` -> `delta_risk_pct`, and so on.
+
+**Scenario effects (why each preset is non-trivial).** `extend_closure_east` and `dynamic_zone_sightings` both close productive eastern (Stellwagen) water, so they cut risk ~33-35% but at a large access cost (120 trips lost vs 57 at baseline). `seasonal_speed_limit_8kn` cuts risk ~8% by slowing vessels (the strike-lethality curve is steep near 8-12 kn) while *raising* steaming hours ~3% — a different point on the frontier. `seasonal_speed_limit` (10 kn) is intentionally **near-neutral** (~0% risk): most of the fleet already cruises at or below 10 kn, so the cap barely bites. That is an honest finding, and its `summary` text says so plainly in all three languages. All four options are on the Pareto frontier because each trades risk against fleet cost differently.
