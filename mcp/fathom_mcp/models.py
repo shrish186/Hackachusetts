@@ -27,7 +27,7 @@ class BBox(BaseModel):
     max_lat: float = Field(..., ge=-90.0, le=90.0, description="North edge, degrees.")
 
     @model_validator(mode="after")
-    def _ordered(self) -> "BBox":
+    def _ordered(self) -> BBox:
         """West<=East and South<=North."""
         if self.max_lon < self.min_lon:
             raise ValueError("max_lon must be >= min_lon")
@@ -43,7 +43,7 @@ class TimeRange(BaseModel):
     end: datetime = Field(..., description="UTC range end.")
 
     @model_validator(mode="after")
-    def _ordered(self) -> "TimeRange":
+    def _ordered(self) -> TimeRange:
         if self.end < self.start:
             raise ValueError("end must not be earlier than start")
         return self

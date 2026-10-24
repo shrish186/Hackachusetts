@@ -98,6 +98,8 @@ export interface Citation {
   tool: string;
   claim: string;
   source_url: string | null;
+  /** Human source label shown when source_url is null (e.g. "bundled demo data (synthetic)"). */
+  source_label?: string;
 }
 
 /** A weather window for the planned departure (design.md §10 plan "why"). */

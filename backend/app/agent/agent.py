@@ -20,7 +20,8 @@ import json
 import logging
 import os
 import re
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from app.agent.tools import call_tool
 from app.models import TripRequest
@@ -110,16 +111,40 @@ T = {
 
 _NUM_RE = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
 _CITE_RE = re.compile(r"\[tool:(call_\d+)\]")
-_BANNED_RE = re.compile(r"\b(legally|compliant|compliance|conforme|cumpre|cumple|cumplimiento|conformidade)\b", re.I)
+_BANNED_RE = re.compile(r"\b(legally|compliant|compliance|conforme|cumpre|cumple|cumplimiento|conformidade)\b", re.IGNORECASE)
 
 
-def fmt(x: float | int) -> str:
+def fmt(x: float) -> str:
     """Language-neutral number text (dot decimal) so all languages match."""
     return f"{x:g}" if isinstance(x, float) else str(x)
 
 
 def _cite(call_id: str) -> str:
     return f"[tool:{call_id}]"
+
+
+def _source_label(source_url: str | None, synthetic: bool) -> str:
+    """Human-readable source label for a citation.
+
+    When a tool result has no ``source_url`` (several of our bundled demo
+    layers), the plan narrative must still show *where* the fact came from, so
+    we label it explicitly instead of leaving a bare ``null`` the UI can't
+    render (task 5). Synthetic sources say so.
+    """
+    if source_url:
+        return source_url
+    return "bundled demo data (synthetic)" if synthetic else "bundled demo data"
+
+
+def _citation(call_id: str, tool: str, claim: str, *, source_url: str | None, synthetic: bool) -> dict[str, Any]:
+    """Build a citation record carrying both the url and a human source label."""
+    return {
+        "tool_call_id": call_id,
+        "tool": tool,
+        "claim": claim,
+        "source_url": source_url,
+        "source_label": _source_label(source_url, synthetic),
+    }
 
 
 def _sse(event: str, data: Any) -> dict[str, Any]:
@@ -350,21 +375,27 @@ def _route_plans(lang: str, ids: dict[str, str], res: dict[str, Any]) -> list[di
     zones_by_id = {z["id"]: z for z in res[ids["get_zones"]]["zones"]}
     cond_cid = ids["get_conditions"]
     cond_url = res[cond_cid].get("source_url")
+    cond_synth = bool(res[cond_cid].get("synthetic"))
+    plan_synth = bool(res[plan_cid].get("synthetic"))
     out = []
     for p in plan["plans"]:
         name = PLAN_NAMES[lang].get(p["name"], p["name"])
         cites = [
-            {"tool_call_id": plan_cid, "tool": "plan_routes",
-             "claim": f"eta_hours {fmt(p['eta_hours'])}, fuel_est_l {fmt(p['fuel_est_l'])}, risk_exposure {fmt(p['risk_exposure'])}",
-             "source_url": None},
-            {"tool_call_id": cond_cid, "tool": "get_conditions",
-             "claim": f"max_wave_m {fmt(p['max_wave_m'])} interpolated from buoy readings", "source_url": cond_url},
+            _citation(plan_cid, "plan_routes",
+                      f"eta_hours {fmt(p['eta_hours'])}, fuel_est_l {fmt(p['fuel_est_l'])}, risk_exposure {fmt(p['risk_exposure'])}",
+                      source_url=None, synthetic=plan_synth),
+            _citation(cond_cid, "get_conditions",
+                      f"max_wave_m {fmt(p['max_wave_m'])} interpolated from buoy readings",
+                      source_url=cond_url, synthetic=cond_synth),
         ]
         for zid in p["zones_crossed"] + p["zones_avoided"]:
             z = zones_by_id.get(zid)
-            cites.append({"tool_call_id": ids["get_zones"], "tool": "get_zones",
-                          "claim": f"{'crosses' if zid in p['zones_crossed'] else 'avoids'} {plan['zone_names'].get(zid, zid)}",
-                          "source_url": z.get("source_url") if z else None})
+            cites.append(_citation(
+                ids["get_zones"], "get_zones",
+                f"{'crosses' if zid in p['zones_crossed'] else 'avoids'} {plan['zone_names'].get(zid, zid)}",
+                source_url=z.get("source_url") if z else None,
+                synthetic=bool(z.get("synthetic")) if z else True,
+            ))
         out.append({
             "name": name,
             "waypoints": [list(w) for w in p["waypoints"]],

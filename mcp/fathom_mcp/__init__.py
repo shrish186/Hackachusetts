@@ -23,4 +23,4 @@ __version__ = "0.1.0"
 
 # Re-export lazily to avoid importing the `mcp` SDK (and its transport stack) at
 # package import time; the models/tools modules are safe to import eagerly.
-from .server import build_server, main  # noqa: E402
+from .server import build_server, main

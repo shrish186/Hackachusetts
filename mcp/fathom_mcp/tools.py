@@ -24,6 +24,7 @@ Tool  -> design.md section 7 table:
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
 from .models import (
@@ -51,13 +52,13 @@ def _backend_ready() -> bool:
 
 def _real_response(tool: str, source: str, **payload: Any) -> dict[str, Any]:
     """Envelope for REAL engine output: ``placeholder: false`` + a real source."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     return {
         "placeholder": False,
         "tool": tool,
         "source": source,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         **payload,
     }
 
@@ -73,6 +74,21 @@ def get_conditions(bbox: dict, time_range: dict) -> dict[str, Any]:
         Placeholder conditions payload (always ``placeholder: true``).
     """
     args = GetConditionsArgs(bbox=bbox, time_range=time_range)
+    if _backend_ready():
+        data = _bridge.conditions_readings(
+            args.bbox.model_dump(), args.time_range.model_dump(mode="json")["start"]
+        )
+        return _real_response(
+            tool="get_conditions",
+            source=str(data.get("source", "app.ingest.conditions")),
+            bbox=args.bbox.model_dump(),
+            time_range=args.time_range.model_dump(mode="json"),
+            count=data.get("count", 0),
+            max_wave_m=data.get("max_wave_m"),
+            max_wind_kn=data.get("max_wind_kn"),
+            cells=data.get("readings", []),
+            synthetic=bool(data.get("synthetic")),
+        )
     return placeholder_response(
         tool="get_conditions",
         note=(
@@ -156,6 +172,18 @@ def plan_routes(trip_request: dict) -> dict[str, Any]:
             max_hours, risk_pref, ...).
     """
     args = PlanRoutesArgs(trip_request=trip_request)
+    if _backend_ready():
+        data = _bridge.plan_routes_real(args.trip_request)
+        return _real_response(
+            tool="plan_routes",
+            source=str(data.get("source", "app.engine.routing (A* on study grid)")),
+            trip_request=args.trip_request,
+            ok=data.get("ok"),
+            routes=data.get("plans", []),
+            message=data.get("message"),
+            synthetic=bool(data.get("synthetic", True)),
+            estimate=True,
+        )
     return placeholder_response(
         tool="plan_routes",
         note=(
@@ -208,6 +236,19 @@ def estimate_fuel(route: dict, vessel: str) -> dict[str, Any]:
         vessel: One of ``small_boat``, ``mid_trawler``, ``scalloper``.
     """
     args = EstimateFuelArgs(route=route, vessel=vessel)
+    if _backend_ready():
+        data = _bridge.estimate_fuel_real(args.route, args.vessel)
+        return _real_response(
+            tool="estimate_fuel",
+            source=str(data.get("source", "config/vessels.yaml fuel_burn_l_per_h")),
+            vessel=args.vessel,
+            waypoint_count=len(args.route["waypoints"]),
+            distance_nm=data.get("distance_nm"),
+            hours=data.get("hours"),
+            fuel_est_l=data.get("fuel_est_l"),
+            is_estimate=True,
+            synthetic=bool(data.get("synthetic", True)),
+        )
     return placeholder_response(
         tool="estimate_fuel",
         note=(
@@ -274,6 +315,27 @@ def export_brief(route: dict, language: str) -> dict[str, Any]:
         language: One of ``en``, ``pt``, ``es``.
     """
     args = ExportBriefArgs(route=route, language=language)
+    if _backend_ready():
+        try:
+            html_doc = _bridge.render_brief_html(args.route, args.language)
+            return _real_response(
+                tool="export_brief",
+                source="app.api.trip.render_brief (one-page printable HTML)",
+                language=args.language,
+                waypoint_count=len(args.route["waypoints"]),
+                format="html",
+                html=html_doc,
+                synthetic=True,
+            )
+        except Exception as exc:  # brief needs a full RoutePlan shape
+            return _real_response(
+                tool="export_brief",
+                source="app.api.trip.render_brief",
+                language=args.language,
+                error="could_not_render",
+                detail=str(exc)[:200],
+                hint="route must be a full RoutePlan (name, waypoints, eta_hours, fuel_est_l, ...)",
+            )
     return placeholder_response(
         tool="export_brief",
         note=(

@@ -153,7 +153,7 @@ export function PlanCard({
                     [tool:{c.tool}]
                   </code>{' '}
                   <span>{c.claim}</span>
-                  {c.source_url && (
+                  {c.source_url ? (
                     <>
                       {' '}
                       <a
@@ -165,6 +165,8 @@ export function PlanCard({
                         ↗
                       </a>
                     </>
+                  ) : (
+                    c.source_label && <span className="italic text-mist/70"> — {c.source_label}</span>
                   )}
                 </li>
               ))}

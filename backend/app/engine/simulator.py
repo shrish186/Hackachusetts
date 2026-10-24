@@ -27,9 +27,10 @@ Everything here is deterministic Python (no LLM).
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Protocol, Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 # ---------------------------------------------------------------------------
 # Router interface + fallback
@@ -277,7 +278,7 @@ def build_synthetic_fleet(size: int = 200, seed: str = "fathom-fleet-v1") -> lis
         return anant
     trips: list[FleetTrip] = []
     for i in range(size):
-        u = lambda tag: _stable_unit(seed, i, tag)  # noqa: E731 - local helper
+        u = lambda tag: _stable_unit(seed, i, tag)
         _, origin = _PORTS[int(u("port") * len(_PORTS)) % len(_PORTS)]
         _, dest = _GROUNDS[int(u("ground") * len(_GROUNDS)) % len(_GROUNDS)]
         vessel = _VESSELS[int(u("vessel") * len(_VESSELS)) % len(_VESSELS)]
@@ -384,6 +385,7 @@ class FleetTotals:
     fuel_l: float = 0.0
     effort_access: float = 0.0  # ESTIMATE of fishing activity, not revenue
     trips: int = 0
+    access_lost: int = 0  # trips whose target ground a candidate closure removed
 
     def as_dict(self) -> dict[str, float | int]:
         return {
@@ -392,7 +394,22 @@ class FleetTotals:
             "fuel_l": round(self.fuel_l, 1),
             "effort_access": round(self.effort_access, 4),
             "trips": self.trips,
+            "access_lost": self.access_lost,
         }
+
+
+def _ground_blocked(trip: FleetTrip, extra_zones: list[dict] | None) -> bool:
+    """True if a prohibited candidate zone covers this trip's target ground.
+
+    "Access lost" (Req 6, task 4): when a candidate closure sits on top of a
+    fishing ground, the honest outcome is that the ground is unreachable, not
+    that the fleet relocates to another ground. We detect it by testing the
+    trip's destination (the ground) against each prohibited candidate zone.
+    """
+    for z in extra_zones or []:
+        if z.get("prohibited") and _point_in_zone(trip.dest, z):
+            return True
+    return False
 
 
 def _route_fleet(
@@ -401,9 +418,20 @@ def _route_fleet(
     when: datetime,
     extra_zones: list[dict] | None,
 ) -> FleetTotals:
-    """Route every fleet trip once and aggregate the totals."""
+    """Route every fleet trip once and aggregate the totals.
+
+    Trips whose target ground is closed by a prohibited candidate zone are
+    counted as ``access_lost`` (the ground is unreachable) instead of being
+    relocated — their effort access contribution is zero and they are not
+    re-routed elsewhere.
+    """
     totals = FleetTotals()
     for trip in fleet:
+        if _ground_blocked(trip, extra_zones):
+            # Ground closed: report lost access; no relocation, no phantom route.
+            totals.access_lost += 1
+            totals.trips += 1
+            continue
         res = router(
             trip.origin,
             trip.dest,
@@ -460,6 +488,13 @@ class OptionResult:
                 "fuel": self.delta_fuel_pct,
                 "effort_access": self.delta_effort_access_pct,
             },
+            "cost_breakdown": {
+                # Trips whose target ground a candidate closure removed entirely
+                # (reported as lost access, not relocated — task 4).
+                "access_lost_trips": self.totals.access_lost,
+                "steaming_hours": self.totals.steaming_hours,
+                "fuel_l": self.totals.fuel_l,
+            },
             "on_frontier": self.on_frontier,
         }
 
@@ -485,6 +520,27 @@ def _mark_pareto_frontier(options: list[OptionResult]) -> None:
                 dominated = True
                 break
         oi.on_frontier = not dominated
+
+
+def _pareto_points(options: list[OptionResult]) -> list[dict[str, Any]]:
+    """Explicit trade-off points for the frontend chart (API_CONTRACT.md).
+
+    Matches ``frontend/src/manager/TradeoffChart.tsx``:
+      * ``risk_reduced`` = -delta_risk_pct  (higher = more whale risk removed),
+      * ``fleet_cost``   = (delta_hours_pct + -delta_effort_access_pct) / 2
+        (higher = costlier for the fleet).
+    ``on_frontier`` marks the efficient (non-dominated) options.
+    """
+    pts = []
+    for o in options:
+        pts.append({
+            "scenario_id": o.scenario_id,
+            "name": o.name,
+            "risk_reduced": round(-o.delta_risk_pct, 2),
+            "fleet_cost": round((o.delta_hours_pct + -o.delta_effort_access_pct) / 2.0, 2),
+            "on_frontier": o.on_frontier,
+        })
+    return pts
 
 
 def _summaries(option: OptionResult) -> dict[str, str]:
@@ -605,6 +661,7 @@ class Simulator:
             "options": [
                 {**o.as_dict(), "summary": _summaries(o)} for o in options
             ],
+            "pareto": _pareto_points(options),
             "fleet": {
                 "size": len(self.fleet),
                 "synthetic": True,
@@ -620,4 +677,4 @@ class Simulator:
 
 def _default_when() -> datetime:
     """Default evaluation time: mid-March (whale season) demo date, UTC."""
-    return datetime(2026, 3, 15, 11, 0, tzinfo=timezone.utc)
+    return datetime(2026, 3, 15, 11, 0, tzinfo=UTC)

@@ -34,8 +34,8 @@ def available() -> bool:
     """True if the backend engine can be imported in this process."""
     _ensure_backend_on_path()
     try:  # pragma: no cover - environment dependent
-        import app.engine.risk  # noqa: F401
-        import app.engine.effort  # noqa: F401
+        import app.engine.effort
+        import app.engine.risk
         import app.ingest.zones  # noqa: F401
 
         return True
@@ -103,6 +103,40 @@ def effort_grid(bbox: dict, step: float = 0.1) -> list[dict[str, Any]]:
             lon += step
         lat += step
     return cells
+
+
+def conditions_readings(bbox: dict, time_iso: str | None) -> dict[str, Any]:
+    """Return wave/wind/SST readings for a bbox at a time (real ingest)."""
+    _ensure_backend_on_path()
+    from app.agent.tools import get_conditions as _get_conditions
+
+    b = [bbox["min_lon"], bbox["min_lat"], bbox["max_lon"], bbox["max_lat"]]
+    return _get_conditions(bbox=b, time=time_iso)
+
+
+def plan_routes_real(trip_request: dict) -> dict[str, Any]:
+    """Plan 2-3 routes for a trip request via the real A* router."""
+    _ensure_backend_on_path()
+    from app.agent.tools import plan_routes as _plan_routes
+
+    return _plan_routes(trip_request=trip_request)
+
+
+def estimate_fuel_real(route: dict, vessel: str) -> dict[str, Any]:
+    """Estimate fuel for a route via the real vessel-burn model."""
+    _ensure_backend_on_path()
+    from app.agent.tools import estimate_fuel as _estimate_fuel
+
+    return _estimate_fuel(route=route, vessel=vessel)
+
+
+def render_brief_html(route: dict, language: str) -> str:
+    """Render the one-page trip brief HTML for a route via the real renderer."""
+    _ensure_backend_on_path()
+    from app.api.trip import BriefBody, render_brief
+
+    body = BriefBody.model_validate({"plan": route, "language": language})
+    return render_brief(body)
 
 
 def simulate_candidate(polygon: dict, prohibited: bool = True) -> dict[str, Any]:

@@ -12,7 +12,7 @@ This keeps the citation-guard honest: placeholder facts are visibly not sourced.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 #: Marker written into every ``source``/``source_url`` field of placeholder data.
@@ -21,7 +21,7 @@ PLACEHOLDER_SOURCE = "PLACEHOLDER — fathom_mcp skeleton (no real data)"
 
 def _utcnow_iso() -> str:
     """Current UTC time as an ISO-8601 string (all times are UTC internally)."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def placeholder_response(tool: str, note: str, **payload: Any) -> dict[str, Any]:

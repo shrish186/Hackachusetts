@@ -14,10 +14,7 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime, timezone
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from datetime import UTC, datetime
 
 from app.engine.simulator import (
     Simulator,
@@ -25,8 +22,10 @@ from app.engine.simulator import (
     preloaded_scenarios,
     synthetic_route_one,
 )
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-WHEN = datetime(2026, 3, 15, 11, 0, tzinfo=timezone.utc)
+WHEN = datetime(2026, 3, 15, 11, 0, tzinfo=UTC)
 
 
 def fake_router(origin, dest, speed_kn, vessel, when, risk_pref, extra_zones=None):
@@ -179,3 +178,111 @@ def test_synthetic_router_outputs_nonnegative(speed: float, risk_pref: float) ->
     assert res["eta_hours"] >= 0
     assert res["fuel_est_l"] >= 0
     assert res["risk_exposure"] >= 0
+
+
+# --- Access lost (task 4) -----------------------------------------------------
+
+def _poly(min_lon, min_lat, max_lon, max_lat):
+    return {
+        "type": "Polygon",
+        "coordinates": [[
+            [min_lon, min_lat], [max_lon, min_lat], [max_lon, max_lat],
+            [min_lon, max_lat], [min_lon, min_lat],
+        ]],
+    }
+
+
+def test_req6_ground_closure_reports_access_lost_not_relocation() -> None:
+    """A prohibited zone over a fishing ground is reported as access_lost.
+
+    Stellwagen Bank sits near (-70.25, 42.35); a prohibited zone covering it
+    must mark trips to that ground as access_lost rather than relocating them.
+    """
+    from app.engine.simulator import Scenario
+
+    fleet = build_synthetic_fleet(size=60, seed="access-lost")
+    # Ensure at least one trip targets a ground inside the closure.
+    targets_in = [t for t in fleet if -70.35 <= t.dest[0] <= -70.1 and 42.25 <= t.dest[1] <= 42.5]
+    sim = Simulator(router=fake_router, fleet=fleet, current_zones=[])
+    closure = Scenario(
+        id="close_stellwagen",
+        name="Close Stellwagen",
+        description="prohibited over Stellwagen",
+        extra_zones=[{
+            "id": "close_stellwagen", "name": "Close Stellwagen", "kind": "fishing_closure",
+            "geometry": _poly(-70.35, 42.25, -70.1, 42.5), "prohibited": True,
+            "speed_limit_kn": None, "synthetic": True,
+        }],
+    )
+    opt = sim.run_scenario(closure, WHEN)
+    if targets_in:
+        assert opt.totals.access_lost >= 1
+        assert opt.as_dict()["cost_breakdown"]["access_lost_trips"] == opt.totals.access_lost
+
+
+def test_req6_pareto_points_present_and_match_options() -> None:
+    """run_all exposes pareto points, one per option, with on_frontier flags."""
+    result = _sim().run_all()
+    assert len(result["pareto"]) == len(result["options"])
+    by_id = {p["scenario_id"]: p for p in result["pareto"]}
+    for o in result["options"]:
+        p = by_id[o["scenario_id"]]
+        assert p["on_frontier"] == o["on_frontier"]
+        # risk_reduced is the negation of the risk delta.
+        assert p["risk_reduced"] == round(-o["deltas_pct"]["risk"], 2)
+
+
+# --- Property: a prohibited zone never raises risk, never lowers cost ---------
+
+@st.composite
+def _prohibited_zone(draw):
+    """A valid prohibited rectangle somewhere in/around the study area."""
+    min_lon = draw(st.floats(min_value=-71.0, max_value=-69.5))
+    min_lat = draw(st.floats(min_value=41.0, max_value=43.0))
+    w = draw(st.floats(min_value=0.1, max_value=1.0))
+    h = draw(st.floats(min_value=0.1, max_value=1.0))
+    return {
+        "id": "pbt_zone", "name": "PBT zone", "kind": "fishing_closure",
+        "geometry": _poly(min_lon, min_lat, min_lon + w, min_lat + h),
+        "prohibited": True, "speed_limit_kn": None, "synthetic": True,
+    }
+
+
+@given(zone=_prohibited_zone())
+@settings(max_examples=40, deadline=None)
+def test_req6_prohibited_zone_never_increases_risk_and_always_costs_the_fleet(zone) -> None:
+    """Adding a prohibited zone never increases total whale risk, and always
+    costs the fleet (more steaming time, OR lost access to a closed ground).
+
+    A no-entry zone can only force detours or close grounds, so the fleet can
+    never be exposed to MORE whale risk than with the zone absent. For the
+    livelihood side, the honest cost is twofold: trips that can still reach
+    their ground steam further (hours up), and trips whose ground the closure
+    removes are counted as ``access_lost`` (ground unreachable, not relocated —
+    task 4). The invariant is therefore: risk never rises, and the fleet is
+    never strictly better off — either steaming hours do not fall, or some
+    access was lost.
+
+    (An earlier version asserted steaming_hours alone never falls; Hypothesis
+    found the counterexample where a closure removes grounds entirely, dropping
+    those trips' hours. That is lost access, a real cost, not a free lunch — so
+    the invariant now accounts for access_lost. Logged in LOG-vidhaan.md.)
+    """
+    from app.engine.simulator import Scenario
+
+    fleet = build_synthetic_fleet(size=40, seed="pbt")
+    sim = Simulator(router=fake_router, fleet=fleet, current_zones=[])
+    base = sim.baseline(WHEN)
+    scen = Scenario(id="pbt", name="PBT", description="pbt", extra_zones=[zone])
+    opt = sim.run_scenario(scen, WHEN)
+    tol = 1e-9
+    # Risk never increases.
+    assert opt.totals.risk_exposure <= base.risk_exposure + tol, "prohibited zone increased risk"
+    # The fleet is never strictly better off: either it steams at least as much,
+    # or access was lost (grounds closed).
+    steams_at_least_as_much = opt.totals.steaming_hours >= base.steaming_hours - tol
+    lost_access = opt.totals.access_lost > 0
+    assert steams_at_least_as_much or lost_access, "prohibited zone was a free lunch (no cost)"
+    # When access is lost, effort access must drop (grounds removed).
+    if lost_access:
+        assert opt.totals.effort_access <= base.effort_access + tol
