@@ -54,6 +54,23 @@ interface Strings {
   tryDemoHint: string;
   summary: string;
   printBrief: string;
+  // manager mode
+  simTitle: string;
+  simIntro: string;
+  scenarios: string;
+  drawZone: string;
+  finishZone: string;
+  clearZone: string;
+  drawHint: string;
+  runSim: string;
+  running: string;
+  efficient: string;
+  riskReduced: string;
+  fleetCost: string;
+  deltaRisk: string;
+  deltaEffort: string;
+  deltaHours: string;
+  deltaFuel: string;
   // vessel labels
   small_boat: string;
   mid_trawler: string;
@@ -104,6 +121,22 @@ const STRINGS: Record<Language, Strings> = {
     tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, morning departure, safest',
     summary: 'Summary',
     printBrief: 'Print brief',
+    simTitle: 'What-if simulator',
+    simIntro: 'Compare candidate protection zones: whale strikes removed vs. the cost to the fleet. Highlighted options are on the efficient frontier.',
+    scenarios: 'Scenarios',
+    drawZone: 'Draw candidate zone',
+    finishZone: 'Finish',
+    clearZone: 'Clear',
+    drawHint: 'Click the map to add corners. Finish when you have 3+.',
+    runSim: 'Run simulation',
+    running: 'Re-routing fleet…',
+    efficient: 'efficient',
+    riskReduced: 'Risk removed',
+    fleetCost: 'Fleet cost',
+    deltaRisk: 'Risk',
+    deltaEffort: 'Fishing access',
+    deltaHours: 'Steaming hrs',
+    deltaFuel: 'Fuel',
     small_boat: 'Small boat',
     mid_trawler: 'Mid trawler',
     scalloper: 'Scalloper',
@@ -150,6 +183,22 @@ const STRINGS: Record<Language, Strings> = {
     tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, partida de manhã, mais seguro',
     summary: 'Resumo',
     printBrief: 'Imprimir resumo',
+    simTitle: 'Simulador hipotético',
+    simIntro: 'Compare zonas de proteção candidatas: colisões com baleias evitadas vs. o custo para a frota. As opções destacadas estão na fronteira eficiente.',
+    scenarios: 'Cenários',
+    drawZone: 'Desenhar zona candidata',
+    finishZone: 'Concluir',
+    clearZone: 'Limpar',
+    drawHint: 'Clique no mapa para adicionar cantos. Conclua com 3 ou mais.',
+    runSim: 'Executar simulação',
+    running: 'Redirecionando a frota…',
+    efficient: 'eficiente',
+    riskReduced: 'Risco removido',
+    fleetCost: 'Custo da frota',
+    deltaRisk: 'Risco',
+    deltaEffort: 'Acesso à pesca',
+    deltaHours: 'Horas de navegação',
+    deltaFuel: 'Combustível',
     small_boat: 'Barco pequeno',
     mid_trawler: 'Arrastão médio',
     scalloper: 'Barco de vieiras',
@@ -196,6 +245,22 @@ const STRINGS: Record<Language, Strings> = {
     tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, salida por la mañana, más seguro',
     summary: 'Resumen',
     printBrief: 'Imprimir resumen',
+    simTitle: 'Simulador hipotético',
+    simIntro: 'Compara zonas de protección candidatas: choques con ballenas evitados vs. el costo para la flota. Las opciones resaltadas están en la frontera eficiente.',
+    scenarios: 'Escenarios',
+    drawZone: 'Dibujar zona candidata',
+    finishZone: 'Finalizar',
+    clearZone: 'Borrar',
+    drawHint: 'Haz clic en el mapa para añadir esquinas. Finaliza con 3 o más.',
+    runSim: 'Ejecutar simulación',
+    running: 'Redirigiendo la flota…',
+    efficient: 'eficiente',
+    riskReduced: 'Riesgo eliminado',
+    fleetCost: 'Costo de flota',
+    deltaRisk: 'Riesgo',
+    deltaEffort: 'Acceso a pesca',
+    deltaHours: 'Horas de navegación',
+    deltaFuel: 'Combustible',
     small_boat: 'Bote pequeño',
     mid_trawler: 'Arrastrero mediano',
     scalloper: 'Barco vieiras',

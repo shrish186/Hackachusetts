@@ -32,8 +32,14 @@ export function MapView({ routes }: MapViewProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
 
-  const { sliceIndex, speedKn, layers } = useAppState();
+  const { sliceIndex, speedKn, layers, drawing, drawnPolygon, setDrawnPolygon } =
+    useAppState();
   const timeIso = sliceToIso(sliceIndex);
+
+  // Keep the latest draw state in refs so the stable map click handler can read
+  // it without re-binding on every change.
+  const drawingRef = useRef(drawing);
+  drawingRef.current = drawing;
 
   const zones = useZones(timeIso);
   const sightings = useSightings();
@@ -62,6 +68,13 @@ export function MapView({ routes }: MapViewProps) {
     const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
     map.addControl(overlay as unknown as IControl);
 
+    // Polygon draw tool: click adds a vertex while draw mode is on.
+    map.on('click', (e) => {
+      if (!drawingRef.current) return;
+      const v: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      setDrawnPolygon((prev) => [...prev, v]);
+    });
+
     mapRef.current = map;
     overlayRef.current = overlay;
 
@@ -70,7 +83,14 @@ export function MapView({ routes }: MapViewProps) {
       mapRef.current = null;
       overlayRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reflect draw mode in the cursor.
+  useEffect(() => {
+    const canvas = mapRef.current?.getCanvas();
+    if (canvas) canvas.style.cursor = drawing ? 'crosshair' : '';
+  }, [drawing]);
 
   // Track cursor for tooltips.
   useEffect(() => {
@@ -92,11 +112,12 @@ export function MapView({ routes }: MapViewProps) {
         risk,
         show: layers,
         routeWaypoints: routes?.map((r) => r.waypoints),
+        drawnPolygon,
         onZoneClick: setSelectedZone,
         onRiskHover: setHoverRisk,
       }),
     });
-  }, [timeIso, zones, sightings, conditions, risk, layers, routes]);
+  }, [timeIso, zones, sightings, conditions, risk, layers, routes, drawnPolygon]);
 
   return (
     <div className="absolute inset-0">

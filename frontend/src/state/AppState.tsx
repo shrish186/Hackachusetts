@@ -34,6 +34,13 @@ export interface AppState {
   language: Language;
   setLanguage: Dispatch<SetStateAction<Language>>;
 
+  /** Manager draw tool: true while the user is placing polygon vertices. */
+  drawing: boolean;
+  setDrawing: Dispatch<SetStateAction<boolean>>;
+  /** The candidate-zone polygon being drawn, as [lon, lat] vertices. */
+  drawnPolygon: Array<[number, number]>;
+  setDrawnPolygon: Dispatch<SetStateAction<Array<[number, number]>>>;
+
   layers: LayerToggles;
   toggleLayer: (key: keyof LayerToggles) => void;
 }
@@ -45,6 +52,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [sliceIndex, setSliceIndex] = useState(6); // ~Sat afternoon
   const [speedKn, setSpeedKn] = useState(10);
   const [language, setLanguage] = useState<Language>('en');
+  const [drawing, setDrawing] = useState(false);
+  const [drawnPolygon, setDrawnPolygon] = useState<Array<[number, number]>>([]);
   const [layers, setLayers] = useState<LayerToggles>({
     conditions: false,
     zones: true,
@@ -62,11 +71,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setSpeedKn,
       language,
       setLanguage,
+      drawing,
+      setDrawing,
+      drawnPolygon,
+      setDrawnPolygon,
       layers,
       toggleLayer: (key) =>
         setLayers((prev) => ({ ...prev, [key]: !prev[key] })),
     }),
-    [mode, sliceIndex, speedKn, language, layers],
+    [mode, sliceIndex, speedKn, language, drawing, drawnPolygon, layers],
   );
 
   return (

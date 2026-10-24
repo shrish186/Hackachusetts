@@ -27,6 +27,8 @@ export interface LayerBuildArgs {
   risk: RiskCell[];
   show: { conditions: boolean; zones: boolean; risk: boolean; sightings: boolean };
   routeWaypoints?: Array<[number, number]>[];
+  /** Candidate-zone polygon vertices being drawn in Manager mode. */
+  drawnPolygon?: Array<[number, number]>;
   onZoneClick?: (zone: Zone) => void;
   onRiskHover?: (cell: RiskCell | null) => void;
 }
@@ -163,6 +165,61 @@ export function buildDeckLayers(args: LayerBuildArgs): Layer[] {
         }),
       );
     });
+  }
+
+  // --- Drawn candidate zone (Manager mode) ---
+  const poly = args.drawnPolygon;
+  if (poly && poly.length > 0) {
+    // Closed ring when we have 3+ vertices; otherwise show the open line.
+    if (poly.length >= 3) {
+      layers.push(
+        new GeoJsonLayer({
+          id: 'draw-polygon',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [[...poly, poly[0]]] },
+            properties: {},
+          } as GeoJSON.Feature,
+          stroked: true,
+          filled: true,
+          getFillColor: [57, 183, 214, 50],
+          getLineColor: [57, 183, 214, 230],
+          getLineWidth: 2,
+          lineWidthMinPixels: 2,
+        }),
+      );
+    } else if (poly.length === 2) {
+      layers.push(
+        new GeoJsonLayer({
+          id: 'draw-line',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: poly },
+            properties: {},
+          } as GeoJSON.Feature,
+          stroked: true,
+          filled: false,
+          getLineColor: [57, 183, 214, 230],
+          getLineWidth: 2,
+          lineWidthMinPixels: 2,
+        }),
+      );
+    }
+    // Vertex dots.
+    layers.push(
+      new ScatterplotLayer<[number, number]>({
+        id: 'draw-vertices',
+        data: poly,
+        getPosition: (d) => d,
+        getRadius: 5,
+        radiusMinPixels: 4,
+        radiusMaxPixels: 7,
+        getFillColor: [230, 244, 249, 255],
+        getLineColor: [57, 183, 214, 255],
+        lineWidthMinPixels: 2,
+        stroked: true,
+      }),
+    );
   }
 
   return layers;
