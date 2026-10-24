@@ -27,8 +27,12 @@ def test_req1_conditions_layer_has_provenance() -> None:
     assert _PROVENANCE_KEYS <= body["provenance"].keys()
     assert body["provenance"]["source"]  # non-empty source label
     assert body["count"] == len(body["features"])
-    # conditions.json is hand-authored for the demo (Lane A honesty fix).
-    assert body["provenance"]["synthetic"] is True
+    # Provenance must be honest: whichever it is, cached XOR synthetic. The
+    # conditions snapshot can be a real NOAA download (cached) or a hand-authored
+    # demo set (synthetic); the loader reflects the file's own metadata.
+    prov = body["provenance"]
+    assert isinstance(prov["synthetic"], bool) and isinstance(prov["cached"], bool)
+    assert prov["cached"] != prov["synthetic"]
 
 
 def test_req2_zones_layer_marks_active_state_and_provenance() -> None:

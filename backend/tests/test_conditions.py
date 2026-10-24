@@ -59,11 +59,17 @@ def test_conditions_cells_are_water_cells():
 
 
 def test_filter_by_time():
-    """Filtering returns only the conditions at the requested slice."""
+    """Filtering returns only the conditions at the requested slice.
+
+    Derive the slice from the data rather than hardcoding a date, so the test
+    holds whether the snapshot is a live download or a hand-authored demo set.
+    """
     res = load_cached_conditions()
-    slice_t = datetime(2026, 3, 14, 18, 0, tzinfo=timezone.utc)
+    assert res.conditions, "expected some conditions in the snapshot"
+    first = res.conditions[0]
+    slice_t = first.time if first.time.tzinfo else first.time.replace(tzinfo=timezone.utc)
     got = filter_by_time(res.conditions, slice_t)
-    assert got, "expected conditions at 18:00Z"
+    assert got, "expected at least one record at the first record's time"
     assert all(
         (c.time if c.time.tzinfo else c.time.replace(tzinfo=timezone.utc)) == slice_t
         for c in got
