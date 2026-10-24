@@ -66,6 +66,7 @@ def get_zones(bbox: Any = None, time: Any = None) -> dict[str, Any]:
         **zones_provenance(),
         "time": _iso(when),
         "count": len(items),
+        "active_count": sum(1 for z in items if z["active"]),
         "zones": [
             {k: z[k] for k in ("id", "name", "kind", "active", "prohibited", "speed_limit_kn",
                                "active_from", "active_to", "restriction", "source_url", "synthetic")}
@@ -86,6 +87,7 @@ def get_whale_risk(bbox: Any = None, time: Any = None, speed_kn: float = 10.0, t
         **sightings_provenance(),
         "time": _iso(when),
         "speed_kn": float(speed_kn),
+        "scale": [0, 1],
         "cells_reported": len(items),
         "max_risk": round(max(risks), 3) if risks else 0.0,
         "mean_risk": round(sum(risks) / len(risks), 3) if risks else 0.0,
@@ -128,6 +130,7 @@ def get_effort_proxy(bbox: Any = None, month: int | None = None, top_n: int = 5)
         "synthetic": bool(EFFORT_SYNTHETIC),
         "estimate": True,
         "month": month,
+        "scale": [0, 1],
         "note": "Effort proxy is an estimate of fishing activity, not catch or revenue. Month is not yet used.",
         "max_effort": max((c["effort"] for c in cells), default=0.0),
         "top_cells": top,
