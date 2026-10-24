@@ -27,7 +27,7 @@ def test_req1_conditions_layer_has_provenance() -> None:
     assert _PROVENANCE_KEYS <= body["provenance"].keys()
     assert body["provenance"]["source"]  # non-empty source label
     assert body["count"] == len(body["features"])
-    # The bundled example seed is synthetic, not real cached data.
+    # conditions.json is hand-authored for the demo (Lane A honesty fix).
     assert body["provenance"]["synthetic"] is True
 
 
