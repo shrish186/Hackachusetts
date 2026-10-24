@@ -95,7 +95,12 @@ export function MapView({ routes, onError }: MapViewProps) {
       if (!c || c.width === 0 || c.height === 0) return;
       map.resize(); // ensure the GL viewport matches the container
       if (!overlayRef.current && mapRef.current) {
-        const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
+        // Overlaid (non-interleaved) mode: deck renders in its own canvas and
+        // derives its viewport from the map's move events, so it never reads
+        // MapLibre's transform mid-initialisation (the source of the deck.gl
+        // "reading 'height'" crash). Our data layers sit above the basemap
+        // regardless, so z-ordering is unaffected.
+        const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
         map.addControl(overlay as unknown as IControl);
         overlayRef.current = overlay;
       }
