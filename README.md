@@ -20,8 +20,19 @@ Built with **Kiro**, spec-driven. See [KIRO_WRITEUP.md](KIRO_WRITEUP.md) and the
 
 ## Live demo
 
-- App (frontend): **TODO — paste deployed URL** (demo mode on by default, no login).
-- API: **TODO — paste deployed API URL** (`/api/health`, `/docs`).
+Live demo: https://fathom-six-vert.vercel.app (API: https://hackachusetts.onrender.com/api/health). First load can take up to a minute while the free server wakes.
+
+Demo mode is on, and there is no login.
+
+## How to test (for judges)
+
+1. Open https://fathom-six-vert.vercel.app. If the first load is slow, the free API server is waking up; wait up to a minute.
+2. In Captain mode, click **Try the demo trip** (Gloucester, small boat, 9 kn), then plan it. Watch the live tool-call feed, then compare the 2 or 3 ranked plan cards (Fastest, Balanced, Safest) on the map. Open a card's "why" drawer to see the zones crossed, weather window and citations.
+3. Switch to **Manager** mode, pick a scenario (for example the seasonal 10 kn speed limit) and run it. Compare risk removed against the cost to the fleet on the trade-off chart, and read the plain-language summary.
+4. Switch the language to **PT** and then **ES**. Numbers and zone names stay the same in every language.
+5. Optional: print or save the one-page trip brief from a plan card.
+
+To check the API directly: `GET https://hackachusetts.onrender.com/api/health` (alive) and `/api/ready` (warm-up finished).
 
 ## What's in the box
 
@@ -51,14 +62,18 @@ Open http://localhost:5173. The frontend talks to the API via `VITE_API_URL`
 (defaults to the local backend) and falls back to bundled mocks if the API is
 down. `FATHOM_DEMO_MODE=true` (default) serves bundled snapshots with no network.
 
-Key API endpoints: `GET /api/layers/{conditions,zones,risk}`,
-`GET /api/sim/scenarios`, `POST /api/sim/run`, `GET /api/meta/sources`,
-`POST /api/trip/plan` (SSE agent stream).
+Key API endpoints: `GET /api/health`, `GET /api/ready`,
+`GET /api/layers/{conditions,zones,risk}`, `GET /api/sim/scenarios`,
+`POST /api/sim/run`, `GET /api/meta/sources`, `POST /api/trip/plan` (SSE agent
+stream), `POST /api/trip/brief`. Full shapes: [docs/API_CONTRACT.md](docs/API_CONTRACT.md).
+Interactive docs (`/docs`) are off unless `FATHOM_ENABLE_DOCS=true`.
+Deployment: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Run the tests
 
 ```bash
 cd backend && pytest -q          # includes Hypothesis property-based tests
+ruff check --isolated --select E4,E7,E9,F --target-version py311 backend mcp   # from the repo root
 ```
 
 CI (`.github/workflows/ci.yml`) also runs the frontend build + type-check,
@@ -77,7 +92,11 @@ tool output treated as data, citation guard, and input validation.
 
 ## Team
 
-- **Vidhaan**
-- **Shrish**
-- **Anant**
-- **Aayush**
+- Vidhaan Kothari
+- Shrish
+- Anant
+- Aayush
+
+## License and credits
+
+MIT, see [LICENSE](LICENSE). Data, map and library credits: [ATTRIBUTIONS.md](ATTRIBUTIONS.md).

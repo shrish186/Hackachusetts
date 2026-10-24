@@ -10,9 +10,21 @@ Owner: Lane B. Item shapes follow `frontend/src/api/types.ts`; if the two disagr
 
 ## GET /api/health
 
+Liveness. Answers immediately, even during warm-up.
+
 ```json
 { "status": "ok" }
 ```
+
+## GET /api/ready
+
+Readiness. `503 {"status": "warming_up"}` (with `Retry-After: 5`) until the startup warm-up has loaded the snapshots, grid, risk surfaces and one demo plan, then `200 {"status": "ready", "warmup_seconds": 0.45}`.
+
+## Headers, CORS and docs
+
+- CORS: origins from `FATHOM_ALLOWED_ORIGINS` (comma-separated, trimmed, trailing `/` removed), methods GET/POST/OPTIONS, header `content-type`, no credentials. An OPTIONS request without `Access-Control-Request-Method` gets 204 (with Allow-Origin only for allowed origins) instead of 405.
+- Every response: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. `Strict-Transport-Security` is sent on HTTPS requests behind the trusted proxy. `Cache-Control: no-store` is sent on every POST and every `/api/trip/*` response.
+- `/docs`, `/redoc` and `/openapi.json` are off unless `FATHOM_ENABLE_DOCS=true`.
 
 ## GET /api/meta/sources
 
@@ -164,6 +176,35 @@ data: {"tool_calls": 6}
 If no legal route exists, `plans` is `[]` and `message` names the constraint to relax, for example `"No legal route within 2 h. Relax: max_hours (shortest legal route needs about 3.4 h)."`.
 
 Every narrative sentence ends with `[tool:call_N]`. Numbers and zone names are identical in `en`, `pt`, and `es`. `effort_proxy` is an estimate, not catch or revenue.
+
+### Plan fields added in the QA round
+
+- `plans[]` are ranked for the requester's `risk_pref` (`rank` 1 = best). Names describe the measured numbers: `Fastest` (least time), `Safest` (lowest whale-risk exposure, only if lower than Fastest's), `Balanced` (less risk than Fastest, less time than Safest), and `Alternate track N` (a genuinely different track that is not better on either measure). Each plan carries `risk_weight` (0.1 / 0.5 / 0.9), `method` (`risk_weight`, or `corridor` when a cost on earlier tracks was needed to find a different one), `vs_fastest {extra_hours, risk_change}`, `max_wind_kn` and `origin_adjusted_nm` (how far the port was moved off a coastal land cell, at most 3 cells).
+- Two tracks are duplicates when more than 90 % of each lies within one grid cell (0.05°) of the other. If only one distinct track exists, `single_route_reason` explains why and the narrative says "All weightings give the same route because ...".
+- `waypoints` are dense: the cell-centre track simplified only to a 0.5-cell tolerance, and never across land.
+- All displayed numbers use one rounding helper (`app.engine.routing.rnd`): m and kn to 1 decimal, hours to 2, liters to 1, risk to 3, exposure to 4. The narrative's per-plan wave and wind values are the plan card's values.
+
+### `access_lost` (shared with Lane D's simulator)
+
+The router never moves a destination. If the target ground (or the departure port) is on land, outside the study area, or inside an **active closed (prohibited) zone**, including candidate zones passed as `extra_zones`, `route_one` and `plan_routes` return `ok: false`, `plans: []` and:
+
+```json
+"access_lost": {
+  "endpoint": "destination",
+  "code": "closed_zone",
+  "reason": "is inside active closed zone Western Gulf of Maine Seasonal Closure",
+  "zone_id": "closure_western_gom",
+  "zone_name": "Western Gulf of Maine Seasonal Closure",
+  "zone_active_to": "2026-04-30T00:00:00Z",
+  "nearest_open": { "lon": -70.325, "lat": 42.925, "distance_nm": 3.6 }
+}
+```
+
+`endpoint` is `destination` or `origin`. `code` is one of `closed_zone`, `land`, `outside` or `no_water`. `nearest_open` is the closest cell that is neither land nor closed, and it may be null. The SSE `plans` event repeats it as `access_lost`, and `message` gives the plain-language version. The simulator counts such trips as lost access (`access_lost_trips`) instead of as shorter trips.
+
+### Validation (422)
+
+`depart_window` must satisfy `start <= end` (equal is allowed; the frontend sends a single time twice), `end - start <= 14 days`, and a start no more than 7 days in the past. In demo mode the 7 days count back from the bundled data date (2026-03-14), so the March demo trips stay valid. Errors look like `{"error": "Invalid input.", "fields": ["depart_window"]}`. Unparseable JSON gives `"fields": ["body"]`.
 
 ## POST /api/trip/brief
 

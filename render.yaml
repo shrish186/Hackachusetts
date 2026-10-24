@@ -13,11 +13,14 @@ services:
       - key: FATHOM_DEMO_MODE
         value: "true"
       - key: FATHOM_ALLOWED_ORIGINS
-        # Comma-separated. Replace/extend with the deployed frontend origin.
-        value: "http://localhost:5173"
+        # Comma-separated; trailing slashes are stripped. See docs/DEPLOY.md.
+        value: "https://fathom-six-vert.vercel.app"
       - key: FATHOM_TRUST_PROXY
         # Use the last X-Forwarded-For hop (appended by Render) for rate limiting.
         value: "true"
+      - key: FATHOM_ENABLE_DOCS
+        # Keep /docs, /redoc and /openapi.json off in production.
+        value: "false"
       - key: ANTHROPIC_API_KEY
         # Optional. Set in the Render dashboard; never commit a value.
         sync: false

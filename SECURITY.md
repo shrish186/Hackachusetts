@@ -87,3 +87,11 @@ facts, and it cannot take arbitrary actions.
 
 This is a hackathon project. For a real deployment, report suspected
 vulnerabilities privately to the maintainers before public disclosure.
+
+## Production API hardening
+
+- CORS allows only origins in `FATHOM_ALLOWED_ORIGINS` (GET/POST/OPTIONS, `content-type`, no credentials). Other origins get no `Access-Control-Allow-Origin`.
+- `/docs`, `/redoc` and `/openapi.json` are disabled unless `FATHOM_ENABLE_DOCS=true`.
+- Headers on every response: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`. HSTS is sent on HTTPS requests behind the trusted proxy. `Cache-Control: no-store` is sent on POST and trip responses.
+- 60 requests/min per IP (in memory), a 1 MB body cap, a 20 s request timeout, strict input bounds (422 with field names), and generic error bodies with no stack traces.
+- Regression tests: `backend/tests/test_security.py` and `backend/tests/test_qa_regressions.py`.

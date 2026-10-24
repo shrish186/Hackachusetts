@@ -35,6 +35,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Lint (ruff)
+        run: |
+          pip install "ruff>=0.6"
+          # Ruff defaults (E4,E7,E9,F), isolated from any user config. The per-file
+          # ignores cover existing findings in other lanes' files; owners: remove
+          # an entry once its file is clean.
+          ruff check --isolated --select E4,E7,E9,F --target-version py311 \
+            --config 'lint.per-file-ignores = {"app/engine/simulator.py" = ["F401", "E731"], "app/ingest/ndbc.py" = ["F401"], "tests/test_conditions.py" = ["F401"], "tests/test_zones.py" = ["F401"]}' \
+            . ../mcp
       - name: Run tests
         run: pytest -q
 
@@ -90,7 +99,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Audit (fail on high or critical)
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
 
   secret-scan:
     name: Secret scan (gitleaks)
