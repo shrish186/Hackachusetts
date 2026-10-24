@@ -12,8 +12,9 @@ lane only owns `/frontend`.
 
 React + Vite + TypeScript, Tailwind CSS v4, MapLibre GL, deck.gl.
 
-- **Basemap:** CARTO dark raster tiles — free, **no API key** required
-  (attribution included). Defined in `src/map/basemap.ts`.
+- **Basemap:** OpenStreetMap raster tiles, darkened via MapLibre raster paint —
+  free, **no API key** required (attribution included). Defined in
+  `src/map/basemap.ts`. (CARTO's keyless tiles were discontinued in Aug 2026.)
 - **Theme:** dark ocean (`src/index.css` `@theme` tokens).
 
 ## Run
@@ -60,7 +61,7 @@ adds:
 - **Security headers:** `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`,
   and a **Content-Security-Policy**. The CSP allows the map tile host
-  (`*.basemaps.cartocdn.com`), `blob:` workers (MapLibre/deck.gl), inline
+  (`*.tile.openstreetmap.org`), `blob:` workers (MapLibre/deck.gl), inline
   styles, and `https:` API calls (so any `VITE_API_URL` origin works). Verified
   against a real `npm run build`: the app loads one external module script and
   one stylesheet from `'self'`, with no inline or third-party scripts.
