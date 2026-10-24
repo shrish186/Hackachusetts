@@ -1,117 +1,123 @@
 # How we used Kiro to build Fathom
 
-> **First draft** assembled from `docs/kiro-evidence/LOG.md` and the real git
-> history. Every claim below is traceable to a commit or a log line; TODOs mark
-> where a teammate should add a screenshot or a final number before submission.
-> Judges score depth of understanding and experimentation — specific beats long.
+Every number here is pulled from the repo (`pytest -q`, `tasks.md`,
+`.kiro/`, git history). Screenshot placeholders use the exact filenames from
+`docs/kiro-evidence/README.md`; drop the PNGs in that folder before submitting.
 
 ## 1. Which Kiro tools did we use?
 
-- **Kiro CLI** — primary driver for Lane D (product/QA/MCP/docs): CI, security,
-  the what-if simulator, MCP wiring, and these docs, committing after each task.
-- **Kiro Web** — Lanes A and B worked from the Web client (per the evidence log):
-  data ingest, the risk model, the API, and security hardening.
+- **Kiro CLI** — primary driver for Lane D (simulator, agent, MCP, QA, docs):
+  committing after each task, `git pull --rebase --autostash` before every push.
+- **Kiro Web** — Lanes A and B (data ingest, risk model, API, agent, hardening).
 - **Kiro IDE** — initial project setup: spec, steering, hooks, and MCP config.
-- Kiro Crew: TODO — state whether used.
 
-We ran four parallel lanes (A data/geo, B backend/agent, C frontend, D
-product/QA/MCP/story) against a shared `main`, which is why the git history
-interleaves lanes and why our steering defines strict file ownership.
+We ran four parallel lanes against one shared `main`; the interleaved git
+history (e.g. `Lane A (5,6,9)…`, `Lane B task 7…`, `Lane C task 4…`) and the
+strict file ownership in `.kiro/steering/structure.md` are what kept four people
+from colliding. Screenshot: `10-cli-or-web.png`.
 
 ## 2. Spec-driven development
 
-- The spec lives in [`.kiro/specs/fathom/`](.kiro/specs/fathom/):
-  `requirements.md` (10 requirements in EARS form), `design.md` (14 sections:
-  grid, risk model, routing, agent, simulator), and `tasks.md`.
-- Spec-driven paid off most on the **deterministic engine**. The risk model was
-  built straight from design §5 and requirements §3, including the invariants —
-  and those invariants became property tests (see §6). Example commit:
-  `0f840c3 Lane A: grid+land mask, zone/conditions ingest, whale risk model`.
-- The **simulator** (this round) was coded directly against design §8: synthetic
-  fleet, baseline vs. scenario, percent deltas, Pareto frontier, trilingual
-  summaries — a well-specified task that a sub-agent could execute end to end.
-- Vibe coding stayed useful for UI polish (Lane C) and doc wording.
-- TODO: final count of tasks Kiro completed vs. total.
+The spec lives in `.kiro/specs/fathom/`: **10 requirements** (EARS form) in
+`requirements.md`, a 14-section `design.md`, and **52 tasks** in `tasks.md`.
+Tasks are tracked by lane in git commit messages rather than checkbox ticks, so
+the honest "completed" count is read from the history, not from `[x]` marks
+(there are 0 ticked boxes — a process gap we'd fix next time).
+
+Spec-driven paid off most on the **deterministic engine**: the whale-risk model
+was built straight from design §5 + requirement 3, *including its invariants*,
+which became property tests (see §6). Vibe coding stayed useful for UI polish
+(Lane C) and copy. Screenshots: `01-spec-requirements.png`,
+`02-spec-design.png`, `03-spec-tasks-running.png`, `12-vibe-vs-spec.png`.
 
 ## 3. Agent hooks
 
-Hooks live in [`.kiro/hooks/`](.kiro/hooks/). Real moments:
+Five hooks in `.kiro/hooks/`:
 
-- **Risk model guard** (`risk-tests-on-save`) — on changes to `engine/**` or
+- **`risk-tests-on-save`** — on changes to `backend/app/engine/**` or
   `config/risk.yaml`, runs the property tests and forbids editing tests to pass.
-- **Citation guard** (`citation-guard-on-agent-change`) — enforces that agent
-  output cites a tool result for every number/zone/date.
-- **Plain-language check** (`plain-language-check`).
-- **Evidence logger** (`evidence-log-on-task-done`) — appends to
-  `docs/kiro-evidence/LOG.md`, which is the source for this write-up.
-- **Secret scan on save** (`secret-scan`, added this round) — flags API keys,
-  tokens, private keys, and raw `.env` content before they can be committed.
-- TODO: screenshot of a hook catching/confirming an invariant.
+- **`citation-guard-on-agent-change`** — enforces that every agent sentence with
+  a number/zone/date carries a `[tool:call_N]` tag. The guard is also code
+  (`backend/app/agent/agent.py::citation_guard`): it drops any uncited factual
+  sentence, any number not present in the cited tool result, and anything
+  claiming legal compliance.
+- **`plain-language-check`**, **`evidence-log-on-task-done`** (which feeds
+  `docs/kiro-evidence/LOG.md`), and **`secret-scan`** (flags keys/tokens/`.env`
+  on save).
+
+Screenshots: `05-hook-fired.png`, `06-hook-caught-bug.png`.
 
 ## 4. Steering docs
 
-Files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md`,
-`structure.md` (the lane ownership that kept four people off each other's files),
-`data-and-safety.md`, and `testing-pbt.md`.
-
-The highest-impact rule was **data-and-safety**: "anything not from a real source
-must say `synthetic: true`." It drove a real honesty fix —
-`d2bb1b7 Lane A (1.1): honesty fix — mark hand-authored snapshots synthetic:true`
-— where hand-written data had been mislabeled as real and was corrected before
-the demo. The safety rules also kept the agent from ever claiming "legally
-compliant."
+Five files in `.kiro/steering/`: `product.md`, `tech.md`, `structure.md` (lane
+ownership), `data-and-safety.md`, `testing-pbt.md`. The highest-impact rule was
+data-and-safety's "anything not from a real source must say `synthetic: true`,"
+which drove a real honesty fix (`d2bb1b7 Lane A (1.1): honesty fix — mark
+hand-authored snapshots synthetic:true`) and kept the agent from ever printing
+"legally compliant." Screenshot: `04-steering-list.png`.
 
 ## 5. MCP
 
-- **`fetch` MCP** — used for the hour-0 data reality check against public sources.
-- **Our own `fathom` MCP server** ([`mcp/fathom_mcp/`](mcp/fathom_mcp/)) exposes
-  the eight engine tools (design §7). This round we wired `get_zones`,
-  `get_whale_risk`, `get_effort_proxy`, and `simulate_zone` to the real backend
-  engine via a bridge (`b4f3623`), with graceful placeholder fallback when the
-  backend isn't importable. `python -m fathom_mcp` boots clean, so we enabled the
-  server in `.kiro/settings/mcp.json`.
-- Payoff: Kiro (and the in-app agent) can query the **same** tested engine while
-  we write code — e.g. asking the real zones/risk at the demo date instead of
-  guessing — which is both a dev accelerator and a trust story.
+- **`fetch` MCP** — used for the hour-0 data reality check against public
+  sources. Screenshot: `07-mcp-fetch.png`.
+- **Our own `fathom` MCP server** (`mcp/fathom_mcp/`) exposes all **eight**
+  engine tools (`get_conditions`, `get_zones`, `get_whale_risk`, `plan_routes`,
+  `get_effort_proxy`, `estimate_fuel`, `simulate_zone`, `export_brief`). They are
+  wired to the real backend via `backend_bridge.py`, degrade to labelled
+  placeholders if the backend isn't importable, and `python -m fathom_mcp` boots
+  clean, so the server is enabled in `.kiro/settings/mcp.json`. The in-app agent
+  and Kiro call the *same* tested engine. Screenshot: `08-mcp-fathom.png`.
 
 ## 6. Property-based testing
 
-Using Hypothesis (steering `testing-pbt.md`), mapped to requirements:
+Hypothesis properties (steering `testing-pbt.md`), mapped to requirements, in
+`backend/tests/`:
 
-- Risk ∈ [0,1]; risk monotonic non-decreasing in speed (Req 3.2); risk 0 on land
-  (Req 3); adding a sighting never lowers risk (Req 3.3). 27 Lane A tests.
-- Simulator (Req 6): no Pareto-frontier option is dominated; deltas consistent
-  with totals; en/pt/es summaries carry identical numbers (Req 7.2).
-- A real design insight surfaced via the invariants: to keep "adding a sighting
-  never lowers risk," presence is mapped with a fixed saturating transform
-  `1 - exp(-density/scale)` instead of data-dependent max-normalization, which
-  would couple cells and could *lower* another cell's risk (logged 2026-10-24).
-- TODO: paste a concrete Hypothesis counterexample if one was captured.
+- **Risk** (`test_risk_properties.py`, Req 3): risk ∈ [0,1]; monotonic
+  non-decreasing in speed; 0 on land; adding a sighting never lowers risk.
+- **Routing** (`test_routing.py`, Req 5): routes never cross land or enter
+  active prohibited zones.
+- **Simulator** (`test_simulator.py`, Req 6/7): no Pareto-frontier option is
+  dominated; deltas consistent with totals; en/pt/es summaries carry identical
+  numbers; and *"a prohibited zone never increases whale risk and is never a free
+  lunch."*
 
-## 7. Kiro powers / integrations
+That last property found a **real counterexample** this round: our first version
+asserted a closure never lowers total steaming hours, and Hypothesis falsified
+it — a closure that sits on a fishing ground removes those trips entirely, which
+*lowers* hours. The right reading is that this is **lost access** (a cost), not a
+saving, so we fixed the model (report `access_lost`) and the invariant, not the
+test-to-pass. Screenshot: `09-pbt-counterexample.png`.
 
-- Powers available in-session included GitHub CLI (used for push/PR flow) and
-  fetch/browser tooling.
-- TODO: confirm the final list the team actually relied on.
+`pytest -q`: **112 tests pass** across 15 test files.
+
+## 7. Real bugs QA caught (and what happened)
+
+- **Simulator timeout / 504 (fixed).** `POST /api/sim/run` with a preset took
+  >20 s on Render and returned `504 {"error":"Request timed out."}`; a second
+  call hung 45 s+. Cause: the live A* router ran over the 200-trip fleet four
+  times per request. Fix: precompute the three presets at build time into
+  `data/snapshots/sim_results.json` (`scripts/precompute_sim.py`) and serve them
+  in ~20 ms; keep the live path only for custom polygons, now bounded (vertex
+  cap 200, study-area clip, hard 8 s budget → `422`, single-flight semaphore →
+  `429`). Commit `7951075`.
+- **Reversed departure-window 500.** A `depart_window` with end before start
+  surfaced a 500 instead of a clean 422 — logged for the API owner; the trip
+  request model should reject it at validation.
+- **Blank-map worker bug.** The map tile/worker init intermittently rendered a
+  blank map on first load — a frontend (Lane C) issue tracked during QA.
+
+Honesty: only the 504 has a committed fix in this repo; the other two are QA
+findings handed to their owning lanes.
 
 ## 8. Honest lessons
 
-- **What worked:** strict lane ownership + commit-after-each-task + rebase-before-push
-  kept four parallel contributors on one green `main`. The deterministic-engine /
-  LLM-orchestrator split made the agent trustworthy and testable.
-- **What was bumpy:** cross-lane interface churn. A mid-round refactor removed
-  `app/api/_snapshots.py` and briefly broke `sim.py` on import; we caught it
-  locally and shipped a one-line hotfix (`10233c9`). The evidence log's
-  cross-lane handoff notes were essential to resolving these quickly.
-- **What we'd do differently:** pin cross-lane interfaces (the router's
-  `route_one` signature, the snapshot loader) in a contract doc earlier so
-  dependent lanes aren't chasing renames under a deadline.
-
----
-
-### Honesty note
-
-As of this draft, the agent's routing (`plan_routes`) and the printable brief
-(`export_brief`) are not yet wired to a real router/renderer, so those MCP tools
-still return clearly-labeled placeholders. The risk model, zones, effort proxy,
-and the what-if simulator are real and tested.
+- **Worked:** strict lane ownership + commit-per-task + rebase-before-push kept
+  four contributors on a green `main`; the deterministic-engine / LLM-explainer
+  split made the agent testable and the citation guard trustworthy.
+- **Did not:** cross-lane interface churn bit us — a refactor removed
+  `app/api/_snapshots.py` and broke the sim import (`10233c9` hotfix), and the
+  preset simulator was shipped before anyone measured its latency on the
+  deployed box (hence the 504).
+- **Next time:** pin cross-lane interfaces in `API_CONTRACT.md` *before* building
+  dependents, measure latency in CI, and tick `tasks.md` as we go.

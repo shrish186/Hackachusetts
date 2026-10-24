@@ -1,26 +1,23 @@
-# Fathom — demo video script (2:40)
+# Fathom — 3-minute demo video script
 
-Target length **2 minutes 40 seconds**. Screen recording + voiceover only.
-**No music, no logos, no intro animation.** Pre-load: demo mode on a whale-season
-snapshot day (15 March), Captain mode open, Gloucester selected. Practice until
-the live portion fits its windows; if anything breaks, cut to a backup clip and
-keep talking.
+Total **3:00**. Screen recording + voiceover only. **No copyrighted music and no
+third-party logos** (brand marks, company logos, stock tracks are all out). Use
+**preset scenarios only** in Manager mode — they are precomputed and return
+instantly, so there is no spinner on camera. Pre-load: live app open in demo
+mode, Captain mode, Gloucester selected, a whale-season date (15 March).
 
-| Time | On screen | Voiceover |
-|------|-----------|-----------|
-| 0:00–0:20 | Static map of Massachusetts Bay with zones visible | "At 4 a.m. Captain Joe leaves Gloucester. Between him and his fishing ground: a whale slow zone that changed yesterday, a closure, a wind construction area, and weather that turns by noon. Today he checks five websites and guesses." |
-| 0:20–0:35 | Pan to the open water / a zone outline | "On the other side of the same ocean, a fisheries manager has to decide whether to close an area. She sees the whale data. She can't see what it costs the fleet. So it becomes whales versus jobs — when it's really a routing and information problem." |
-| 0:35–0:45 | Fathom app, full map with layer toggles | "Fathom gives both of them the same trusted picture of the ocean." |
-| 0:45–1:00 | Toggle conditions, zones, risk heatmap; click a slow zone → popup with name, dates, source link | "Weather, regulatory zones, whale risk — one map. Click any zone: name, effective dates, and a source link. Everything carries a source and a timestamp." |
-| 1:00–1:15 | Type into Captain panel: "Leaving Gloucester at 5am, 12-hour trip, small boat, 9 knots, fish near Stellwagen — safest option that still gets me there." | "The captain just types the trip in plain language." |
-| 1:15–1:35 | Agent feed streams tool calls: get_zones, get_whale_risk, plan_routes | "Watch the agent. It isn't guessing — it's calling tested tools. The language model never computes the risk or the route. A deterministic engine does, using sighting data and a published speed-lethality curve." |
-| 1:35–1:55 | Three ranked plans; open "why" on the top one: zones avoided, risk reduced %, extra minutes, weather window, citations | "Three ranked plans. Open 'why': which zones it avoids, how much risk it removes for how many extra minutes, and a citation on every number." |
-| 1:55–2:05 | Drag risk-preference slider; route visibly shifts. Then switch language to Portuguese | "Slide from fastest to safest — the route shifts. Switch to Portuguese for New Bedford's fleet. Same numbers, new language." |
-| 2:05–2:30 | Manager mode. Select "extend closure east," then "seasonal 10-knot speed limit." Trade-off chart: risk removed vs. fleet cost; efficient option highlighted | "Now the manager. Test a candidate: extend the closure east. Then a seasonal speed limit instead. Fathom re-routes a whole fleet and shows the trade-off — risk removed versus livelihood cost — and highlights the efficient option. Often a speed limit removes most of the risk at a fraction of a closure's cost. Effort is an estimate, not revenue, and we say so." |
-| 2:30–2:40 | Plain-language summary sentence on screen; advisory disclaimer visible | "One sentence a board member could repeat. Advisory only — and built with Kiro, spec-driven, with an MCP server Kiro used while writing the code. Whales and fishermen don't have to lose for the other to win." |
+| Time | Segment | On screen | Voiceover |
+|------|---------|-----------|-----------|
+| 0:00–0:15 | **Hook (15 s)** | Map of Massachusetts Bay with zones and the risk heatmap on | "At 4 a.m. a Gloucester fisherman has to thread between a whale slow zone that changed yesterday, a closure, a wind-construction area, and worsening weather. Today he checks five websites and guesses. On the other side, a manager must decide whether to close an area — and can't see what it costs the fleet. Fathom gives both of them the same trusted picture." |
+| 0:15–1:15 | **Captain flow (60 s)** | Toggle layers; click a slow zone → popup with name, dates, source link. Type the trip request. Agent feed streams tool calls. Three plans appear; open "why" on the best. Drag the risk slider; switch to Portuguese. | "Everything on the map has a source and a timestamp. The captain types the trip in plain language: leave Gloucester, twelve hours, small boat, nine knots, fish near Stellwagen, safest option. Watch the agent — it isn't guessing, it's calling tested tools: zones, whale risk, route planning. Three ranked plans come back. Open 'why': the zones it avoids, the risk it removes for a few extra minutes, and a citation on every number — including a plain label when the source is bundled demo data. Slide toward 'safest' and the route shifts. Switch to Portuguese for New Bedford's fleet — same numbers, new language." |
+| 1:15–2:15 | **Manager flow (60 s)** | Manager mode. Click preset "Extend closure east" (instant), then "Seasonal 10-knot speed limit." Trade-off chart with the efficient frontier highlighted; read the summary. Point at an "access lost" figure. | "Now the manager. Pick a candidate — extend the closure east. Fathom instantly re-routes a 200-boat synthetic fleet and shows the trade-off: whale risk removed versus the cost in steaming time, fuel, and lost access to grounds. Try a seasonal speed limit instead. On the frontier chart, the speed limit removes most of the risk at a fraction of the closure's livelihood cost — the efficient option is highlighted. When a closure sits on a fishing ground, Fathom reports that ground as access lost, honestly, instead of pretending the fleet just fishes elsewhere." |
+| 2:15–2:50 | **Kiro usage (35 s)** | Flip through: spec files, steering list, a hook firing, Kiro calling the `fathom` MCP, a Hypothesis counterexample | "We built Fathom with Kiro, spec-first: ten EARS requirements, a design doc, and fifty-plus tasks across four lanes. Steering rules taught Kiro our safety and honesty standards once. Hooks ran our property tests and the citation guard on every change. Our own MCP server exposes the engine, so Kiro queried the same tested tools while writing code. And property-based testing caught a real modelling bug — a closure that looked like it saved fleet time was actually destroying access." |
+| 2:50–3:00 | **Safety & close (10 s)** | Advisory disclaimer and "Demo data" badge visible | "Fathom is advisory only — it never claims legal compliance and uses public or clearly-labeled synthetic data. Protecting whales and protecting livelihoods isn't a zero-sum fight. It's a routing and information problem. That's Fathom." |
 
 **Recording notes**
 
-- Keep the cursor deliberate; pause ~1 s on each citation and the trade-off chart.
-- Make sure the "Demo data" badge and the advisory disclaimer are visible at least once.
-- Show only synthetic/public data; do not display any real vessel identity.
+- Pause ~1 s on each citation and on the frontier chart so they read on video.
+- Keep the "Demo data" badge and advisory disclaimer visible at least once.
+- Show only synthetic/public data; never display a real vessel identity.
+- Presets are instant; if you must show a custom draw, keep the polygon small
+  (the live path is bounded to 8 s and will otherwise ask you to simplify it).

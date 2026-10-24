@@ -1,68 +1,67 @@
-# Submission text
+# Submission
 
-## Feature description (~250 words)
+**Track:** Climate Tech & Clean Energy (blue economy, coastal livelihoods, ocean protection)
+**Live app:** https://fathom-six-vert.vercel.app
+**Repository:** https://github.com/shrish186/Hackachusetts
+**Team (4):** Vidhaan, Shrish, Anant, Aayush
+
+## Project description (~210 words)
 
 Fathom is an ocean decision copilot for Massachusetts' working waterfront. In
-Massachusetts waters, right whales, fishing closures, slow zones, offshore wind,
-and fast-changing weather all collide — and the people affected have to make
-decisions with scattered data. Fathom gives them one trusted picture.
+these waters, endangered right whales, fishing closures, seasonal slow zones,
+offshore wind, and fast-changing weather all overlap — and the people affected
+make decisions from scattered sources. Fathom gives them one trusted picture.
 
-For a fisherman, it turns a plain-language request ("leaving Gloucester at 5am,
-12-hour trip, small boat, 9 knots, fish near Stellwagen, safest option") into
-2–3 ranked routes that avoid closures, respect slow-zone speed limits, and weigh
-whale risk against time — each with a cited "why" and a printable brief in
+For a fisherman, it turns a plain-language trip request ("leaving Gloucester at
+5am, 12-hour trip, small boat, 9 knots, fish near Stellwagen, safest option")
+into 2–3 ranked routes that avoid closures, respect slow-zone speed limits, and
+weigh whale risk against time — each with a cited "why" and a printable brief in
 English, Portuguese, or Spanish.
 
 For a harbor or fisheries manager, Fathom's what-if simulator re-routes a
 representative fleet around a candidate protection zone and reports the
-trade-off: how much whale risk is removed versus the cost in steaming hours,
-fuel, and access to fishing grounds. It compares options on a Pareto frontier,
-so a seasonal speed limit that removes most of the risk at a fraction of a
-closure's cost is visible at a glance.
+trade-off: whale risk removed versus the cost in steaming hours, fuel, and lost
+access to fishing grounds. Options are compared on a Pareto frontier, so a
+seasonal speed limit that removes most of the risk at a fraction of a closure's
+cost is obvious at a glance.
 
-The engineering point: the LLM never computes risk, routes, or zone facts. A
-deterministic, tested Python engine does — seasonal presence, sighting recency,
-and a published speed-lethality curve. The agent only calls tools and must cite
-every claim; uncited facts are stripped. The same engine is exposed as an MCP
-server that Kiro itself used while building the project. Everything runs in a
-demo mode from bundled public/synthetic data, with synthetic layers clearly
-labeled.
+The engineering point: the language model never computes risk, routes, or zone
+facts — a deterministic, tested Python engine does, and the agent must cite every
+number. The same engine is exposed as an MCP server.
 
-## Testing instructions
+## How to test
 
-**Run the demo (no keys needed):**
+No keys needed — demo mode runs from bundled public/synthetic data.
 
-```bash
-# backend
-cd backend && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000   # FATHOM_DEMO_MODE=true by default
-# frontend (new terminal)
-cd frontend && npm install && npm run dev    # open http://localhost:5173
+1. Open the live app and accept the intro card. Toggle the weather, zones, and
+   risk layers; click a zone to see its dates and source.
+2. **Captain mode:** click "Try the demo trip," watch the agent stream its tool
+   calls, open a plan's "why" to see citations, drag the risk slider, switch the
+   language (numbers stay identical).
+3. **Manager mode:** pick a preset scenario (extend closure east / dynamic zone /
+   seasonal speed limit) — results are instant (precomputed) — and read the
+   trade-off chart and the plain-language summary.
+4. **Run the tests:** `cd backend && pip install -r requirements.txt && pytest -q`
+   (112 tests, including Hypothesis property tests).
+
+API quick check:
+```
+curl -X POST https://fathom-six-vert.vercel.app/api/sim/run \
+  -H 'Content-Type: application/json' -d '{"scenario_id":"seasonal_speed_limit"}'
 ```
 
-**Try the Captain flow:** open Captain mode, click "Try the demo trip," watch the
-agent stream tool calls, open "why" on a plan to see citations, slide the
-risk preference, switch the language (numbers stay identical).
+## Data honesty
 
-**Try the Manager flow (the simulator):**
+Fathom uses only public or synthetic data. Every layer carries its source,
+fetch time, and a cached/synthetic flag; anything not from a real source is
+flagged `synthetic: true` and badged in the UI. The whale-risk model is a
+transparent screening tool based on the Vanderlaan & Taggart (2007) vessel-strike
+lethality curve — not a prediction — and the fishing-effort figure is an estimate
+of activity, **not** catch or revenue. The fleet in the simulator is synthetic
+and anonymized; no real vessel identity is shown.
 
-```bash
-curl http://localhost:8000/api/sim/scenarios
-curl -X POST http://localhost:8000/api/sim/run \
-  -H 'Content-Type: application/json' \
-  -d '{"scenario_id":"seasonal_speed_limit"}'
-```
+## Safety
 
-The response includes the baseline, per-option percent deltas, an `on_frontier`
-flag, and trilingual summaries with identical numbers.
-
-**Run the automated tests:**
-
-```bash
-cd backend && pytest -q    # engine + API + Hypothesis property tests
-```
-
-**MCP server (optional):** `cd mcp && pip install -e . && python -m fathom_mcp`
-starts the stdio server; tools return real engine data when the backend is on
-the path, else clearly-labeled placeholders.
+Advisory only. Fathom does not replace official NOAA notices, VHF warnings, or
+the captain's judgment, and it never states that a plan is "legally compliant" —
+it reports which known zones a plan avoids. This appears on every plan.
