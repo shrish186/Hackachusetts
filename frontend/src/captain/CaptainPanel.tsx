@@ -1,12 +1,17 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
-import type { NarrativeLine } from '@/api/client';
+import type { AccessLost, NarrativeLine } from '@/api/client';
 import type { AgentEvent, RoutePlan, TripRequest, VesselType } from '@/api/types';
 import { useAppState } from '@/state/AppState';
 import { useZones } from '@/hooks/useLayerData';
-import { sliceToIso, defaultDeparture, toDatetimeLocalValue, formatDepartureLabel } from '@/lib/time';
+import {
+  REPLAY_WHALE_SEASON_ISO,
+  datetimeLocalToIso,
+  formatDepartureLabel,
+  isoToDatetimeLocal,
+} from '@/lib/time';
 import { t, DISCLAIMER } from '@/lib/i18n';
-import { recommendedIndex, classifyPlans } from '@/lib/recommend';
+import { recommendedIndex, classifyPlans, sortPlans } from '@/lib/recommend';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { AgentFeed } from './AgentFeed';
 import { PlanCard } from './PlanCard';
@@ -21,41 +26,51 @@ const VESSELS: VesselType[] = ['small_boat', 'mid_trawler', 'scalloper'];
 /**
  * Captain mode request panel (tasks.md 2.8 + 2.9).
  *
- * Trip request form → streamed agent feed → 2–3 ranked plan cards. Selecting a
- * card draws its route on the map. Each card has a "Why" drawer and the
- * advisory disclaimer. A language switch re-renders all plan text in
- * English / Portuguese / Spanish (numbers + zone names stay identical).
+ * Trip request form → streamed agent feed → 2–3 ranked plan cards (ordered
+ * Fastest, Balanced, Safest). Selecting a card draws its route on the map. Each
+ * card has a "Why" drawer and the advisory disclaimer. The departure field and
+ * the time slider stay in sync via shared app state. "Replay whale season" and
+ * "Try the demo trip" both plan for the whale-season date.
  */
 export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
-  const { language, setLanguage, sliceIndex } = useAppState();
+  const {
+    language,
+    setLanguage,
+    layerTimeIso,
+    replay,
+    setReplay,
+    departure,
+    setDeparture,
+  } = useAppState();
   const s = t(language);
 
-  // Resolve zone ids → display names (loaded once; names are language-neutral).
-  const zones = useZones(sliceToIso(sliceIndex));
+  // Resolve zone ids → display names at the active layer time.
+  const zones = useZones(layerTimeIso);
   const zoneName = useMemo(() => {
     const byId = new Map(zones.map((z) => [z.id, z.name]));
     return (id: string) => byId.get(id) ?? id;
   }, [zones]);
 
-  // Form state. Departure defaults to now + 2 h (local), never in the past.
+  // Form state (departure is shared app state, synced with the slider).
   const [vessel, setVessel] = useState<VesselType>('mid_trawler');
-  const [port, setPort] = useState('provincetown');
+  const [port, setPort] = useState('gloucester');
   const [cruiseKn, setCruiseKn] = useState(9.5);
   const [maxHours, setMaxHours] = useState(14);
-  const [departure, setDeparture] = useState(() => toDatetimeLocalValue(defaultDeparture()));
   const [riskPref, setRiskPref] = useState(0.6);
 
   // Result state
   const [loading, setLoading] = useState(false);
+  const [coldStart, setColdStart] = useState(false);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [plans, setPlans] = useState<RoutePlan[]>([]);
   const [narrative, setNarrative] = useState<NarrativeLine[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [accessLost, setAccessLost] = useState<AccessLost | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [lastTrip, setLastTrip] = useState<TripRequest | null>(null);
-  // risk_pref used for the run that produced `plans` (so "recommended" is stable).
   const [resultRiskPref, setResultRiskPref] = useState(0.6);
   const abortRef = useRef<AbortController | null>(null);
+  const coldTimerRef = useRef<number | null>(null);
 
   const departureDate = useMemo(() => {
     const d = new Date(departure);
@@ -63,11 +78,15 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
   }, [departure]);
 
   /**
-   * Build a valid depart_window: [start, end] with start strictly before end.
-   * The chosen departure is clamped to at least `minLeadMs` in the future so we
-   * never send a past/reversed window (backend 422).
+   * Build a valid depart_window [start, end], start <= end. When replaying we
+   * send the whale-season instant twice (the backend accepts equal times in
+   * demo mode). Otherwise the chosen departure is clamped to be at least
+   * `minLeadMs` in the future so we never send a past/reversed window (422).
    */
   function buildWindow(departISO: string, minLeadMs = 60_000): [string, string] {
+    if (replay) {
+      return [REPLAY_WHALE_SEASON_ISO, REPLAY_WHALE_SEASON_ISO];
+    }
     const now = Date.now();
     let start = new Date(departISO).getTime();
     if (isNaN(start) || start < now + minLeadMs) start = now + minLeadMs;
@@ -76,16 +95,21 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
   }
 
   async function plan(req: TripRequest, riskPrefUsed: number) {
-    // Reset prior run.
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
 
     setLoading(true);
+    setColdStart(false);
+    // After 2 s of waiting, show the cold-start message (item 5).
+    if (coldTimerRef.current) window.clearTimeout(coldTimerRef.current);
+    coldTimerRef.current = window.setTimeout(() => setColdStart(true), 2000);
+
     setEvents([]);
     setPlans([]);
     setNarrative([]);
     setMessage(null);
+    setAccessLost(null);
     setSelected(null);
     setLastTrip(req);
     setResultRiskPref(riskPrefUsed);
@@ -96,7 +120,6 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
         signal: ac.signal,
         onEvent: (ev) =>
           setEvents((prev) => {
-            // Replace the running placeholder with its done state (same id).
             const i = prev.findIndex((p) => p.id === ev.id);
             if (i === -1) return [...prev, ev];
             const next = prev.slice();
@@ -105,19 +128,26 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
           }),
       });
       if (ac.signal.aborted) return;
-      setPlans(result.plans);
+      const ordered = sortPlans(result.plans);
+      setPlans(ordered);
       setNarrative(result.narrative);
       setMessage(result.message);
-      if (result.plans.length > 0) {
-        // Recommended = single scoring function over risk_pref (task 5).
-        const rec = recommendedIndex(result.plans, riskPrefUsed);
+      setAccessLost(result.access_lost);
+      if (ordered.length > 0) {
+        const rec = recommendedIndex(ordered, riskPrefUsed);
         setSelected(rec);
-        onSelectedRoute(result.plans[rec] ?? result.plans[0]);
+        onSelectedRoute(ordered[rec] ?? ordered[0]);
       }
     } finally {
-      if (!ac.signal.aborted) setLoading(false);
+      if (coldTimerRef.current) window.clearTimeout(coldTimerRef.current);
+      if (!ac.signal.aborted) {
+        setLoading(false);
+        setColdStart(false);
+      }
     }
   }
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   function currentRequest(): TripRequest {
     return {
@@ -125,7 +155,7 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
       vessel,
       cruise_kn: cruiseKn,
       max_hours: maxHours,
-      depart_window: buildWindow(departure),
+      depart_window: buildWindow(datetimeLocalToIso(departure)),
       target_ground: 'stellwagen_bank',
       risk_pref: riskPref,
       language,
@@ -133,28 +163,35 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
   }
 
   function runDemo() {
-    // Pre-fill Gloucester, small boat, 9 kn, 12 h, departure >= 1 min ahead,
-    // slider toward safest. Keep the visible form in sync.
-    const demoDepart = toDatetimeLocalValue(defaultDeparture());
+    // Pre-fill Gloucester, small boat, 9 kn, 12 h, replay ON, slider to safest.
     setPort('gloucester');
     setVessel('small_boat');
     setCruiseKn(9);
     setMaxHours(12);
-    setDeparture(demoDepart);
     setRiskPref(0.8);
+    setReplay(true);
+    setDeparture(isoToDatetimeLocal(REPLAY_WHALE_SEASON_ISO));
     void plan(
       {
         port: 'gloucester',
         vessel: 'small_boat',
         cruise_kn: 9,
         max_hours: 12,
-        depart_window: buildWindow(demoDepart),
+        depart_window: [REPLAY_WHALE_SEASON_ISO, REPLAY_WHALE_SEASON_ISO],
         target_ground: 'stellwagen_bank',
         risk_pref: 0.8,
         language,
       },
       0.8,
     );
+  }
+
+  function planToNearestOpen() {
+    // Re-plan toward the nearest open-water coordinate the backend suggested.
+    const n = accessLost?.nearest_open;
+    if (!n) return;
+    const req = currentRequest();
+    void plan({ ...req, target_ground: `${n.lon.toFixed(3)},${n.lat.toFixed(3)}` }, riskPref);
   }
 
   function selectPlan(i: number) {
@@ -242,7 +279,7 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
         </label>
       </div>
 
-      {/* Departure */}
+      {/* Departure (shared with the time slider) */}
       <label className="text-xs text-mist">
         {s.departure}
         <input
@@ -296,18 +333,55 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
         </button>
       </div>
 
+      {/* Cold-start hint while the free server wakes (item 5) */}
+      {loading && coldStart && (
+        <p className="rounded-xl border border-surf/40 bg-surf/10 p-2 text-[11px] leading-snug text-surf" role="status">
+          {s.planningCold}
+        </p>
+      )}
+
       {/* Live agent feed */}
       <AgentFeed events={events} language={language} active={loading} />
 
       {/* Empty state before the first plan */}
-      {!loading && plans.length === 0 && !message && events.length === 0 && (
+      {!loading && plans.length === 0 && !message && !accessLost && events.length === 0 && (
         <p className="rounded-xl border border-dashed border-depth bg-abyss/30 p-3 text-center text-[11px] leading-snug text-mist">
           {s.tryDemoHint}
         </p>
       )}
 
+      {/* Access-lost card (item 4) */}
+      {accessLost && (
+        <div className="rounded-xl border border-coral/60 bg-coral/10 p-3 text-xs" role="status">
+          <p className="font-semibold text-coral">
+            {s.accessLostTitle}{' '}
+            <span className="text-foam">
+              {accessLost.zone_name ?? accessLost.reason ?? accessLost.code}
+            </span>
+          </p>
+          {accessLost.nearest_open && (
+            <>
+              <p className="mt-1 text-mist">
+                {s.nearestOpen}{' '}
+                <span className="font-mono text-foam">
+                  {accessLost.nearest_open.lat.toFixed(3)}, {accessLost.nearest_open.lon.toFixed(3)}
+                </span>{' '}
+                ({accessLost.nearest_open.distance_nm.toFixed(1)} nm)
+              </p>
+              <button
+                onClick={planToNearestOpen}
+                disabled={loading}
+                className="mt-2 min-h-9 w-full rounded-lg bg-tide px-3 text-xs font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-surf"
+              >
+                {s.planToNearest}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* No legal route message (Req 5.4) */}
-      {message && (
+      {message && !accessLost && (
         <div className="rounded-xl border border-coral/50 bg-coral/10 p-3 text-xs text-coral" role="status">
           {message}
         </div>
@@ -320,7 +394,7 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
         </p>
       )}
 
-      {/* Ranked plan cards */}
+      {/* Ranked plan cards (ordered Fastest, Balanced, Safest) */}
       {plans.length > 0 && (
         <div className="flex flex-col gap-2">
           {plans.map((p, i) => (

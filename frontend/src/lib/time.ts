@@ -8,10 +8,27 @@ export const DEMO_START_ISO = '2026-03-14T00:00:00Z';
 export const SLICE_HOURS = 3;
 export const SLICE_COUNT = 16; // 48h / 3h
 
+/**
+ * "Replay whale season" instant — 2026-03-15T13:00:00Z == 9:00 AM EDT
+ * (config/demo_scenarios.yaml → replay_whale_season.time_utc). On this date the
+ * Cape Cod Bay / Off Race Point SMAs, the Stellwagen slow zone and the western
+ * Gulf of Maine closure are all active, so the map shows real closures.
+ */
+export const REPLAY_WHALE_SEASON_ISO = '2026-03-15T13:00:00Z';
+
 /** ISO timestamp for slice index [0, SLICE_COUNT). */
 export function sliceToIso(index: number): string {
   const start = new Date(DEMO_START_ISO).getTime();
   return new Date(start + index * SLICE_HOURS * 3600 * 1000).toISOString();
+}
+
+/** Nearest slice index to a given UTC instant (clamped to [0, SLICE_COUNT-1]). */
+export function isoToSlice(iso: string): number {
+  const start = new Date(DEMO_START_ISO).getTime();
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return 0;
+  const idx = Math.round((t - start) / (SLICE_HOURS * 3600 * 1000));
+  return Math.max(0, Math.min(SLICE_COUNT - 1, idx));
 }
 
 const NY_FMT = new Intl.DateTimeFormat('en-US', {
@@ -79,4 +96,15 @@ export function defaultDeparture(now: Date = new Date()): Date {
 export function toDatetimeLocalValue(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** A datetime-local value (local wall-clock) → UTC ISO instant. */
+export function datetimeLocalToIso(value: string): string {
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+/** A UTC ISO instant → datetime-local value in the browser's local time. */
+export function isoToDatetimeLocal(iso: string): string {
+  return toDatetimeLocalValue(new Date(iso));
 }

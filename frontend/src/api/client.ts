@@ -21,6 +21,7 @@ import type {
   RoutePlan,
   ScenarioListItem,
   ScenarioResult,
+  ScenarioRunResult,
   Sighting,
   SourceMeta,
   TripRequest,
@@ -212,17 +213,30 @@ function adaptConditions(raw: unknown): Conditions[] {
   return items(raw) as unknown as Conditions[];
 }
 
+/** Pull a number from a record under any of the given keys, else null. */
+function numOrNull(obj: Record<string, unknown> | undefined, ...keys: string[]): number | null {
+  if (!obj) return null;
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === 'number') return v;
+  }
+  return null;
+}
+
 /**
- * Map the /api/sim/run response `{ baseline, options:[...] }` into the flat
- * ScenarioResult[] the UI uses. `deltas_pct.{risk,hours,fuel,effort_access}`
- * map to delta_* fields; the localized summary is picked by language.
+ * Map the /api/sim/run response `{ baseline, options:[...] }` into the shape the
+ * UI uses. `deltas_pct.{risk,hours,fuel,effort_access}` map to delta_* fields;
+ * the localized summary is picked by language. Also surfaces baseline access
+ * loss (item 6) and per-option access-lost trips (item 4).
  */
-function adaptScenarioRun(raw: unknown, language: Language): ScenarioResult[] {
-  const options = (raw as { options?: unknown[] }).options ?? [];
-  if (!Array.isArray(options)) return [];
-  return options.map((o) => {
+function adaptScenarioRun(raw: unknown, language: Language): ScenarioRunResult {
+  const root = raw as Record<string, unknown>;
+  const baseline = (root.baseline ?? {}) as Record<string, unknown>;
+  const options = Array.isArray(root.options) ? root.options : [];
+  const results: ScenarioResult[] = options.map((o) => {
     const opt = o as Record<string, unknown>;
     const d = (opt.deltas_pct ?? {}) as Record<string, number>;
+    const totals = (opt.totals ?? {}) as Record<string, unknown>;
     const summary = opt.summary as Record<string, string> | string | undefined;
     const summaryText =
       typeof summary === 'string'
@@ -237,8 +251,14 @@ function adaptScenarioRun(raw: unknown, language: Language): ScenarioResult[] {
       delta_effort_access_pct: Number(d.effort_access ?? 0),
       on_frontier: Boolean(opt.on_frontier),
       summary: summaryText,
+      access_lost_trips: numOrNull(opt, 'access_lost_trips') ?? numOrNull(totals, 'access_lost_trips'),
     };
   });
+  return {
+    results,
+    baselineAccessLost: numOrNull(baseline, 'access_lost_trips', 'access_lost'),
+    baselineTrips: numOrNull(baseline, 'trips'),
+  };
 }
 
 function adaptRisk(raw: unknown): RiskCell[] {
@@ -295,12 +315,25 @@ export interface NarrativeLine {
   citations: string[];
 }
 
+/** Access-lost info when the target ground / port is unreachable (item 4). */
+export interface AccessLost {
+  endpoint: string; // "destination" | "origin"
+  code: string; // "closed_zone" | "land" | "outside" | "no_water"
+  reason?: string;
+  zone_id?: string;
+  zone_name?: string;
+  zone_active_to?: string;
+  nearest_open?: { lon: number; lat: number; distance_nm: number } | null;
+}
+
 export interface PlanResult {
   plans: RoutePlan[];
   narrative: NarrativeLine[];
   disclaimer: string | null;
   /** Set when no legal route exists; names the constraint to relax. */
   message: string | null;
+  /** Present when the target ground (or port) is closed/unreachable. */
+  access_lost: AccessLost | null;
 }
 
 export interface PlanStreamCallbacks {
@@ -333,6 +366,7 @@ async function replayMockStream(
     narrative: mock.narrativeFor(req.language),
     disclaimer: null,
     message: null,
+    access_lost: null,
   };
 }
 
@@ -471,7 +505,7 @@ export const api = {
     language?: Language;
     signal?: AbortSignal;
     timeoutMs?: number;
-  }): Promise<ScenarioResult[]> {
+  }): Promise<ScenarioRunResult> {
     const language = opts?.language ?? 'en';
     const body: Record<string, unknown> = {};
     if (opts?.polygon && opts.polygon.length >= 3) {
@@ -493,20 +527,6 @@ export const api = {
       timeoutMs: opts?.timeoutMs ?? 60_000,
     });
     return adaptScenarioRun(raw, language);
-  },
-
-  /** Like runScenario, but returns mock numbers on any failure. */
-  async runScenarioOrMock(opts?: {
-    scenarioId?: string;
-    polygon?: Array<[number, number]>;
-    language?: Language;
-    signal?: AbortSignal;
-  }): Promise<ScenarioResult[]> {
-    try {
-      return await api.runScenario(opts);
-    } catch {
-      return mock.scenarios;
-    }
   },
 
   /**
@@ -555,7 +575,13 @@ async function consumeSse(
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  const result: PlanResult = { plans: mock.routes, narrative: [], disclaimer: null, message: null };
+  const result: PlanResult = {
+    plans: mock.routes,
+    narrative: [],
+    disclaimer: null,
+    message: null,
+    access_lost: null,
+  };
   let gotPlans = false;
 
   const handleFrame = (frame: string) => {
@@ -593,6 +619,7 @@ async function consumeSse(
         result.narrative = (msg.narrative as NarrativeLine[]) ?? [];
         result.disclaimer = (msg.disclaimer as string | null) ?? null;
         result.message = (msg.message as string | null) ?? null;
+        result.access_lost = (msg.access_lost as AccessLost | null) ?? null;
         break;
       case 'error':
         cb.onEvent({

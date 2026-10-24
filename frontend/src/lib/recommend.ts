@@ -78,15 +78,15 @@ export function recommendedIndex(plans: RoutePlan[], riskPref: number): number {
   return best;
 }
 
-export type PlanClass = 'fastest' | 'balanced' | 'safest';
+export type PlanClass = 'fastest' | 'balanced' | 'safest' | 'alternative';
 
 /**
- * Classify each plan as Fastest / Safest / Balanced for a plain label
- * (task 10). Fastest = lowest ETA, Safest = lowest risk; the rest Balanced.
+ * Classify each plan as Fastest / Safest / Balanced / Alternative for a plain
+ * label (task 10, item 2). Fastest = lowest ETA, Safest = lowest risk; a plan
+ * the backend named "Alternate track …" is "alternative"; the rest Balanced.
  */
 export function classifyPlans(plans: RoutePlan[]): PlanClass[] {
   if (plans.length === 0) return [];
-  if (plans.length === 1) return ['balanced'];
 
   let fastest = 0;
   let safest = 0;
@@ -95,9 +95,26 @@ export function classifyPlans(plans: RoutePlan[]): PlanClass[] {
     if (p.risk_exposure < plans[safest].risk_exposure) safest = i;
   });
 
-  return plans.map((_, i) => {
+  return plans.map((p, i) => {
+    if (/alternate/i.test(p.name ?? '')) return 'alternative';
+    if (plans.length === 1) return 'balanced';
     if (i === safest && safest !== fastest) return 'safest';
     if (i === fastest) return 'fastest';
     return 'balanced';
+  });
+}
+
+/**
+ * Sort plans into the display order Fastest, Balanced, Safest, Alternative
+ * (item 2): primarily by ETA ascending, but any "Alternate track" plan is
+ * pushed to the end. Returns a new array; does not mutate the input.
+ */
+export function sortPlans(plans: RoutePlan[]): RoutePlan[] {
+  const isAlt = (p: RoutePlan) => /alternate/i.test(p.name ?? '');
+  return [...plans].sort((a, b) => {
+    const aAlt = isAlt(a) ? 1 : 0;
+    const bAlt = isAlt(b) ? 1 : 0;
+    if (aAlt !== bAlt) return aAlt - bAlt; // alternates last
+    return a.eta_hours - b.eta_hours; // fastest first
   });
 }

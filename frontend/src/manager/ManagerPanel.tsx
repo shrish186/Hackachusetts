@@ -26,6 +26,8 @@ export function ManagerPanel() {
 
   const [list, setList] = useState<ScenarioListItem[]>([]);
   const [results, setResults] = useState<ScenarioResult[]>([]);
+  const [baselineAccessLost, setBaselineAccessLost] = useState<number | null>(null);
+  const [baselineTrips, setBaselineTrips] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
@@ -48,8 +50,10 @@ export function ManagerPanel() {
   // Cancel any in-flight run on unmount.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  function applyResults(res: ScenarioResult[]) {
+  function applyResults(res: ScenarioResult[], accessLost: number | null, trips: number | null) {
     setResults(res);
+    setBaselineAccessLost(accessLost);
+    setBaselineTrips(trips);
     const firstFrontier = res.find((r) => r.on_frontier) ?? res[0];
     setSelectedId(firstFrontier?.scenario_id ?? null);
   }
@@ -69,7 +73,7 @@ export function ManagerPanel() {
         timeoutMs: 60_000,
       });
       if (ac.signal.aborted) return;
-      applyResults(res.length ? res : mock.scenarios);
+      applyResults(res.results.length ? res.results : mock.scenarios, res.baselineAccessLost, res.baselineTrips);
     } catch (err) {
       if (ac.signal.aborted) return; // user cancelled; stay quiet
       // Friendly messages for the documented error codes; always recover with
@@ -78,7 +82,8 @@ export function ManagerPanel() {
       else if (err instanceof ApiError && (err.status === 504)) setError(s.simSlow);
       else if (err instanceof DOMException && err.name === 'AbortError') setError(s.simTimeout);
       else setError(s.simError);
-      applyResults(mock.scenarios);
+      // Mock numbers carry no real baseline access-lost count (do not hardcode).
+      applyResults(mock.scenarios, null, null);
     } finally {
       if (!ac.signal.aborted) setRunning(false);
     }
@@ -191,6 +196,15 @@ export function ManagerPanel() {
       {/* Results */}
       {results.length > 0 && (
         <>
+          {/* Baseline access-lost note — only when the API returns the number (item 6) */}
+          {baselineAccessLost != null && (
+            <div className="rounded-xl border border-coral/40 bg-coral/10 p-2 text-[11px] leading-snug text-coral" role="note">
+              Baseline: {baselineAccessLost}
+              {baselineTrips != null ? ` of ${baselineTrips}` : ''} sample trips already
+              lose access to closed grounds in this model.
+            </div>
+          )}
+
           <TradeoffChart
             scenarios={results}
             selectedId={selectedId}
@@ -205,6 +219,7 @@ export function ManagerPanel() {
                 r={r}
                 selected={r.scenario_id === selectedId}
                 onSelect={() => setSelectedId(r.scenario_id)}
+                accessLostLabel={s.accessLostTrips}
                 labels={{
                   efficient: s.efficient,
                   risk: s.deltaRisk,
@@ -251,11 +266,13 @@ function ScenarioCard({
   selected,
   onSelect,
   labels,
+  accessLostLabel,
 }: {
   r: ScenarioResult;
   selected: boolean;
   onSelect: () => void;
   labels: { efficient: string; risk: string; effort: string; hours: string; fuel: string };
+  accessLostLabel: string;
 }) {
   return (
     <button
@@ -283,6 +300,12 @@ function ScenarioCard({
         <Delta label={labels.hours} pct={r.delta_hours_pct} />
         <Delta label={labels.fuel} pct={r.delta_fuel_pct} />
       </div>
+      {/* Access-lost trips for this scenario (only when the API returns it) */}
+      {r.access_lost_trips != null && (
+        <p className="mt-1.5 text-[11px] text-coral">
+          {r.access_lost_trips} {accessLostLabel}
+        </p>
+      )}
     </button>
   );
 }

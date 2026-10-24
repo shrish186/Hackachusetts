@@ -1,6 +1,9 @@
 import { ModeToggle } from './ModeToggle';
 import { DemoBadge } from './DemoBadge';
+import { ReplayToggle } from './ReplayToggle';
 import { formatLocalShort } from '@/lib/time';
+import { useAppState } from '@/state/AppState';
+import { t } from '@/lib/i18n';
 
 interface TopBarProps {
   demoMode: boolean;
@@ -9,6 +12,8 @@ interface TopBarProps {
 }
 
 export function TopBar({ demoMode, dataTimestamp, onOpenSources }: TopBarProps) {
+  const { replay, language } = useAppState();
+  const s = t(language);
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-3 sm:p-4">
       {/* Brand + data timestamp strip */}
@@ -36,6 +41,19 @@ export function TopBar({ demoMode, dataTimestamp, onOpenSources }: TopBarProps) 
             Sources
           </button>
         </div>
+
+        {/* Replay whale season toggle (item 1) */}
+        <ReplayToggle />
+
+        {/* Replay banner */}
+        {replay && (
+          <div
+            role="status"
+            className="max-w-xs rounded-md border border-surf/50 bg-surf/15 px-2 py-1 text-[11px] font-semibold text-surf backdrop-blur"
+          >
+            {s.replayBanner}
+          </div>
+        )}
       </div>
 
       {/* Mode toggle + demo badge */}

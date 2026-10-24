@@ -54,16 +54,27 @@ interface Strings {
   tryDemoHint: string;
   summary: string;
   printBrief: string;
+  planningCold: string; // cold-start spinner text (item 5)
+  // replay whale season (item 1)
+  today: string;
+  replayWhaleSeason: string;
+  replayBanner: string;
   // plan card clarity (task 10)
   fastestLabel: string;
   balancedLabel: string;
   safestLabel: string;
+  alternativeLabel: string; // "Alternative" (item 2)
   advisoryShort: string;
   bundledDemoData: string;
   singleRouteNote: string;
   vsFastest: string; // "vs fastest"
   lessRisk: string; // "less whale risk"
   moreRisk: string; // "more whale risk"
+  // access lost (item 4)
+  accessLostTitle: string; // "Your target ground is closed on this date:"
+  nearestOpen: string; // "Nearest open water:"
+  planToNearest: string; // button
+  accessLostTrips: string; // "trips lose access"
   // manager mode
   simTitle: string;
   simIntro: string;
@@ -135,18 +146,27 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Try the demo trip',
-    tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, departure soon, safest',
+    tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, replay whale season, safest',
     summary: 'Summary',
     printBrief: 'Print brief',
+    planningCold: 'Planning routes… (the free server may take up to 60 s the first time)',
+    today: 'Today',
+    replayWhaleSeason: 'Replay whale season (15 Mar 2026)',
+    replayBanner: 'Replaying 15 Mar 2026: whale-season closures are active',
     fastestLabel: 'Fastest',
     balancedLabel: 'Balanced',
     safestLabel: 'Safest',
+    alternativeLabel: 'Alternative',
     advisoryShort: 'Advisory only',
     bundledDemoData: 'bundled demo data',
     singleRouteNote: 'Only one safe, legal route fits these limits. Relax max hours or the risk setting to see alternatives.',
     vsFastest: 'vs fastest',
     lessRisk: 'less whale risk',
     moreRisk: 'more whale risk',
+    accessLostTitle: 'Your target ground is closed on this date:',
+    nearestOpen: 'Nearest open water:',
+    planToNearest: 'Plan to nearest open water',
+    accessLostTrips: 'trips lose access to closed grounds',
     simTitle: 'What-if simulator',
     simIntro: 'Compare candidate protection zones: whale strikes removed vs. the cost to the fleet. Highlighted options are on the efficient frontier.',
     scenarios: 'Scenarios',
@@ -213,15 +233,24 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Testar viagem demo',
-    tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, partida em breve, mais seguro',
+    tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, repetir temporada de baleias, mais seguro',
     summary: 'Resumo',
     printBrief: 'Imprimir resumo',
+    planningCold: 'Planejando rotas… (o servidor gratuito pode levar até 60 s na primeira vez)',
+    today: 'Hoje',
+    replayWhaleSeason: 'Repetir temporada de baleias (15 mar 2026)',
+    replayBanner: 'Repetindo 15 mar 2026: fechamentos da temporada de baleias ativos',
     fastestLabel: 'Mais rápida',
     balancedLabel: 'Equilibrada',
     safestLabel: 'Mais segura',
+    alternativeLabel: 'Alternativa',
     advisoryShort: 'Apenas informativo',
     bundledDemoData: 'dados demo incluídos',
     singleRouteNote: 'Só uma rota segura e legal cabe nestes limites. Aumente as horas máximas ou ajuste o risco para ver alternativas.',
+    accessLostTitle: 'Seu pesqueiro-alvo está fechado nesta data:',
+    nearestOpen: 'Água aberta mais próxima:',
+    planToNearest: 'Planejar para a água aberta mais próxima',
+    accessLostTrips: 'viagens perdem acesso a pesqueiros fechados',
     vsFastest: 'vs. mais rápida',
     lessRisk: 'menos risco de baleia',
     moreRisk: 'mais risco de baleia',
@@ -291,15 +320,24 @@ const STRINGS: Record<Language, Strings> = {
     liters: 'L',
     meters: 'm',
     tryDemo: 'Probar viaje demo',
-    tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, salida pronto, más seguro',
+    tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, repetir temporada de ballenas, más seguro',
     summary: 'Resumen',
     printBrief: 'Imprimir resumen',
+    planningCold: 'Planificando rutas… (el servidor gratuito puede tardar hasta 60 s la primera vez)',
+    today: 'Hoy',
+    replayWhaleSeason: 'Repetir temporada de ballenas (15 mar 2026)',
+    replayBanner: 'Repitiendo 15 mar 2026: los cierres de temporada de ballenas están activos',
     fastestLabel: 'Más rápida',
     balancedLabel: 'Equilibrada',
     safestLabel: 'Más segura',
+    alternativeLabel: 'Alternativa',
     advisoryShort: 'Solo informativo',
     bundledDemoData: 'datos demo incluidos',
     singleRouteNote: 'Solo una ruta segura y legal cabe en estos límites. Aumenta las horas máximas o ajusta el riesgo para ver alternativas.',
+    accessLostTitle: 'Tu zona de pesca objetivo está cerrada en esta fecha:',
+    nearestOpen: 'Agua abierta más cercana:',
+    planToNearest: 'Planificar a la agua abierta más cercana',
+    accessLostTrips: 'viajes pierden acceso a zonas cerradas',
     vsFastest: 'vs. más rápida',
     lessRisk: 'menos riesgo de ballena',
     moreRisk: 'más riesgo de ballena',
@@ -347,11 +385,15 @@ export function riskLevelWord(lang: Language, exposure: number): string {
   return s.riskLevelHigh;
 }
 
-/** Plain plan-class label (Fastest / Balanced / Safest). */
-export function planClassLabel(lang: Language, cls: 'fastest' | 'balanced' | 'safest'): string {
+/** Plain plan-class label (Fastest / Balanced / Safest / Alternative). */
+export function planClassLabel(
+  lang: Language,
+  cls: 'fastest' | 'balanced' | 'safest' | 'alternative',
+): string {
   const s = STRINGS[lang];
   if (cls === 'fastest') return s.fastestLabel;
   if (cls === 'safest') return s.safestLabel;
+  if (cls === 'alternative') return s.alternativeLabel;
   return s.balancedLabel;
 }
 

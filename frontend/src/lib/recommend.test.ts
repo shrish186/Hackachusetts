@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recommendedIndex, classifyPlans } from './recommend';
+import { recommendedIndex, classifyPlans, sortPlans } from './recommend';
 import type { RoutePlan } from '@/api/types';
 
 function plan(over: Partial<RoutePlan>): RoutePlan {
@@ -68,5 +68,32 @@ describe('classifyPlans', () => {
 
   it('labels a single plan balanced', () => {
     expect(classifyPlans([DIRECT])).toEqual(['balanced']);
+  });
+
+  it('labels an "Alternate track" plan as alternative', () => {
+    const alt = plan({ name: 'Alternate track 1', eta_hours: 6, risk_exposure: 0.3 });
+    const labels = classifyPlans([DIRECT, EASTERN, SAFEST, alt]);
+    expect(labels[3]).toBe('alternative');
+  });
+});
+
+describe('sortPlans', () => {
+  it('orders by ETA ascending (Fastest first)', () => {
+    const out = sortPlans([SAFEST, DIRECT, EASTERN]); // 5.1, 3.8, 4.4
+    expect(out.map((p) => p.eta_hours)).toEqual([3.8, 4.4, 5.1]);
+  });
+
+  it('pushes Alternate track plans to the end regardless of ETA', () => {
+    const alt = plan({ name: 'Alternate track 1', eta_hours: 1.0, risk_exposure: 0.5 });
+    const out = sortPlans([SAFEST, alt, DIRECT]);
+    expect(out[out.length - 1].name).toBe('Alternate track 1');
+    expect(out[0].name).toBe('Direct run'); // fastest non-alternate
+  });
+
+  it('does not mutate the input array', () => {
+    const input = [SAFEST, DIRECT];
+    const copy = [...input];
+    sortPlans(input);
+    expect(input).toEqual(copy);
   });
 });

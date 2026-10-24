@@ -19,7 +19,6 @@ import {
   useSightings,
   useZones,
 } from '@/hooks/useLayerData';
-import { sliceToIso } from '@/lib/time';
 import { ZonePopup } from '@/components/ZonePopup';
 import { RiskTooltip } from '@/components/RiskTooltip';
 
@@ -35,9 +34,10 @@ export function MapView({ routes, onError }: MapViewProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
 
-  const { sliceIndex, speedKn, layers, drawing, drawnPolygon, setDrawnPolygon } =
+  const { layerTimeIso, speedKn, layers, drawing, drawnPolygon, setDrawnPolygon } =
     useAppState();
-  const timeIso = sliceToIso(sliceIndex);
+  // Layer fetch time (whale-season instant when replaying, else the slider).
+  const timeIso = layerTimeIso;
 
   // Keep the latest draw state in refs so the stable map click handler can read
   // it without re-binding on every change.

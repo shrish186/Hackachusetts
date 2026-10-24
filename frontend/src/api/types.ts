@@ -178,6 +178,17 @@ export interface ScenarioResult {
   on_frontier: boolean;
   /** Plain-language summary in the user's language (already localized). */
   summary: string;
+  /** Trips that lose access to a closed ground under this scenario (item 4/6). */
+  access_lost_trips?: number | null;
+}
+
+/** Full /api/sim/run response the Manager panel needs (item 4/6). */
+export interface ScenarioRunResult {
+  results: ScenarioResult[];
+  /** Baseline trips already losing access before any new zone (item 6). */
+  baselineAccessLost: number | null;
+  /** Total trips in the sample fleet (for "N of 200"). */
+  baselineTrips: number | null;
 }
 
 /** Bounding box [minLon, minLat, maxLon, maxLat]. */
