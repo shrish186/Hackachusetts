@@ -5,6 +5,9 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Relative asset paths so the SPA works whether served from a domain root
+  // (Vercel, with the /index.html rewrite) or opened directly.
+  base: './',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -13,13 +16,5 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // During real-backend development, proxy /api to the FastAPI server.
-    // Until the backend exists the app runs entirely on mocks (see src/api/client.ts).
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-    },
   },
 });

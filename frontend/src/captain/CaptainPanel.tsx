@@ -260,6 +260,13 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
       {/* Live agent feed */}
       <AgentFeed events={events} language={language} active={loading} />
 
+      {/* Empty state before the first plan */}
+      {!loading && plans.length === 0 && !message && events.length === 0 && (
+        <p className="rounded-xl border border-dashed border-depth bg-abyss/30 p-3 text-center text-[11px] leading-snug text-mist">
+          {s.tryDemoHint}
+        </p>
+      )}
+
       {/* No legal route message (Req 5.4) */}
       {message && (
         <div className="rounded-xl border border-coral/50 bg-coral/10 p-3 text-xs text-coral" role="status">

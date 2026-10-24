@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Fathom — ocean decision copilot">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#082a3f"/>
+      <stop offset="1" stop-color="#04121f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(120 230)">
+    <path d="M0 40c40 0 40 36 80 36s40-36 80-36 40 36 80 36 40-36 80-36" fill="none" stroke="#39b7d6" stroke-width="10" stroke-linecap="round"/>
+    <path d="M0 100c40 0 40 30 80 30s40-30 80-30 40 30 80 30 40-30 80-30" fill="none" stroke="#1b7fa8" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="120" y="200" font-family="system-ui, sans-serif" font-size="110" font-weight="800" fill="#e6f4f9">Fathom</text>
+  <text x="124" y="470" font-family="system-ui, sans-serif" font-size="40" fill="#9bc3d4">Ocean decision copilot — plan safer, legal trips</text>
+  <text x="124" y="525" font-family="system-ui, sans-serif" font-size="40" fill="#9bc3d4">and simulate whale-protection trade-offs.</text>
+  <text x="124" y="590" font-family="system-ui, sans-serif" font-size="26" fill="#3fae8f">Advisory only · public &amp; synthetic data</text>
+</svg>

@@ -32,6 +32,25 @@ body {
   overscroll-behavior: none;
 }
 
+/* Visible keyboard focus ring everywhere (accessibility, task 7). Pointer
+   users don't see it; keyboard users always do. */
+:focus-visible {
+  outline: 2px solid var(--color-surf);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* MapLibre dark attribution/controls so they read on the dark theme. */
 .maplibregl-ctrl-attrib {
   background: rgba(4, 18, 31, 0.7) !important;
