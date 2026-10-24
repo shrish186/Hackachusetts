@@ -80,20 +80,26 @@ export function MapView({ routes, onError }: MapViewProps) {
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(new ScaleControl({ unit: 'nautical' }), 'bottom-left');
 
-    const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
-    map.addControl(overlay as unknown as IControl);
-
     // Surface async GL/worker errors (e.g. worker failed to load) to the UI.
     map.on('error', (e) => {
       const msg = (e && e.error && e.error.message) || '';
       if (/webgl|worker|context/i.test(msg)) onError?.(msg);
     });
 
-    // Mark ready only once the style has loaded and the canvas has a real size,
-    // so deck.gl never reads width/height off an unsized/undefined viewport.
+    // Attach the deck.gl overlay only AFTER the style has loaded and the canvas
+    // has a real size. Adding it earlier lets deck render against an unsized
+    // viewport and throw "Cannot read properties of undefined (reading
+    // 'height')". We also wait one resize/idle tick to be safe.
     map.on('load', () => {
       const c = map.getCanvas();
-      if (c && c.width > 0 && c.height > 0) setMapReady(true);
+      if (!c || c.width === 0 || c.height === 0) return;
+      map.resize(); // ensure the GL viewport matches the container
+      if (!overlayRef.current && mapRef.current) {
+        const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
+        map.addControl(overlay as unknown as IControl);
+        overlayRef.current = overlay;
+      }
+      setMapReady(true);
     });
 
     // Polygon draw tool: click adds a vertex while draw mode is on.
@@ -104,7 +110,6 @@ export function MapView({ routes, onError }: MapViewProps) {
     });
 
     mapRef.current = map;
-    overlayRef.current = overlay;
 
     return () => {
       map.remove();
