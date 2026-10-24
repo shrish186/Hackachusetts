@@ -1,0 +1,10 @@
+{
+  "port": "provincetown",
+  "vessel": "mid_trawler",
+  "cruise_kn": 9.5,
+  "max_hours": 14.0,
+  "depart_window": ["2026-03-15T09:00:00Z", "2026-03-15T13:00:00Z"],
+  "target_ground": "stellwagen_bank",
+  "risk_pref": 0.6,
+  "language": "en"
+}

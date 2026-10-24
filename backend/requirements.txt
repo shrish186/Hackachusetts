@@ -1,3 +1,17 @@
+# Fathom backend dependencies (Python 3.11)
+# Web/API
 fastapi>=0.110
 uvicorn[standard]>=0.29
+# Data models / validation
 pydantic>=2.6
+pyyaml
+# Numeric & geospatial
+numpy
+shapely
+geopandas
+xarray
+# HTTP client (ingest)
+httpx
+# Testing
+pytest
+hypothesis
