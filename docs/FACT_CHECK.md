@@ -36,16 +36,24 @@ Last checked: 2026-10-24 (UTC).
   (derived from the two published anchor points; fits 0.81 at 15.3 kn and ~0.98
   at 21 kn).
 
-## 3. Seasonal Management Area / slow-zone dates and speed limits — **NOT VERIFIED**
+## 3. Seasonal Management Area dates and speed limits — **DATES VERIFIED; polygons approximate**
 
-- The 10-knot speed limit is the well-known NOAA SMA figure, but the **exact
-  active dates and polygon boundaries in `data/snapshots/zones.json` are
-  hand-digitized demo values, not downloaded** from NOAA Fisheries. The Cape Cod
-  Bay restricted-area dates (Mass DMF) were not confirmed this session.
-- **Do not present specific SMA dates as fact.** To verify: NOAA Fisheries
-  "Reducing Vessel Strikes to North Atlantic Right Whales" and the Mass DMF
-  Cape Cod Bay regulations pages.
-- Status in data: all such zones carry `synthetic: true`.
+- **Dates/limits VERIFIED against NOAA Fisheries (2026 season bulletins):**
+  - Cape Cod Bay SMA: active **Jan 1 – May 15**, 10 kn for vessels ≥ 65 ft.
+    https://content.govdelivery.com/accounts/USNOAAFISHERIES/bulletins/401441e
+  - Off Race Point SMA: active **Mar 1 – Apr 30**, 10 kn for vessels ≥ 65 ft.
+  - Great South Channel SMA: active **Apr 1 – Jul 31**, 10 kn for vessels ≥ 65 ft.
+    https://content.govdelivery.com/accounts/USNOAAFISHERIES/bulletins/40ff22f
+  - General rule: https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales
+- **Still approximate:** the zone **polygons** in `data/snapshots/zones.json`
+  are hand-drawn approximations of the official areas, not the NOAA shapefiles,
+  so every zone keeps `synthetic: true` with a per-zone `note` saying so.
+- **Honesty note on the live API:** on a date outside these windows (e.g.
+  24 Oct) the SMAs correctly report **inactive** — that is correct, not a bug.
+  Use the `config/demo_scenarios.yaml` "Replay whale season" date (2026-03-15)
+  to see them active.
+- **Important:** the 10 kn limit is mandatory only for vessels ≥ 65 ft; Fathom
+  treats it as advisory for all vessels and never claims legal compliance.
 
 ## 4. Wind lease area names and boundaries — **NOT VERIFIED**
 
@@ -58,9 +66,30 @@ Last checked: 2026-10-24 (UTC).
 
 ---
 
+## 5. Whale sightings — **REAL (OBIS)** as of 2026-10-24
+
+- `data/snapshots/sightings.json` now holds **real** North Atlantic right whale
+  (*Eubalaena glacialis*) occurrence records pulled from OBIS for the study
+  bbox (NOAA/NMFS/NEFSC surveys aggregated by OBIS; CC-BY). The demo retains the
+  60 most-recent records for routing performance. `synthetic: false`.
+- Source: https://obis.org/  (API https://api.obis.org/)
+
+## 6. Ocean conditions — **REAL (NOAA NDBC + NWS)** as of 2026-10-24
+
+- `data/snapshots/conditions.json` holds **real** NOAA NDBC buoy observations
+  (44013 Boston, 44029 Mass Bay) plus **real** NWS marine gridpoint forecast
+  samples (api.weather.gov) for study-wide wave/wind coverage. `synthetic: false`.
+
+---
+
 ## Summary for the judges
 
-- **Safe to state as fact:** right whale population (~384, 2024) and the
-  speed–lethality curve (0.5 at 11.8 kn), both cited above.
-- **Must be labeled demo/synthetic:** all zone polygons and dates, wind lease
-  names/boundaries, the coastline, whale sightings, effort proxy, and the fleet.
+- **Real data:** ocean conditions (NOAA NDBC buoys + NWS forecast), whale
+  sightings (OBIS), and the verified lethality-curve parameters.
+- **Verified facts (safe to state):** right whale population (~384, 2024); the
+  speed–lethality curve (0.5 at 11.8 kn); SMA active **dates** and the 10 kn
+  limit for vessels ≥ 65 ft.
+- **Still demo/synthetic (labeled):** zone **polygons** (hand-drawn
+  approximations of real NOAA/BOEM areas — dates are real, shapes are not), the
+  coastline/land mask, the effort proxy, and the fleet. The whale-risk layer is
+  a transparent screening **model** over real inputs, not a measured value.

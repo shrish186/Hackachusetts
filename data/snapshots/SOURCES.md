@@ -1,27 +1,23 @@
 # Data sources — Fathom snapshots
 
-Honest status of every data layer. "Real" = downloaded from a real URL this
-session with `synthetic: false`. "Synthetic" = hand-authored / seeded and
-labeled `synthetic: true`. Times are UTC.
+Honest status of every data layer, last refreshed **2026-10-24 (UTC)**.
+"Real" = fetched from a real public URL this session (`synthetic: false`).
+"Synthetic" = hand-authored / seeded / a derived model (`synthetic: true`).
+See `docs/DATA.md` for the fuller table and `docs/FACT_CHECK.md` for verified facts.
 
-| Layer | File | Status | Source URL | fetched_at (UTC) | Notes |
-|---|---|---|---|---|---|
-| Conditions (buoy obs) | `conditions.json` | **REAL (live)** | https://www.ndbc.noaa.gov/data/realtime2/ | 2026-10-24 ~16:55Z | NOAA NDBC standard-met feed, buoys 44013 (Boston) + 44029 (Mass Bay). Only rows with BOTH real wave + wind kept. 44090/44098 had no complete row and were skipped. |
-| Marine forecast (NWS) | — | **NOT DONE** | https://api.weather.gov | — | Skipped under time box; conditions covered by NDBC buoys instead. |
-| Protection zones | `zones.json` | **SYNTHETIC** | NOAA Fisheries / Mass DMF / BOEM pages referenced per-zone | 2026-03-14 (demo date) | Polygons are hand-digitized from published maps; dates/limits are demo values. Each zone `synthetic: true`. NOT a real geospatial download. |
-| Wind lease areas | `zones.json` (`wind_lease_*`) | **SYNTHETIC** | https://www.boem.gov/renewable-energy/state-activities/massachusetts | — | Hand-drawn boxes, not the real BOEM GeoJSON. |
-| Coastline / land mask | `land_mask.geojson` | **SYNTHETIC** | (none) | — | Simplified hand-digitized MA coastline. Not Natural Earth / NOAA shoreline. Coarse: some real ports fall on "land" cells. |
-| Whale sightings | `sightings.json` | **SYNTHETIC** | (none) | 2026-03-14 (demo date) | Seeded from published seasonal patterns; aggregate, no individual identity. Not an OBIS download. |
-| Effort proxy | (computed) `engine/effort.py` | **SYNTHETIC** | (none) | — | Gaussian field around known grounds. An ESTIMATE, not catch/revenue. |
-| Fleet | (computed) `engine/fleet.py` | **SYNTHETIC** | (none) | — | Deterministic anonymous trips (V-001..), seeded from real port/ground coords. |
-| Ports & grounds | `config/ports.yaml` | REAL coordinates | public gazetteer / NOAA charts | — | Point locations are real; everything built on them is still a model estimate. |
-| Lethality curve | `config/risk.yaml` | **REAL (verified)** | http://www.phys.ocean.dal.ca/~taggart/Publications/Vanderlaan_Taggart_MarMamSci-23_2007.pdf | 2026-10-24 | v50=11.8 kn verified; k=2.415 derived from published anchor points. |
+| Layer | File | Source | URL | fetched_at | Status | License | Limitations |
+|---|---|---|---|---|---|---|---|
+| Conditions | `conditions.json` | NOAA NDBC buoys + NWS marine forecast | https://www.ndbc.noaa.gov/data/realtime2/ , https://api.weather.gov/ | 2026-10-24 | **REAL** | US Gov public domain | Buoys 44013/44029 only report a few cells; NWS gridpoint samples fill coverage. NWS rows are forecast, not observations. |
+| Sightings | `sightings.json` | OBIS (NOAA/NMFS/NEFSC surveys) | https://obis.org/ | 2026-10-24 | **REAL** | CC-BY 4.0 | 60 most-recent of thousands of in-bbox records retained for routing speed. |
+| Risk | (model) `app/engine/risk.py` + `config/risk.yaml` | Real OBIS sightings + Vanderlaan & Taggart (2007) lethality curve | https://doi.org/10.1111/j.1748-7692.2007.00048.x | 2026-10-24 | **Model over real inputs** (flagged synthetic) | paper © authors; our code MIT | Screening model, not a measured probability. Params verified (v50=11.8 kn, k=2.415). |
+| Zones | `zones.json` | NOAA Fisheries SMAs, GARFO/Mass DMF closures, BOEM wind leases | https://www.fisheries.noaa.gov/.../reducing-vessel-strikes-north-atlantic-right-whales | 2026-10-24 | **Dates real, polygons synthetic** | facts US Gov public domain | Polygons are hand-drawn approximations of the official areas. SMA active dates + 10 kn (≥65 ft) are verified. |
+| Land mask | `land_mask.geojson` | Hand-drawn approximation of NOAA/Natural Earth coastline | https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-land/ | n/a | **Synthetic** | Natural Earth public domain; shapes ours | Coarse; ports snapped to nearest water cell. Not for navigation. |
+| Ports & grounds | `config/ports.yaml` | Real harbor/ground coordinates | public gazetteer / NOAA charts | n/a | **Real coords** | — | Everything built on them (routes/effort) is an estimate. |
+| Effort proxy | (model) `app/engine/effort.py` | Seeded from `config/ports.yaml` grounds | — | n/a | **Synthetic** | our code MIT | An ESTIMATE of fishing activity, not catch or revenue. |
+| Fleet | (model) `app/engine/fleet.py` | Deterministic synthetic, seeded from ports/grounds | — | n/a | **Synthetic** | our code MIT | Anonymous trips (V-001…); no real vessel identity. |
 
-## What is real vs. synthetic (one line)
-Real: NDBC buoy conditions (2 stations), the lethality curve parameters, and
-port/ground coordinates. Everything else (zones, coastline, sightings, effort,
-fleet) is synthetic and labeled as such.
-
-## How to refresh the real buoy data
-`python -c "from app.ingest.ndbc import fetch_all; print(fetch_all())"` (run
-from `backend/` with `FATHOM_ROOT` set), then regenerate `conditions.json`.
+## Refresh
+`python scripts/refresh_snapshots.py --all` re-fetches conditions (NDBC+NWS) and
+sightings (OBIS) and rewrites the snapshots with a fresh `fetched_at`. If a
+source is unreachable it keeps the previous snapshot and says so. Validate with
+`python scripts/validate_snapshots.py`.

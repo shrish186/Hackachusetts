@@ -1,10 +1,13 @@
 {
   "type": "FeatureCollection",
   "metadata": {
-    "description": "Simplified land polygons for the Fathom study area (Massachusetts Bay, Cape Cod Bay, approaches). Hand-digitized from published coastline maps for demo use.",
+    "description": "Simplified land polygons for the Fathom study area (Massachusetts Bay, Cape Cod Bay, approaches). Hand-drawn approximation of the real coastline for the demo land mask.",
+    "source": "hand-drawn approximation of the NOAA / Natural Earth coastline",
+    "source_url": "https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-land/",
+    "license": "Natural Earth data is public domain; the simplified polygons here are our own hand-drawn approximation.",
     "synthetic": true,
-    "source_url": null,
-    "note": "Approximate coastline. Use only for the land mask / routing demo, not for navigation."
+    "fetched_at": null,
+    "note": "Approximate coastline only. Some real harbors fall inside a land cell at grid resolution; ports are snapped to the nearest water cell (backend/app/ingest/ports.py). Do not use for navigation."
   },
   "features": [
     {
