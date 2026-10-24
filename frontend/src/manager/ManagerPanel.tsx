@@ -5,6 +5,7 @@ import type { ScenarioListItem, ScenarioResult } from '@/api/types';
 import { useAppState } from '@/state/AppState';
 import { useConn } from '@/hooks/useConn';
 import { t } from '@/lib/i18n';
+import { polygonAreaNm2 } from '@/lib/geo';
 import { TradeoffChart } from './TradeoffChart';
 
 /**
@@ -32,7 +33,19 @@ export function ManagerPanel() {
   const [running, setRunning] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Draw UX (item 5): whether the drawn shape is finished, and whether the
+  // candidate zone is a full closure or a 10 kn speed limit.
+  const [finished, setFinished] = useState(false);
+  const [prohibited, setProhibited] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
+
+  const hasPolygon = finished && drawnPolygon.length >= 3;
+  const customReady = hasPolygon; // a valid custom candidate zone exists
+  // Disable Run only when the user started a custom shape but hasn't finished a
+  // valid one; a bare scenario run (no drawing) is always allowed.
+  const blockRun = (drawing || drawnPolygon.length > 0) && !customReady;
+
+  const areaNm2 = drawnPolygon.length >= 3 ? polygonAreaNm2(drawnPolygon) : 0;
 
   // Load the selectable scenario list once.
   useEffect(() => {
@@ -58,6 +71,26 @@ export function ManagerPanel() {
     setSelectedId(firstFrontier?.scenario_id ?? null);
   }
 
+  /** One attempt at /api/sim/run. Returns true on success. */
+  async function attemptRun(ac: AbortController): Promise<boolean> {
+    const res = await api.runScenario({
+      polygon: customReady ? drawnPolygon : undefined,
+      prohibited: customReady ? prohibited : undefined,
+      speedLimitKn: customReady && !prohibited ? 10 : undefined,
+      scenarioId: 'seasonal_speed_limit',
+      language,
+      signal: ac.signal,
+      timeoutMs: 60_000,
+    });
+    if (ac.signal.aborted) return false;
+    applyResults(
+      res.results.length ? res.results : mock.scenarios,
+      res.baselineAccessLost,
+      res.baselineTrips,
+    );
+    return true;
+  }
+
   async function run() {
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -65,21 +98,24 @@ export function ManagerPanel() {
     setRunning(true);
     setError(null);
     try {
-      const res = await api.runScenario({
-        polygon: drawnPolygon.length >= 3 ? drawnPolygon : undefined,
-        scenarioId: 'seasonal_speed_limit',
-        language,
-        signal: ac.signal,
-        timeoutMs: 60_000,
-      });
-      if (ac.signal.aborted) return;
-      applyResults(res.results.length ? res.results : mock.scenarios, res.baselineAccessLost, res.baselineTrips);
+      await attemptRun(ac);
     } catch (err) {
-      if (ac.signal.aborted) return; // user cancelled; stay quiet
-      // Friendly messages for the documented error codes; always recover with
-      // sample numbers so the view is never empty.
+      if (ac.signal.aborted) return;
+      // Cold-start grace: auto-retry once after 8 s before showing an error
+      // (item 4). Keep the spinner up during the wait.
+      if (!(err instanceof ApiError)) {
+        await new Promise((r) => setTimeout(r, 8000));
+        if (ac.signal.aborted) return;
+        try {
+          await attemptRun(ac);
+          return; // retry succeeded
+        } catch {
+          /* fall through to the friendly error below */
+        }
+      }
+      if (ac.signal.aborted) return;
       if (err instanceof ApiError && err.status === 429) setError(s.simBusy);
-      else if (err instanceof ApiError && (err.status === 504)) setError(s.simSlow);
+      else if (err instanceof ApiError && err.status === 504) setError(s.simSlow);
       else if (err instanceof DOMException && err.name === 'AbortError') setError(s.simTimeout);
       else setError(s.simError);
       // Mock numbers carry no real baseline access-lost count (do not hardcode).
@@ -94,6 +130,13 @@ export function ManagerPanel() {
     setRunning(false);
   }
 
+  /** Clear the drawn polygon and reset the draw state (item 5). */
+  function clearPolygon() {
+    setDrawnPolygon([]);
+    setDrawing(false);
+    setFinished(false);
+  }
+
   const selected = results.find((r) => r.scenario_id === selectedId) ?? null;
 
   return (
@@ -101,11 +144,22 @@ export function ManagerPanel() {
       <h2 className="text-sm font-bold text-foam">{s.simTitle}</h2>
       <p className="text-xs leading-snug text-mist">{s.simIntro}</p>
 
-      {/* Draw tool */}
+      {/* Draw tool (item 5) */}
       <div className="rounded-xl border border-depth bg-abyss/40 p-3">
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setDrawing((d) => !d)}
+            onClick={() => {
+              if (drawing) {
+                // Finish: keep the shape if it has 3+ points.
+                setDrawing(false);
+                setFinished(drawnPolygon.length >= 3);
+              } else {
+                // Start a fresh shape.
+                setDrawnPolygon([]);
+                setFinished(false);
+                setDrawing(true);
+              }
+            }}
             aria-pressed={drawing}
             className={[
               'min-h-9 flex-1 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-surf',
@@ -115,20 +169,53 @@ export function ManagerPanel() {
             {drawing ? s.finishZone : s.drawZone}
           </button>
           <button
-            onClick={() => {
-              setDrawnPolygon([]);
-              setDrawing(false);
-            }}
+            onClick={clearPolygon}
             disabled={drawnPolygon.length === 0}
             className="min-h-9 rounded-lg border border-depth px-3 text-xs font-semibold text-mist transition-colors hover:text-foam disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-surf"
           >
             {s.clearZone}
           </button>
         </div>
+
         {drawing && <p className="mt-2 text-[11px] leading-snug text-surf">{s.drawHint}</p>}
+
         {drawnPolygon.length > 0 && (
           <p className="mt-2 text-[11px] text-mist">
-            {drawnPolygon.length} {drawnPolygon.length === 1 ? 'vertex' : 'vertices'}
+            {drawnPolygon.length} {s.vertices}
+            {hasPolygon && <> · {s.area} ~{Math.round(areaNm2)} nm²</>}
+          </p>
+        )}
+
+        {/* Closure / speed-limit switch for the custom polygon */}
+        {customReady && (
+          <div className="mt-2 flex gap-1" role="group" aria-label={`${s.closure} / ${s.speedLimit10}`}>
+            <button
+              onClick={() => setProhibited(true)}
+              aria-pressed={prohibited}
+              className={[
+                'flex-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-surf',
+                prohibited ? 'border-alert bg-alert/20 text-alert' : 'border-depth text-mist hover:text-foam',
+              ].join(' ')}
+            >
+              🔒 {s.closure}
+            </button>
+            <button
+              onClick={() => setProhibited(false)}
+              aria-pressed={!prohibited}
+              className={[
+                'flex-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-surf',
+                !prohibited ? 'border-coral bg-coral/20 text-coral' : 'border-depth text-mist hover:text-foam',
+              ].join(' ')}
+            >
+              {s.speedLimit10}
+            </button>
+          </div>
+        )}
+
+        {/* "Finish the shape first" hint when a shape is in progress */}
+        {blockRun && (
+          <p className="mt-2 text-[11px] font-semibold text-coral" role="status">
+            {s.finishShapeFirst}
           </p>
         )}
       </div>
@@ -173,7 +260,9 @@ export function ManagerPanel() {
       ) : (
         <button
           onClick={run}
-          className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf focus-visible:ring-2 focus-visible:ring-surf"
+          disabled={blockRun}
+          title={blockRun ? s.finishShapeFirst : undefined}
+          className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-surf"
         >
           {s.runSim}
         </button>

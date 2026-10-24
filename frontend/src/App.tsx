@@ -1,5 +1,6 @@
 import { Suspense, lazy, useState } from 'react';
 import { TopBar } from '@/components/TopBar';
+import { LeftRail } from '@/components/LeftRail';
 import { TimeSlider } from '@/components/TimeSlider';
 import { LayerPanel } from '@/components/LayerPanel';
 import { CaptainPanel } from '@/captain/CaptainPanel';
@@ -26,12 +27,11 @@ const ManagerPanel = lazy(() =>
 );
 
 /**
- * Panels scroll fully within the space between the top bar and the bottom time
- * slider, with extra bottom padding, so results and the last agent line are
- * never hidden behind the timeline (task 4). The timeline is ~7rem tall; the
- * panel top is ~8rem; we leave ~1rem gap, hence the max-height below.
+ * The left column scrolls within the space between the top (1rem) and the
+ * bottom time slider (~8rem), with extra bottom padding, so the header stack
+ * and planner results are never hidden behind the timeline (tasks 2 + 4).
  */
-const PANEL_SCROLL = 'max-h-[calc(100dvh-16rem)] overflow-y-auto overscroll-contain pb-6';
+const PANEL_SCROLL = 'max-h-[calc(100dvh-9rem)] overflow-y-auto overscroll-contain pb-6';
 
 export function App() {
   const route = useRoute();
@@ -80,25 +80,41 @@ export function App() {
         </Suspense>
       </ErrorBoundary>
 
-      {/* Top bar: brand, data timestamp + sources, about, mode toggle, badge */}
-      <TopBar
-        demoMode={meta?.demo_mode ?? true}
-        dataTimestamp={meta?.data_timestamp ?? null}
-        onOpenSources={() => setSourcesOpen(true)}
-      />
-
-      {/* Offline / cold-start banner (task 7) */}
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-20 flex justify-center px-3 sm:top-24">
-        <OfflineBanner />
-      </div>
+      {/* Top-right: mode toggle + data badge */}
+      <TopBar demoMode={meta?.demo_mode ?? true} />
 
       {/*
-        Mode-specific panel.
-        - Desktop/tablet (sm+): docked top-left, scrolls within the viewport.
-        - Phone (<sm): a bottom sheet toggled by a floating button.
+        Left column (item 2): a single vertical flex stack — header rail,
+        cold-start/offline banner, then the planner — so the replay banner can
+        never overlap the "Plan a trip" title. The whole column scrolls as one.
+        Desktop/tablet only; phones use the bottom sheet below.
       */}
-      <div className="pointer-events-none absolute left-3 top-32 z-10 hidden sm:left-4 sm:top-36 sm:block">
-        <div className={PANEL_SCROLL}>{panel}</div>
+      <div className="pointer-events-none absolute left-3 top-3 z-10 hidden sm:left-4 sm:top-4 sm:block">
+        <div className={`flex flex-col gap-2 ${PANEL_SCROLL}`}>
+          <div className="pointer-events-auto">
+            <LeftRail
+              dataTimestamp={meta?.data_timestamp ?? null}
+              onOpenSources={() => setSourcesOpen(true)}
+            />
+          </div>
+          <div className="pointer-events-auto">
+            <OfflineBanner />
+          </div>
+          {panel}
+        </div>
+      </div>
+
+      {/* Phone: compact header stack (rail + banner) top-left */}
+      <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-w-[82vw] flex-col gap-2 sm:hidden">
+        <div className="pointer-events-auto">
+          <LeftRail
+            dataTimestamp={meta?.data_timestamp ?? null}
+            onOpenSources={() => setSourcesOpen(true)}
+          />
+        </div>
+        <div className="pointer-events-auto">
+          <OfflineBanner />
+        </div>
       </div>
 
       {/* Phone bottom sheet */}
@@ -128,8 +144,8 @@ export function App() {
         )}
       </div>
 
-      {/* Right: layer toggles + legend (hidden on narrow phones to keep the map clear) */}
-      <div className="pointer-events-none absolute right-3 top-32 z-10 hidden sm:right-4 sm:top-40 md:block">
+      {/* Right: layer toggles + legend, below the mode toggle (hidden on phones) */}
+      <div className="pointer-events-none absolute right-3 top-28 z-10 hidden sm:right-4 sm:top-28 md:block">
         <LayerPanel />
       </div>
 

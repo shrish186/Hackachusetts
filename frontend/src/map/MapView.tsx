@@ -34,7 +34,7 @@ export function MapView({ routes, onError }: MapViewProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
 
-  const { layerTimeIso, speedKn, layers, drawing, drawnPolygon, setDrawnPolygon } =
+  const { mode, layerTimeIso, speedKn, layers, drawing, drawnPolygon, setDrawnPolygon } =
     useAppState();
   // Layer fetch time (whale-season instant when replaying, else the slider).
   const timeIso = layerTimeIso;
@@ -77,7 +77,13 @@ export function MapView({ routes, onError }: MapViewProps) {
       return;
     }
 
-    map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    // Zoom control bottom-right, clear of the top-right mode toggle and the
+    // bottom time slider / mobile bottom sheet (item 1). Spacing is applied via
+    // the `.fathom-nav` CSS rule in index.css so it lifts above the slider.
+    const nav = new NavigationControl({ showCompass: false });
+    map.addControl(nav, 'bottom-right');
+    const navContainer = (nav as unknown as { _container?: HTMLElement })._container;
+    navContainer?.classList.add('fathom-nav');
     map.addControl(new ScaleControl({ unit: 'nautical' }), 'bottom-left');
 
     // Surface async GL/worker errors (e.g. worker failed to load) to the UI.
@@ -141,6 +147,11 @@ export function MapView({ routes, onError }: MapViewProps) {
     const canvas = mapRef.current?.getCanvas();
     if (canvas) canvas.style.cursor = drawing ? 'crosshair' : '';
   }, [drawing]);
+
+  // Close any open zone popup when the mode changes (item 5).
+  useEffect(() => {
+    setSelectedZone(null);
+  }, [mode]);
 
   // Track cursor for tooltips.
   useEffect(() => {

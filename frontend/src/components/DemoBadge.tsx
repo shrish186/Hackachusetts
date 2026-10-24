@@ -26,6 +26,12 @@ export function DemoBadge({ demoMode }: DemoBadgeProps) {
       />
     );
   }
+  if (conn === 'waking') {
+    // Neutral during the cold-start grace window — never the red offline badge.
+    return (
+      <Badge tone="mist" label="Waking server…" title="Waking the free-tier server (up to 60 s)." />
+    );
+  }
   if (demoMode) {
     return (
       <Badge
@@ -47,7 +53,7 @@ function Badge({
   label,
   title,
 }: {
-  tone: 'alert' | 'coral' | 'kelp';
+  tone: 'alert' | 'coral' | 'kelp' | 'mist';
   label: string;
   title: string;
 }) {
@@ -55,11 +61,13 @@ function Badge({
     alert: 'border-alert/50 bg-alert/15 text-alert',
     coral: 'border-coral/50 bg-coral/15 text-coral',
     kelp: 'border-kelp/50 bg-kelp/15 text-kelp',
+    mist: 'border-depth bg-deep/80 text-mist',
   };
   const dot: Record<string, string> = {
     alert: 'bg-alert',
     coral: 'bg-coral',
     kelp: 'bg-kelp',
+    mist: 'bg-mist',
   };
   return (
     <span

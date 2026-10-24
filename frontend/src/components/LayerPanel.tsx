@@ -57,6 +57,26 @@ export function LayerPanel() {
           <p className="mt-1 text-[10px] leading-snug text-mist">
             Higher speed raises strike risk (lethality curve).
           </p>
+
+          {/* Risk heatmap legend (item 3) */}
+          <div className="mt-3">
+            <div className="mb-1 text-[11px] font-semibold text-foam">
+              Whale risk (0 to 1)
+            </div>
+            <div
+              className="h-2.5 w-full rounded-full"
+              style={{
+                background:
+                  'linear-gradient(to right, rgba(57,183,214,0.35), #f2994a, #e5544b)',
+              }}
+              aria-hidden
+            />
+            <div className="mt-0.5 flex justify-between text-[10px] text-mist">
+              <span>0</span>
+              <span>0.5</span>
+              <span>1</span>
+            </div>
+          </div>
         </div>
       )}
 

@@ -120,6 +120,13 @@ interface Strings {
   simSlow: string;
   simError: string;
   retry: string;
+  wakingServer: string;
+  offlineDemo: string;
+  finishShapeFirst: string;
+  vertices: string;
+  area: string;
+  closure: string;
+  speedLimit10: string;
   efficient: string;
   riskReduced: string;
   fleetCost: string;
@@ -242,6 +249,13 @@ const STRINGS: Record<Language, Strings> = {
     simSlow: 'The server timed out. Try again in a moment.',
     simError: 'Could not run the simulation. Showing sample numbers.',
     retry: 'Retry',
+    wakingServer: 'Waking the server (free tier, up to 60 s)…',
+    offlineDemo: 'Showing sample data, live server unreachable',
+    finishShapeFirst: 'Finish the shape first (3+ points)',
+    vertices: 'vertices',
+    area: 'Area',
+    closure: 'Closure (no entry)',
+    speedLimit10: '10 kn speed limit',
     efficient: 'efficient',
     riskReduced: 'Risk removed',
     fleetCost: 'Fleet cost',
@@ -360,6 +374,13 @@ const STRINGS: Record<Language, Strings> = {
     simSlow: 'O servidor expirou. Tente novamente em instantes.',
     simError: 'Não foi possível executar a simulação. Mostrando números de exemplo.',
     retry: 'Tentar novamente',
+    wakingServer: 'Acordando o servidor (gratuito, até 60 s)…',
+    offlineDemo: 'Mostrando dados de exemplo, servidor indisponível',
+    finishShapeFirst: 'Conclua a forma primeiro (3+ pontos)',
+    vertices: 'vértices',
+    area: 'Área',
+    closure: 'Fechamento (sem entrada)',
+    speedLimit10: 'Limite de 10 nós',
     efficient: 'eficiente',
     riskReduced: 'Risco removido',
     fleetCost: 'Custo da frota',
@@ -478,6 +499,13 @@ const STRINGS: Record<Language, Strings> = {
     simSlow: 'El servidor expiró. Inténtalo de nuevo en un momento.',
     simError: 'No se pudo ejecutar la simulación. Mostrando números de ejemplo.',
     retry: 'Reintentar',
+    wakingServer: 'Despertando el servidor (gratis, hasta 60 s)…',
+    offlineDemo: 'Mostrando datos de ejemplo, servidor no disponible',
+    finishShapeFirst: 'Termina la forma primero (3+ puntos)',
+    vertices: 'vértices',
+    area: 'Área',
+    closure: 'Cierre (sin entrada)',
+    speedLimit10: 'Límite de 10 nudos',
     efficient: 'eficiente',
     riskReduced: 'Riesgo eliminado',
     fleetCost: 'Costo de flota',

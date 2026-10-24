@@ -1,77 +1,22 @@
 import { ModeToggle } from './ModeToggle';
 import { DemoBadge } from './DemoBadge';
-import { ReplayToggle } from './ReplayToggle';
-import { formatLocalShort } from '@/lib/time';
-import { useAppState } from '@/state/AppState';
-import { t } from '@/lib/i18n';
-import { navigate } from '@/lib/router';
 
 interface TopBarProps {
   demoMode: boolean;
-  dataTimestamp: string | null;
-  onOpenSources: () => void;
 }
 
-export function TopBar({ demoMode, dataTimestamp, onOpenSources }: TopBarProps) {
-  const { replay, language } = useAppState();
-  const s = t(language);
+/**
+ * Top-right controls only (mode toggle + data badge). The left-column header
+ * now lives in <LeftRail/> so it stacks vertically with the planner and never
+ * overlaps it (item 2).
+ */
+export function TopBar({ demoMode }: TopBarProps) {
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-3 sm:p-4">
-      {/* Brand + data timestamp strip */}
-      <div className="pointer-events-auto flex flex-col gap-1">
-        <div className="flex items-center gap-2 rounded-xl border border-depth bg-deep/80 px-3 py-2 backdrop-blur">
-          <span className="text-lg font-bold tracking-tight text-foam">Fathom</span>
-          <span className="hidden text-xs text-mist sm:inline">
-            ocean decision copilot
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-mist">
-          {dataTimestamp && (
-            <span
-              className="rounded-md border border-depth bg-deep/70 px-2 py-1 backdrop-blur"
-              title="Latest data timestamp (America/New_York)"
-            >
-              Data as of {formatLocalShort(dataTimestamp)}
-            </span>
-          )}
-          <button
-            onClick={onOpenSources}
-            className="rounded-md border border-depth bg-deep/70 px-2 py-1 font-semibold text-surf backdrop-blur transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
-            title="Show data sources and their timestamps"
-          >
-            Sources
-          </button>
-          <a
-            href="/about"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/about');
-            }}
-            className="rounded-md border border-depth bg-deep/70 px-2 py-1 font-semibold text-surf backdrop-blur transition-colors hover:text-foam focus-visible:ring-2 focus-visible:ring-surf"
-          >
-            {s.about}
-          </a>
-        </div>
-
-        {/* Replay whale season toggle (item 1) */}
-        <ReplayToggle />
-
-        {/* Replay banner */}
-        {replay && (
-          <div
-            role="status"
-            className="max-w-xs rounded-md border border-surf/50 bg-surf/15 px-2 py-1 text-[11px] font-semibold text-surf backdrop-blur"
-          >
-            {s.replayBanner}
-          </div>
-        )}
-      </div>
-
-      {/* Mode toggle + demo badge */}
+    <div className="pointer-events-none absolute right-3 top-3 z-20 flex flex-col items-end gap-2 sm:right-4 sm:top-4">
       <div className="pointer-events-auto flex flex-col items-end gap-2">
         <ModeToggle />
         <DemoBadge demoMode={demoMode} />
       </div>
-    </header>
+    </div>
   );
 }

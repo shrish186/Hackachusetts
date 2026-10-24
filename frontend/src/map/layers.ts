@@ -1,4 +1,4 @@
-import { GeoJsonLayer, ScatterplotLayer, GridCellLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, GridCellLayer, PolygonLayer } from '@deck.gl/layers';
 import type { Layer, PickingInfo } from '@deck.gl/core';
 import type { Conditions, RiskCell, Sighting, Zone } from '@/api/types';
 import { STUDY_AREA } from '@/config/studyArea';
@@ -11,12 +11,33 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** Risk 0..1 -> teal→coral→alert ramp. */
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Smooth whale-risk heatmap ramp (item 3): transparent → amber → red.
+ * Alpha is driven by the layer opacity; here we vary it slightly with risk so
+ * near-zero cells fade out and high-risk cells read solid.
+ * Stops: 0 = clear deep teal, 0.5 = amber (#f2994a), 1 = red (#e5544b).
+ */
+const AMBER: [number, number, number] = [242, 153, 74];
+const RED: [number, number, number] = [229, 84, 75];
+const LOW: [number, number, number] = [57, 183, 214]; // surf teal, nearly transparent
+
 function riskColor(risk: number): RGBA {
-  const r = Math.round(40 + 215 * risk);
-  const g = Math.round(180 - 150 * risk);
-  const b = Math.round(170 - 120 * risk);
-  return [r, g, b, Math.round(40 + 170 * risk)];
+  const v = Math.max(0, Math.min(1, risk));
+  let rgb: [number, number, number];
+  if (v < 0.5) {
+    const t = v / 0.5;
+    rgb = [lerp(LOW[0], AMBER[0], t), lerp(LOW[1], AMBER[1], t), lerp(LOW[2], AMBER[2], t)];
+  } else {
+    const t = (v - 0.5) / 0.5;
+    rgb = [lerp(AMBER[0], RED[0], t), lerp(AMBER[1], RED[1], t), lerp(AMBER[2], RED[2], t)];
+  }
+  // Fade the lowest values toward transparent so the ramp reads 0→1.
+  const a = Math.round(255 * (0.25 + 0.75 * v));
+  return [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2]), a];
 }
 
 export interface LayerBuildArgs {
@@ -38,16 +59,34 @@ export function buildDeckLayers(args: LayerBuildArgs): Layer[] {
   const cell = STUDY_AREA.cellDeg;
   const layers: Layer[] = [];
 
-  // --- Risk heatmap (grid cells) ---
+  // --- Risk heatmap (item 3) ---
+  // Draw each cell as a gapless filled square in lon/lat (no stroke), sized to
+  // the 0.05° grid with a tiny overlap so adjacent cells never leave the
+  // 1px row gaps that made GridCellLayer look like horizontal stripes.
   if (show.risk && risk.length) {
+    const half = cell / 2;
+    const pad = cell * 0.02; // ~0.5px overlap at demo zoom; hides seams
     layers.push(
-      new GridCellLayer<RiskCell>({
+      new PolygonLayer<RiskCell>({
         id: 'risk-grid',
         data: risk,
-        cellSize: cell * 111000 * 0.9, // deg -> meters (approx)
-        getPosition: (d) => [d.lon - cell / 2, d.lat - cell / 2],
+        getPolygon: (d) => {
+          const w = d.lon - half - pad;
+          const e = d.lon + half + pad;
+          const s = d.lat - half - pad;
+          const n = d.lat + half + pad;
+          return [
+            [w, s],
+            [e, s],
+            [e, n],
+            [w, n],
+            [w, s],
+          ];
+        },
         getFillColor: (d) => riskColor(d.risk),
-        extruded: false,
+        stroked: false,
+        filled: true,
+        opacity: 0.55,
         pickable: true,
         onHover: (info: PickingInfo<RiskCell>) =>
           args.onRiskHover?.(info.object ?? null),

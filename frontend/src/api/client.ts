@@ -71,29 +71,53 @@ function setConn(next: ConnState) {
   listeners.forEach((fn) => fn(next));
 }
 
+/* Cold-start grace window (item 4): for the first 60 s of failures we show a
+ * neutral "waking" state, not the red "offline" badge. `firstFailureAt` is the
+ * timestamp of the earliest failure in the current outage; it resets on any
+ * success. Only once failures persist past the window do we flip to offline. */
+const COLD_START_MS = 60_000;
+let firstFailureAt: number | null = null;
+
+/** Called on any successful response: we're online; clear the outage clock. */
+function markOnline(): void {
+  firstFailureAt = null;
+  setConn('online');
+}
+
+/**
+ * Called on any failed/timed-out call. Within the 60 s grace window we stay in
+ * "waking" (neutral); after it we go "offline" (red badge).
+ */
+function markFailure(): void {
+  const now = Date.now();
+  if (firstFailureAt == null) firstFailureAt = now;
+  if (connState === 'online') firstFailureAt = now; // outage just started
+  setConn(now - firstFailureAt < COLD_START_MS ? 'waking' : 'offline');
+}
+
 /** Mark that we are waiting on a possibly-cold free-tier server. */
 export function setWaking(): void {
-  // Only move to "waking" from a not-yet-online state.
   if (connState !== 'online') setConn('waking');
 }
 
 /**
- * Probe GET /api/health to decide if the backend is reachable. Resolves true
- * on a real 200 response. Used by the offline banner's Retry / auto-retry.
- * `timeoutMs` is generous to allow a free-tier cold start.
+ * Probe GET /api/health. Resolves true on a real 200 response. Used by the
+ * offline banner's retry loop (every 5 s) to auto-recover to Live. A short
+ * per-probe timeout keeps the 5 s cadence snappy; the 60 s grace is tracked by
+ * markFailure, not this timeout.
  */
-export async function pingHealth(timeoutMs = 60000): Promise<boolean> {
+export async function pingHealth(timeoutMs = 8000): Promise<boolean> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
-  setWaking();
+  if (connState !== 'online') setWaking();
   try {
     const res = await fetch(`${API_URL}/api/health`, { signal: ac.signal });
     if (!res.ok) throw new Error(`health -> ${res.status}`);
     await res.json().catch(() => ({}));
-    setConn('online');
+    markOnline();
     return true;
   } catch {
-    setConn('offline');
+    markFailure();
     return false;
   } finally {
     clearTimeout(timer);
@@ -130,14 +154,16 @@ async function fetchJson<T>(
     const res = await fetch(`${API_URL}${path}`, { ...init, signal: ac.signal });
     if (!res.ok) {
       // The server did respond, so the connection is up (helps 429/504 flows).
-      setConn('online');
+      markOnline();
       throw new ApiError(res.status, `${path} -> ${res.status}`);
     }
     const json = (await res.json()) as T;
-    setConn('online');
+    markOnline();
     return json;
   } catch (err) {
-    if (!(err instanceof ApiError)) setConn('offline');
+    // A real HTTP error means the server answered -> still online. Only
+    // network/timeout failures count toward the cold-start outage clock.
+    if (!(err instanceof ApiError)) markFailure();
     throw err;
   } finally {
     clearTimeout(timer);
@@ -508,10 +534,10 @@ export const api = {
       });
       clearTimeout(timer);
       if (!res.ok || !res.body) throw new Error(`trip/plan -> ${res.status}`);
-      setConn('online');
+      markOnline();
       return await consumeSse(res.body, cb);
     } catch {
-      setConn('offline');
+      markFailure();
       return replayMockStream(req, cb);
     }
   },
@@ -549,6 +575,10 @@ export const api = {
   async runScenario(opts?: {
     scenarioId?: string;
     polygon?: Array<[number, number]>;
+    /** Closure (no entry) vs. a speed limit for the custom polygon (item 5). */
+    prohibited?: boolean;
+    /** Speed cap in knots when not a full closure (null for closure). */
+    speedLimitKn?: number | null;
     language?: Language;
     signal?: AbortSignal;
     timeoutMs?: number;
@@ -556,13 +586,14 @@ export const api = {
     const language = opts?.language ?? 'en';
     const body: Record<string, unknown> = {};
     if (opts?.polygon && opts.polygon.length >= 3) {
-      // Candidate polygon as a GeoJSON ring (closed).
+      // Candidate polygon as a closed GeoJSON ring (item 5).
       body.polygon = {
         type: 'Polygon',
         coordinates: [[...opts.polygon, opts.polygon[0]]],
       };
-      body.prohibited = true;
-      body.speed_limit_kn = null;
+      const prohibited = opts.prohibited ?? true;
+      body.prohibited = prohibited;
+      body.speed_limit_kn = prohibited ? null : (opts.speedLimitKn ?? 10);
     } else if (opts?.scenarioId) {
       body.scenario_id = opts.scenarioId;
     }
@@ -593,10 +624,10 @@ export const api = {
       });
       clearTimeout(timer);
       if (!res.ok) throw new Error(`brief -> ${res.status}`);
-      setConn('online');
+      markOnline();
       return await res.text();
     } catch {
-      setConn('offline');
+      markFailure();
       return null;
     }
   },
