@@ -8,18 +8,20 @@ import type { StyleSpecification } from 'maplibre-gl';
  * token, which keeps the demo key-free (no secrets, per data-and-safety
  * steering). Swap `tiles` for any other XYZ endpoint if needed.
  */
+// NOTE: no `{r}` retina placeholder — MapLibre leaves it literal (URL-encoded
+// as %7Br%7D) with 256px tiles, which returns blank images. Use plain tiles.
 const CARTO_DARK_NOLABELS = [
-  'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-  'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-  'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-  'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+  'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+  'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+  'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+  'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
 ];
 
 const CARTO_DARK_LABELS = [
-  'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-  'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-  'https://c.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-  'https://d.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+  'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+  'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+  'https://c.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+  'https://d.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
 ];
 
 const ATTRIBUTION =
