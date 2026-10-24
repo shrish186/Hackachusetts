@@ -104,6 +104,36 @@ def load_snapshot(name: str) -> SnapshotResult:
     collection = SNAPSHOT_DIR / f"{name}.json"
     if collection.exists():
         data = json.loads(collection.read_text())
+        # Lane A snapshots are either a bare JSON list, or a dict of the form
+        # {"metadata": {...}, "<name>": [...]} where metadata carries honest
+        # provenance (source/source_url/fetched_at/synthetic). Respect that
+        # metadata instead of assuming every collection file is real data.
+        if isinstance(data, dict):
+            meta = data.get("metadata", {})
+            records = None
+            for key, value in data.items():
+                if key != "metadata" and isinstance(value, list):
+                    records = value
+                    break
+            if records is None:
+                records = [data]
+            synthetic = bool(meta.get("synthetic", False))
+            parsed_fetched = None
+            if meta.get("fetched_at"):
+                try:
+                    parsed_fetched = datetime.fromisoformat(
+                        str(meta["fetched_at"]).replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    parsed_fetched = None
+            return SnapshotResult(
+                records,
+                source=meta.get("source") or f"fathom snapshot: {name}.json",
+                fetched_at=parsed_fetched or _file_mtime_utc(collection),
+                # A hand-authored (synthetic) snapshot is not real cached data.
+                cached=not synthetic,
+                synthetic=synthetic,
+            )
         records = data if isinstance(data, list) else [data]
         return SnapshotResult(
             records,

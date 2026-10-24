@@ -20,7 +20,7 @@
       "prohibited": false,
       "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "source_updated": "2026-01-01T00:00:00Z",
-      "synthetic": false
+      "synthetic": true
     },
     {
       "id": "slow_zone_stellwagen_mar",

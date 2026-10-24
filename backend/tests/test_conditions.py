@@ -20,7 +20,9 @@ def test_cached_conditions_load_and_flag():
     assert res.conditions, "expected some conditions"
     assert res.cached is True
     assert res.fetched_at is not None
-    assert res.badge.startswith("cached ")
+    # The current conditions snapshot is hand-authored (synthetic: true), so the
+    # badge reflects synthetic honestly; it carries a timestamp either way.
+    assert res.badge.startswith(("cached ", "synthetic "))
 
 
 def test_req1_3_demo_mode_uses_cache(monkeypatch):
