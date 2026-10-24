@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import type { Language, RoutePlan } from '@/api/types';
+import type { NarrativeLine } from '@/api/client';
+import type { Language, RoutePlan, TripRequest } from '@/api/types';
 import { t, riskLevelWord, DISCLAIMER } from '@/lib/i18n';
 import { formatLocalShort } from '@/lib/time';
+import { openBrief } from '@/lib/brief';
 
 interface PlanCardProps {
   plan: RoutePlan;
@@ -11,6 +13,10 @@ interface PlanCardProps {
   onSelect: () => void;
   /** Resolve a zone id to its display name (names stay identical across langs). */
   zoneName: (id: string) => string;
+  /** The trip request this plan answers (for the printable brief). */
+  trip?: TripRequest;
+  /** Agent narrative lines (shown in the "why" drawer when present). */
+  narrative?: NarrativeLine[];
 }
 
 /**
@@ -26,6 +32,8 @@ export function PlanCard({
   selected,
   onSelect,
   zoneName,
+  trip,
+  narrative,
 }: PlanCardProps) {
   const [open, setOpen] = useState(false);
   const s = t(language);
@@ -162,6 +170,26 @@ export function PlanCard({
               ))}
             </ul>
           </section>
+
+          {/* Agent narrative (plain-language, cited) */}
+          {narrative && narrative.length > 0 && rank === 1 && (
+            <section>
+              <h4 className="mb-1 font-bold text-foam">{s.summary}</h4>
+              <ul className="space-y-1 text-mist">
+                {narrative.map((n, i) => (
+                  <li key={i}>{n.text}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Print brief (Task 5) */}
+          <button
+            onClick={() => openBrief(plan, language, { zoneName, trip })}
+            className="min-h-9 w-full rounded-lg border border-surf/60 px-3 text-xs font-semibold text-surf transition-colors hover:bg-surf/15"
+          >
+            {s.printBrief}
+          </button>
 
           {/* Advisory disclaimer on every plan (Req 9.1) */}
           <p className="border-t border-depth pt-2 text-[10px] leading-snug text-mist/80">

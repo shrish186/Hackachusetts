@@ -155,6 +155,13 @@ export interface MetaResponse {
   data_timestamp: string;
 }
 
+/** A selectable scenario from GET /api/sim/scenarios (Manager mode). */
+export interface ScenarioListItem {
+  scenario_id: string;
+  label: string;
+  synthetic?: boolean;
+}
+
 /** Scenario result from POST /api/sim/run (Manager mode). */
 export interface ScenarioResult {
   scenario_id: string;

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
-import type { AgentEvent, RoutePlan, VesselType } from '@/api/types';
+import type { NarrativeLine } from '@/api/client';
+import type { AgentEvent, RoutePlan, TripRequest, VesselType } from '@/api/types';
 import { useAppState } from '@/state/AppState';
 import { useZones } from '@/hooks/useLayerData';
 import { sliceToIso } from '@/lib/time';
@@ -47,10 +48,23 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [plans, setPlans] = useState<RoutePlan[]>([]);
+  const [narrative, setNarrative] = useState<NarrativeLine[]>([]);
+  const [message, setMessage] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [lastTrip, setLastTrip] = useState<TripRequest | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  async function plan() {
+  /** Pre-fill the "Try the demo trip" values: Gloucester, small boat, 9 kn. */
+  function fillDemo() {
+    setPort('gloucester');
+    setVessel('small_boat');
+    setCruiseKn(9);
+    setMaxHours(12);
+    setDeparture('2026-03-15T07:00');
+    setRiskPref(0.8); // toward safest
+  }
+
+  async function plan(req: TripRequest) {
     // Reset prior run.
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -59,43 +73,50 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
     setLoading(true);
     setEvents([]);
     setPlans([]);
+    setNarrative([]);
+    setMessage(null);
     setSelected(null);
+    setLastTrip(req);
     onSelectedRoute(null);
 
-    const departIso = new Date(departure).toISOString();
     try {
-      const routes = await api.planTripStream(
-        {
-          port,
-          vessel,
-          cruise_kn: cruiseKn,
-          max_hours: maxHours,
-          depart_window: [departIso, departIso],
-          target_ground: 'stellwagen_bank',
-          risk_pref: riskPref,
-          language,
-        },
-        {
-          signal: ac.signal,
-          onEvent: (ev) =>
-            setEvents((prev) => {
-              // Replace the running placeholder with its done state (same id).
-              const i = prev.findIndex((p) => p.id === ev.id);
-              if (i === -1) return [...prev, ev];
-              const next = prev.slice();
-              next[i] = ev;
-              return next;
-            }),
-        },
-      );
+      const result = await api.planTripStream(req, {
+        signal: ac.signal,
+        onEvent: (ev) =>
+          setEvents((prev) => {
+            // Replace the running placeholder with its done state (same id).
+            const i = prev.findIndex((p) => p.id === ev.id);
+            if (i === -1) return [...prev, ev];
+            const next = prev.slice();
+            next[i] = ev;
+            return next;
+          }),
+      });
       if (ac.signal.aborted) return;
-      setPlans(routes);
-      // Auto-select the top-ranked plan and draw it.
-      setSelected(0);
-      onSelectedRoute(routes[0] ?? null);
+      setPlans(result.plans);
+      setNarrative(result.narrative);
+      setMessage(result.message);
+      if (result.plans.length > 0) {
+        setSelected(0);
+        onSelectedRoute(result.plans[0]);
+      }
     } finally {
       if (!ac.signal.aborted) setLoading(false);
     }
+  }
+
+  function currentRequest(): TripRequest {
+    const departIso = new Date(departure).toISOString();
+    return {
+      port,
+      vessel,
+      cruise_kn: cruiseKn,
+      max_hours: maxHours,
+      depart_window: [departIso, departIso],
+      target_ground: 'stellwagen_bank',
+      risk_pref: riskPref,
+      language,
+    };
   }
 
   function selectPlan(i: number) {
@@ -205,16 +226,46 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
         />
       </label>
 
-      <button
-        onClick={plan}
-        disabled={loading}
-        className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-60"
-      >
-        {loading ? s.planning : s.planRoutes}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={() => plan(currentRequest())}
+          disabled={loading}
+          className="min-h-11 flex-1 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-60"
+        >
+          {loading ? s.planning : s.planRoutes}
+        </button>
+        <button
+          onClick={() => {
+            fillDemo();
+            const departIso = new Date('2026-03-15T07:00').toISOString();
+            void plan({
+              port: 'gloucester',
+              vessel: 'small_boat',
+              cruise_kn: 9,
+              max_hours: 12,
+              depart_window: [departIso, departIso],
+              target_ground: 'stellwagen_bank',
+              risk_pref: 0.8,
+              language,
+            });
+          }}
+          disabled={loading}
+          title={s.tryDemoHint}
+          className="min-h-11 rounded-lg border border-surf/60 px-3 text-xs font-semibold text-surf transition-colors hover:bg-surf/15 disabled:opacity-60"
+        >
+          {s.tryDemo}
+        </button>
+      </div>
 
       {/* Live agent feed */}
       <AgentFeed events={events} language={language} active={loading} />
+
+      {/* No legal route message (Req 5.4) */}
+      {message && (
+        <div className="rounded-xl border border-coral/50 bg-coral/10 p-3 text-xs text-coral" role="status">
+          {message}
+        </div>
+      )}
 
       {/* Ranked plan cards */}
       {plans.length > 0 && (
@@ -228,6 +279,8 @@ export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
               selected={selected === i}
               onSelect={() => selectPlan(i)}
               zoneName={zoneName}
+              trip={lastTrip ?? undefined}
+              narrative={narrative}
             />
           ))}
         </div>

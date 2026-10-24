@@ -19,6 +19,7 @@ import type {
   MetaResponse,
   RiskCell,
   RoutePlan,
+  ScenarioListItem,
   ScenarioResult,
   Sighting,
   SourceMeta,
@@ -140,9 +141,16 @@ function adaptMeta(raw: unknown): MetaResponse {
   };
 }
 
+/** Extract the item array from a layer envelope `{ items: [...] }`. */
+function items(raw: unknown): Record<string, unknown>[] {
+  const o = raw as { items?: unknown[] };
+  if (Array.isArray(o.items)) return o.items as Record<string, unknown>[];
+  if (Array.isArray(raw)) return raw as Record<string, unknown>[];
+  return [];
+}
+
 function adaptZones(raw: unknown): Zone[] {
-  const features = (raw as { features?: unknown[] }).features ?? (Array.isArray(raw) ? raw : []);
-  return (features as Record<string, unknown>[]).map((z) => ({
+  return items(raw).map((z) => ({
     id: String(z.id),
     name: String(z.name ?? z.id),
     kind: z.kind as Zone['kind'],
@@ -158,13 +166,11 @@ function adaptZones(raw: unknown): Zone[] {
 }
 
 function adaptConditions(raw: unknown): Conditions[] {
-  const features = (raw as { features?: unknown[] }).features ?? (Array.isArray(raw) ? raw : []);
-  return features as Conditions[];
+  return items(raw) as unknown as Conditions[];
 }
 
 function adaptRisk(raw: unknown): RiskCell[] {
-  const cells = (raw as { cells?: unknown[] }).cells ?? (Array.isArray(raw) ? raw : []);
-  return (cells as Record<string, unknown>[]).map((c, i) => {
+  return items(raw).map((c, i) => {
     const factors = (c.factors ?? {}) as Record<string, number>;
     return {
       cell_id: String(c.cell_id ?? `${i}`),
@@ -211,6 +217,20 @@ const TOOL_LABELS: Record<Language, Record<string, string>> = {
   },
 };
 
+/** A plain-language narrative line with its supporting tool-call citations. */
+export interface NarrativeLine {
+  text: string;
+  citations: string[];
+}
+
+export interface PlanResult {
+  plans: RoutePlan[];
+  narrative: NarrativeLine[];
+  disclaimer: string | null;
+  /** Set when no legal route exists; names the constraint to relax. */
+  message: string | null;
+}
+
 export interface PlanStreamCallbacks {
   onEvent: (event: AgentEvent) => void;
   signal?: AbortSignal;
@@ -220,7 +240,7 @@ export interface PlanStreamCallbacks {
 async function replayMockStream(
   req: TripRequest,
   cb: PlanStreamCallbacks,
-): Promise<RoutePlan[]> {
+): Promise<PlanResult> {
   const labels = TOOL_LABELS[req.language] ?? TOOL_LABELS.en;
   for (const step of mock.agentScript) {
     if (cb.signal?.aborted) break;
@@ -235,7 +255,13 @@ async function replayMockStream(
       detail: step.detail,
     });
   }
-  return delay(mock.routes, 200);
+  await delay(null, 200);
+  return {
+    plans: mock.routes,
+    narrative: mock.narrativeFor(req.language),
+    disclaimer: null,
+    message: null,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -259,11 +285,13 @@ export const api = {
   },
 
   async getSightings(): Promise<Sighting[]> {
-    // Backend has no sightings layer endpoint yet; use the bundled sample.
+    // No dedicated sightings layer endpoint in the contract; use the bundled
+    // sample (also synthetic on the backend).
     return withFallback(
       async () => {
-        const raw = await fetchJson<{ features?: Sighting[] }>(`/api/layers/sightings?bbox=${BBOX}`);
-        return raw.features ?? mock.sightings;
+        const raw = await fetchJson<unknown>(`/api/layers/sightings?bbox=${BBOX}`);
+        const arr = items(raw) as unknown as Sighting[];
+        return arr.length ? arr : mock.sightings;
       },
       () => mock.sightings,
     );
@@ -311,9 +339,10 @@ export const api = {
    * Events (requirements.md Req 4.5). Reads POST /api/trip/plan as a stream
    * with fetch; on any failure it replays the scripted mock feed instead.
    */
-  async planTripStream(req: TripRequest, cb: PlanStreamCallbacks): Promise<RoutePlan[]> {
+  async planTripStream(req: TripRequest, cb: PlanStreamCallbacks): Promise<PlanResult> {
     try {
       const ac = new AbortController();
+      // Only time out the initial response; the stream itself may run longer.
       const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
       if (cb.signal) cb.signal.addEventListener('abort', () => ac.abort(), { once: true });
 
@@ -326,39 +355,74 @@ export const api = {
       clearTimeout(timer);
       if (!res.ok || !res.body) throw new Error(`trip/plan -> ${res.status}`);
       setConn('online');
-
-      const plans = await consumeSse(res.body, cb);
-      return plans;
+      return await consumeSse(res.body, cb);
     } catch {
       setConn('offline');
       return replayMockStream(req, cb);
     }
   },
 
-  async getScenarios(): Promise<ScenarioResult[]> {
+  /** List selectable scenarios (GET /api/sim/scenarios). */
+  async getScenarios(): Promise<ScenarioListItem[]> {
     return withFallback(
       async () => {
         const raw = await fetchJson<unknown>('/api/sim/scenarios');
-        const arr = (raw as { scenarios?: ScenarioResult[] }).scenarios ?? (raw as ScenarioResult[]);
-        return Array.isArray(arr) && arr.length ? arr : mock.scenarios;
+        const arr = (Array.isArray(raw) ? raw : (raw as { scenarios?: unknown[] }).scenarios ?? []) as ScenarioListItem[];
+        return arr.length ? arr : mock.scenarioList;
+      },
+      () => mock.scenarioList,
+    );
+  },
+
+  /**
+   * Run the fleet re-route simulation (POST /api/sim/run). Pass scenario ids
+   * to run a subset; pass a drawn polygon so the backend can treat it as a
+   * candidate zone. Returns ScenarioResult[]; falls back to mock numbers.
+   */
+  async runScenario(opts?: {
+    scenarioIds?: string[];
+    polygon?: Array<[number, number]>;
+  }): Promise<ScenarioResult[]> {
+    return withFallback(
+      async () => {
+        const body: Record<string, unknown> = {};
+        if (opts?.scenarioIds) body.scenario_ids = opts.scenarioIds;
+        if (opts?.polygon) body.polygon = opts.polygon;
+        const raw = await fetchJson<unknown>('/api/sim/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const arr = (Array.isArray(raw) ? raw : (raw as { results?: unknown[] }).results ?? []) as ScenarioResult[];
+        return arr.length ? arr : mock.scenarios;
       },
       () => mock.scenarios,
     );
   },
 
-  async runScenario(polygon?: Array<[number, number]>): Promise<ScenarioResult[]> {
-    return withFallback(
-      async () => {
-        const raw = await fetchJson<unknown>('/api/sim/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ polygon: polygon ?? null }),
-        });
-        const arr = (raw as { scenarios?: ScenarioResult[] }).scenarios ?? (raw as ScenarioResult[]);
-        return Array.isArray(arr) && arr.length ? arr : mock.scenarios;
-      },
-      () => mock.scenarios,
-    );
+  /**
+   * Fetch a printable HTML brief for a plan (POST /api/trip/brief). Returns the
+   * HTML string, or null if the backend is unreachable (caller builds it
+   * client-side instead).
+   */
+  async getBriefHtml(plan: RoutePlan, language: Language, trip?: TripRequest): Promise<string | null> {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+      const res = await fetch(`${API_URL}/api/trip/brief`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'text/html' },
+        body: JSON.stringify({ plan, language, trip: trip ?? null }),
+        signal: ac.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`brief -> ${res.status}`);
+      setConn('online');
+      return await res.text();
+    } catch {
+      setConn('offline');
+      return null;
+    }
   },
 };
 
@@ -367,55 +431,87 @@ export const api = {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Consume a Server-Sent Events stream from the trip planner. Expects events
- * whose `data:` payload is JSON of one of:
- *   { type: "tool", id, tool, label?, status, detail? }   -> agent feed step
- *   { type: "plans", plans: RoutePlan[] }                 -> final result
- * Unknown event shapes are ignored. Returns the final plans (or mock routes).
+ * Consume the trip planner SSE stream per docs/API_CONTRACT.md. Each frame is
+ * `event: <name>` + one `data:` JSON line. We handle:
+ *   tool_call   -> agent feed step (status running)
+ *   tool_result -> agent feed step (status done, with detail)
+ *   plans       -> { plans, narrative, disclaimer, message }
+ *   done / error
+ * Returns the final PlanResult (empty plans + message when no legal route).
  */
 async function consumeSse(
   body: ReadableStream<Uint8Array>,
   cb: PlanStreamCallbacks,
-): Promise<RoutePlan[]> {
+): Promise<PlanResult> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let plans: RoutePlan[] | null = null;
+  const result: PlanResult = { plans: mock.routes, narrative: [], disclaimer: null, message: null };
+  let gotPlans = false;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  const handleFrame = (frame: string) => {
+    let eventName = 'message';
+    const dataParts: string[] = [];
+    for (const line of frame.split('\n')) {
+      if (line.startsWith('event:')) eventName = line.slice(6).trim();
+      else if (line.startsWith('data:')) dataParts.push(line.slice(5).trim());
+    }
+    const dataStr = dataParts.join('\n');
+    if (!dataStr) return;
+    let msg: Record<string, unknown>;
+    try {
+      msg = JSON.parse(dataStr) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+
+    switch (eventName) {
+      case 'tool_call':
+      case 'tool_result':
+        cb.onEvent({
+          id: String(msg.id ?? msg.tool),
+          tool: String(msg.tool ?? 'tool'),
+          label: String(msg.label ?? msg.tool ?? 'Working…'),
+          status:
+            (msg.status as AgentEvent['status']) ??
+            (eventName === 'tool_result' ? 'done' : 'running'),
+          detail: msg.detail as string | undefined,
+        });
+        break;
+      case 'plans':
+        gotPlans = true;
+        result.plans = (msg.plans as RoutePlan[]) ?? [];
+        result.narrative = (msg.narrative as NarrativeLine[]) ?? [];
+        result.disclaimer = (msg.disclaimer as string | null) ?? null;
+        result.message = (msg.message as string | null) ?? null;
+        break;
+      case 'error':
+        cb.onEvent({
+          id: 'error',
+          tool: 'error',
+          label: String(msg.error ?? 'Error'),
+          status: 'error',
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
+  for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-
-    // SSE frames are separated by a blank line.
     let sep: number;
     while ((sep = buffer.indexOf('\n\n')) !== -1) {
-      const frame = buffer.slice(0, sep);
+      handleFrame(buffer.slice(0, sep));
       buffer = buffer.slice(sep + 2);
-      const dataLine = frame
-        .split('\n')
-        .filter((l) => l.startsWith('data:'))
-        .map((l) => l.slice(5).trim())
-        .join('\n');
-      if (!dataLine) continue;
-      try {
-        const msg = JSON.parse(dataLine) as Record<string, unknown>;
-        if (msg.type === 'plans' && Array.isArray(msg.plans)) {
-          plans = msg.plans as RoutePlan[];
-        } else if (msg.tool || msg.type === 'tool') {
-          cb.onEvent({
-            id: String(msg.id ?? msg.tool),
-            tool: String(msg.tool ?? 'tool'),
-            label: String(msg.label ?? msg.tool ?? 'Working…'),
-            status: (msg.status as AgentEvent['status']) ?? 'done',
-            detail: msg.detail as string | undefined,
-          });
-        }
-      } catch {
-        // Ignore malformed frames.
-      }
     }
   }
-  return plans ?? mock.routes;
+  if (buffer.trim()) handleFrame(buffer);
+
+  // If the backend streamed tool events but never sent plans, keep mock routes
+  // as a safety net so the UI still shows something.
+  if (!gotPlans) result.plans = mock.routes;
+  return result;
 }

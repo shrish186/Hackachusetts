@@ -50,6 +50,10 @@ interface Strings {
   knots: string;
   liters: string;
   meters: string;
+  tryDemo: string;
+  tryDemoHint: string;
+  summary: string;
+  printBrief: string;
   // vessel labels
   small_boat: string;
   mid_trawler: string;
@@ -96,6 +100,10 @@ const STRINGS: Record<Language, Strings> = {
     knots: 'kn',
     liters: 'L',
     meters: 'm',
+    tryDemo: 'Try the demo trip',
+    tryDemoHint: 'Pre-fill Gloucester, small boat, 9 kn, 12 h, morning departure, safest',
+    summary: 'Summary',
+    printBrief: 'Print brief',
     small_boat: 'Small boat',
     mid_trawler: 'Mid trawler',
     scalloper: 'Scalloper',
@@ -138,6 +146,10 @@ const STRINGS: Record<Language, Strings> = {
     knots: 'nós',
     liters: 'L',
     meters: 'm',
+    tryDemo: 'Testar viagem demo',
+    tryDemoHint: 'Preenche Gloucester, barco pequeno, 9 nós, 12 h, partida de manhã, mais seguro',
+    summary: 'Resumo',
+    printBrief: 'Imprimir resumo',
     small_boat: 'Barco pequeno',
     mid_trawler: 'Arrastão médio',
     scalloper: 'Barco de vieiras',
@@ -180,6 +192,10 @@ const STRINGS: Record<Language, Strings> = {
     knots: 'nudos',
     liters: 'L',
     meters: 'm',
+    tryDemo: 'Probar viaje demo',
+    tryDemoHint: 'Rellena Gloucester, bote pequeño, 9 nudos, 12 h, salida por la mañana, más seguro',
+    summary: 'Resumen',
+    printBrief: 'Imprimir resumen',
     small_boat: 'Bote pequeño',
     mid_trawler: 'Arrastrero mediano',
     scalloper: 'Barco vieiras',

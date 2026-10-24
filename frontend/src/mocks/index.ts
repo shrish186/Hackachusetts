@@ -15,6 +15,7 @@ import type {
   MetaResponse,
   RiskCell,
   RoutePlan,
+  ScenarioListItem,
   ScenarioResult,
   Sighting,
   Zone,
@@ -32,6 +33,42 @@ export const zones = zonesJson as Zone[];
 export const sightings = sightingsJson as Sighting[];
 export const routes = routesJson as unknown as RoutePlan[];
 export const scenarios = scenariosJson as ScenarioResult[];
+
+/** Selectable scenario list (GET /api/sim/scenarios shape). */
+export const scenarioList: ScenarioListItem[] = (scenariosJson as ScenarioResult[]).map((s) => ({
+  scenario_id: s.scenario_id,
+  label: s.label,
+  synthetic: true,
+}));
+
+/**
+ * Plain-language narrative for the mock trip plan, per language. Numbers and
+ * zone names are identical across languages (data-and-safety steering). Each
+ * sentence carries a [tool:call_N] citation tag.
+ */
+export function narrativeFor(language: 'en' | 'pt' | 'es'): Array<{ text: string; citations: string[] }> {
+  const lines: Record<'en' | 'pt' | 'es', string[]> = {
+    en: [
+      'Option 1 (Direct run) reaches Stellwagen Bank in about 3.8 h [tool:plan_routes].',
+      'It crosses the Cape Cod Bay Seasonal Management Area; stay at or below 10 kn there [tool:get_zones].',
+      'Whale risk exposure is 0.42; the safest option lowers it to 0.12 [tool:get_whale_risk].',
+      'Seas stay near 1.6 m through the departure window [tool:get_conditions].',
+    ],
+    pt: [
+      'A Opção 1 (Rota direta) chega ao Stellwagen Bank em cerca de 3.8 h [tool:plan_routes].',
+      'Ela cruza a Cape Cod Bay Seasonal Management Area; mantenha 10 kn ou menos ali [tool:get_zones].',
+      'A exposição ao risco de baleia é 0.42; a opção mais segura reduz para 0.12 [tool:get_whale_risk].',
+      'O mar fica perto de 1.6 m durante a janela de partida [tool:get_conditions].',
+    ],
+    es: [
+      'La Opción 1 (Ruta directa) llega a Stellwagen Bank en unas 3.8 h [tool:plan_routes].',
+      'Cruza la Cape Cod Bay Seasonal Management Area; mantén 10 kn o menos allí [tool:get_zones].',
+      'La exposición al riesgo de ballena es 0.42; la opción más segura la baja a 0.12 [tool:get_whale_risk].',
+      'El mar se mantiene cerca de 1.6 m durante la ventana de salida [tool:get_conditions].',
+    ],
+  };
+  return lines[language].map((text, i) => ({ text, citations: [`call_${i + 1}`] }));
+}
 
 /**
  * Scripted agent tool-calls for the Captain live feed (design.md §7,
