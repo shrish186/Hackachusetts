@@ -327,7 +327,8 @@ def _template_narrative(lang: str, ids: dict[str, str], res: dict[str, Any], tri
     if plan.get("access_lost"):
         info = plan["access_lost"]
         until = t["lost_until"].format(date=info["zone_active_to"][:10]) if info.get("zone_active_to") else ""
-        out.append(t["lost_" + info["code"]].format(ground=plan["ground_name"], zone=info.get("zone_name") or "",
+        code = info["code"] if info.get("endpoint") != "origin" else "no_water"
+        out.append(t["lost_" + code].format(ground=plan["ground_name"], zone=info.get("zone_name") or "",
                                                     until=until, c=c4))
         alt = info.get("nearest_open")
         if alt:

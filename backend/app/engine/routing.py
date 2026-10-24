@@ -389,8 +389,9 @@ def rnd(value: float, unit: str) -> float:
 # A*
 # ---------------------------------------------------------------------------
 
-#: A port may sit in a coastal land cell; it is moved to water at most this many cells away.
-MAX_ORIGIN_SNAP_CELLS = 3
+#: A port may sit in a coastal land cell; it is moved to water at most this many cells
+#: away (about 5 km at 0.05 deg). Always reported as ``origin_adjusted_nm``.
+MAX_ORIGIN_SNAP_CELLS = 6
 
 
 def _step_nm(g: GridSpec, ix: int, iy: int, dx: int, dy: int) -> float:

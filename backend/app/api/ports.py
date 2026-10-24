@@ -74,10 +74,13 @@ def build_ports(when: datetime) -> dict[str, Any]:
             "state": p.get("state", "MA"),
             "lon": float(p["lon"]),
             "lat": float(p["lat"]),
+            # planner_only ports can be planned from but are not in the simulator fleet.
+            "planner_only": bool(p.get("planner_only", False)),
             "grounds": [dict(g) for g in ground_list],
         }
         for pid, p in load_ports().items()
     ]
+    ports.sort(key=lambda p: (str(p["name"]).lower(), p["id"]))
     return {"time": _iso(when), "ports": ports}
 
 

@@ -46,6 +46,18 @@ def _ports() -> dict[str, dict]:
     return load_yaml(config_path("ports.yaml")).get("ports", {})
 
 
+def fleet_ports(ports: dict[str, dict] | None = None) -> dict[str, dict]:
+    """Ports the synthetic fleet sails from.
+
+    Ports marked ``planner_only: true`` in config/ports.yaml are available to the
+    Captain trip planner but are left out of the fleet, so the simulator
+    baseline (and data/snapshots/sim_results.json) does not change when ports
+    are added for planning.
+    """
+    ports = _ports() if ports is None else ports
+    return {k: v for k, v in ports.items() if not bool(v.get("planner_only", False))}
+
+
 @lru_cache(maxsize=1)
 def _grounds() -> dict[str, dict]:
     return load_yaml(config_path("ports.yaml")).get("fishing_grounds", {})
@@ -65,7 +77,7 @@ def build_fleet(n: int = 80, seed: int = 42) -> list[Trip]:
     if n < 0:
         raise ValueError("n must be non-negative")
     rng = random.Random(seed)
-    ports = _ports()
+    ports = fleet_ports()
     grounds = _grounds()
     vessels = _vessels()
     if not ports or not grounds or not vessels:

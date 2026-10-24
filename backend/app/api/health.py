@@ -17,9 +17,11 @@ def health() -> dict[str, str]:
 
 @router.get("/ready")
 def ready() -> JSONResponse:
-    """Readiness: 200 once snapshots, grid, risk surfaces and a dummy plan are warm."""
-    s = warmup.status()
+    """Readiness: 200 once the basic warm-up is done; the wide warm-up continues in the background."""
+    s = warmup.status()  # a dict copy: no work happens here
     if s["ready"]:
-        return JSONResponse({"status": "ready", "warmup_seconds": s["seconds"]})
+        return JSONResponse({"status": "ready", "warmup_seconds": s["seconds"],
+                             "full_warmup": "done" if s.get("full_ready") else "running",
+                             "full_warmup_seconds": s.get("full_seconds")})
     body = {"status": "warming_up" if not s["error"] else "warmup_failed"}
     return JSONResponse(body, status_code=503, headers={"Retry-After": "5"})
