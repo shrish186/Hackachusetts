@@ -10,6 +10,7 @@ Covers:
 from __future__ import annotations
 
 import json
+import re as _re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,7 +18,13 @@ import pytest
 import yaml
 
 from app.ingest.config import config_path, data_path
-from app.ingest.ports import all_ports_water_points, is_water, load_ports, snap_to_water
+from app.ingest.ports import (
+    all_ports_water_points,
+    is_water,
+    load_grounds,
+    load_ports,
+    snap_to_water,
+)
 from app.ingest.zones import is_active, load_zones
 
 SNAPSHOT_DIR = data_path("snapshots")
@@ -223,3 +230,51 @@ def test_jeffreys_ledge_is_legitimately_closed_in_whale_season():
     closure = next(z for z in load_zones() if z.id == "closure_western_gom")
     assert is_active(closure, REPLAY)
     assert zone_shape(closure).covers(pt), "jeffreys_ledge should fall inside the closure"
+
+
+# --- Port / ground metadata (ids, names, display metadata) ----------------
+
+_ID_RE = _re.compile(r"^[a-z0-9_]+$")
+_REQUIRED_META = ("name", "display_name", "description", "region")
+
+
+def _ports_and_grounds():
+    """Yield (kind, id, entry) over every port and fishing ground."""
+    for pid, entry in load_ports().items():
+        yield "port", pid, entry
+    for gid, entry in load_grounds().items():
+        yield "ground", gid, entry
+
+
+def test_port_and_ground_ids_are_slug_lowercase():
+    """Every port/ground id is lowercase [a-z0-9_] (stable, URL/picker-safe)."""
+    for kind, ident, _ in _ports_and_grounds():
+        assert _ID_RE.match(ident), f"{kind} id {ident!r} is not lowercase [a-z0-9_]"
+
+
+def test_port_and_ground_names_non_empty():
+    """Every port/ground has a non-empty name and the display metadata fields."""
+    for kind, ident, entry in _ports_and_grounds():
+        for field in _REQUIRED_META:
+            val = entry.get(field)
+            assert isinstance(val, str) and val.strip(), (
+                f"{kind} {ident!r} has empty/missing {field!r}"
+            )
+
+
+def test_port_and_ground_coords_in_study_bbox():
+    """Coordinates stay inside the study bbox (-71..-69 lon, 41..43.5 lat)."""
+    for kind, ident, entry in _ports_and_grounds():
+        lon, lat = float(entry["lon"]), float(entry["lat"])
+        assert -71.0 <= lon <= -69.0, f"{kind} {ident} lon {lon} out of bbox"
+        assert 41.0 <= lat <= 43.5, f"{kind} {ident} lat {lat} out of bbox"
+
+
+def test_expected_ports_and_grounds_present():
+    """The five ports and three grounds keep their stable ids."""
+    assert set(load_ports()) == {
+        "gloucester", "boston", "plymouth", "provincetown", "new_bedford",
+    }
+    assert set(load_grounds()) == {
+        "stellwagen_bank", "jeffreys_ledge", "cape_cod_bay",
+    }

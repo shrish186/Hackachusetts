@@ -1,4 +1,4 @@
-# Massachusetts fishing ports and fishing grounds (Lane A, task 4).
+# Massachusetts fishing ports and fishing grounds (Lane A).
 #
 # Port coordinates are the approximate harbor mouth / anchorage (decimal
 # degrees, WGS84) chosen to sit in navigable water near the grid, not the town
@@ -7,6 +7,12 @@
 #
 # synthetic: false for the point coordinates (these are real, published
 # locations), but routes/effort built on them remain model estimates.
+#
+# Each entry carries display metadata read by /api/meta/ports and the frontend
+# picker: `name` (short label, kept for backward compatibility), `display_name`
+# (full human label), `description` (one line), and `region`. IDs (the YAML
+# keys) are stable and must stay lowercase [a-z0-9_]. Extra keys are additive;
+# the loader API (load_ports / load_grounds) is unchanged.
 
 ports:
   # Coordinates are the nearest navigable WATER cell to each real harbor on the
@@ -16,26 +22,41 @@ ports:
   # staying within a few km of the real harbor. See docs/DATA.md.
   gloucester:
     name: "Gloucester"
+    display_name: "Gloucester, MA"
+    description: "America's oldest seaport; groundfish and lobster fleet on Cape Ann."
+    region: "Cape Ann / North Shore"
     lon: -70.625
     lat: 42.575
     note: "Off Gloucester Harbor, Cape Ann (nearest water cell to -70.662,42.610)"
   boston:
     name: "Boston"
+    display_name: "Boston, MA"
+    description: "Major port at the head of Massachusetts Bay with a small inshore fleet."
+    region: "Massachusetts Bay"
     lon: -70.875
     lat: 42.425
     note: "Boston Harbor outer approaches (nearest water cell to -70.950,42.350)"
   plymouth:
     name: "Plymouth"
+    display_name: "Plymouth, MA"
+    description: "South Shore harbor on Cape Cod Bay; inshore lobster and day boats."
+    region: "Cape Cod Bay / South Shore"
     lon: -70.625
     lat: 42.025
     note: "Off Plymouth in Cape Cod Bay (nearest water cell to -70.650,41.958)"
   provincetown:
     name: "Provincetown"
+    display_name: "Provincetown, MA"
+    description: "Harbor at the tip of Cape Cod, closest port to Stellwagen Bank."
+    region: "Outer Cape / Cape Cod Bay"
     lon: -70.180
     lat: 42.050
     note: "Provincetown Harbor, tip of Cape Cod"
   new_bedford:
     name: "New Bedford"
+    display_name: "New Bedford, MA"
+    description: "Top-grossing U.S. fishing port; large scallop and groundfish fleet."
+    region: "Buzzards Bay / South Coast"
     lon: -70.912
     lat: 41.630
     note: "New Bedford Harbor (outer, near hurricane barrier)"
@@ -43,16 +64,25 @@ ports:
 fishing_grounds:
   stellwagen_bank:
     name: "Stellwagen Bank"
+    display_name: "Stellwagen Bank"
+    description: "Shallow glacial bank and National Marine Sanctuary; rich feeding ground."
+    region: "Massachusetts Bay"
     lon: -70.250
     lat: 42.350
     note: "Stellwagen Bank National Marine Sanctuary, central bank"
   jeffreys_ledge:
     name: "Jeffreys Ledge"
+    display_name: "Jeffreys Ledge"
+    description: "Underwater ridge in the northern Gulf of Maine; groundfish grounds."
+    region: "Northern Gulf of Maine"
     lon: -70.250
     lat: 42.900
     note: "Jeffreys Ledge, northern Gulf of Maine (near bbox north edge)"
   cape_cod_bay:
     name: "Cape Cod Bay"
+    display_name: "Cape Cod Bay"
+    description: "Sheltered bay and right-whale critical habitat; seasonal inshore fishing."
+    region: "Cape Cod Bay"
     lon: -70.350
     lat: 41.900
     note: "Central Cape Cod Bay"

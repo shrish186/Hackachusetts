@@ -107,3 +107,26 @@ The zone/risk/conditions layer endpoints already accept a `time` query param
 > NOTE for Lane B: please mirror this `time`-replay note in `docs/API_CONTRACT.md`
 > (that file is Lane B-owned, so Lane A did not edit it). The layer endpoints
 > already support the `time` param, so no API change is required.
+
+## Relation to the hackathon datasets
+
+> **Status: AWAITING the official list.** Anant has asked the team to paste the
+> datasets Hackachusetts provides for the Climate Tech & Clean Energy track.
+> Until that list is pasted here, this section is a **placeholder**: Fathom makes
+> **no claim** of using any hackathon-provided dataset. Everything Fathom uses
+> today is listed in the source table above and in `data/snapshots/SOURCES.md`
+> (NOAA NDBC, NWS, OBIS, NOAA Fisheries, BOEM) and was fetched directly from
+> those public sources — not from a hackathon bundle.
+
+Once the official list is provided, fill one row per dataset. Use **Used** only
+for datasets Fathom actually ingests; mark everything else **Not used** with a
+one-line honest reason. Never mark a dataset "Used" that we did not ingest.
+
+| Hackathon dataset | Provided for track | Used by Fathom? | Where / how (file, module) | Notes |
+|---|---|---|---|---|
+| _(awaiting list)_ | Climate Tech & Clean Energy | _(to fill)_ | _(to fill)_ | _(to fill)_ |
+
+Honesty rule for this table: a row may say **Used** only if there is a concrete
+ingest path (a `data/snapshots/*` file or a `backend/app/ingest/*` module that
+reads it). If we evaluated a dataset but did not ingest it, say **Not used** and
+why (e.g. "format/time not compatible", "superseded by the live NOAA feed").
