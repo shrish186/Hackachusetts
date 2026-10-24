@@ -125,6 +125,17 @@ export function MapView({ routes, onError }: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep the map sized to its container. MapLibre can initialise before the
+  // container has its final height (we saw a 1440x300 canvas), leaving the map
+  // a thin strip. A ResizeObserver calls map.resize() whenever the box changes.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => mapRef.current?.resize());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Reflect draw mode in the cursor.
   useEffect(() => {
     const canvas = mapRef.current?.getCanvas();
