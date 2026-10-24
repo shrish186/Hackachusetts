@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from app.agent.tools import TOOLS, call_tool, tool_schemas
+from app.agent.tools import call_tool, tool_schemas
 
 TRIP = {"port": "gloucester", "vessel": "mid_trawler", "cruise_kn": 9.5, "max_hours": 14,
         "depart_window": ["2026-03-15T09:00:00Z", "2026-03-15T09:00:00Z"],

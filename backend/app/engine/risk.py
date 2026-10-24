@@ -29,7 +29,7 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import numpy as np
 
