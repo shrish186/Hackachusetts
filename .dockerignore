@@ -1,0 +1,19 @@
+# Docker build context is the repo root (see backend/Dockerfile).
+.git
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.hypothesis
+**/.venv
+**/venv
+frontend
+mcp
+docs
+.kiro
+data/raw
+backend/tests

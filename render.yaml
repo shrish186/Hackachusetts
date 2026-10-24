@@ -1,0 +1,23 @@
+# Render Blueprint for the Fathom backend (Lane B).
+# The frontend is deployed separately; set FATHOM_ALLOWED_ORIGINS to its URL.
+services:
+  - type: web
+    name: fathom-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: FATHOM_DEMO_MODE
+        value: "true"
+      - key: FATHOM_ALLOWED_ORIGINS
+        # Comma-separated. Replace/extend with the deployed frontend origin.
+        value: "http://localhost:5173"
+      - key: FATHOM_TRUST_PROXY
+        # Use the last X-Forwarded-For hop (appended by Render) for rate limiting.
+        value: "true"
+      - key: ANTHROPIC_API_KEY
+        # Optional. Set in the Render dashboard; never commit a value.
+        sync: false
