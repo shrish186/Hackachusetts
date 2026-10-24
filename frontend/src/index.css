@@ -72,10 +72,13 @@ body {
    tall at the bottom; the mobile opener sits at ~7rem. */
 .maplibregl-ctrl-bottom-right .fathom-nav {
   margin-right: 10px;
-  margin-bottom: 9.5rem;
+  /* Phone: lift fully above the bottom time-slider panel (~8rem) AND the
+     mobile "Plan a trip" opener, so the zoom never sits on the slider. */
+  margin-bottom: 14.5rem;
 }
 @media (min-width: 640px) {
   .maplibregl-ctrl-bottom-right .fathom-nav {
-    margin-bottom: 8.5rem;
+    /* Desktop: slider is a centered max-w panel, so only clear its height. */
+    margin-bottom: 9rem;
   }
 }
