@@ -2,5 +2,5 @@
   "tool_call_id": "call_5",
   "tool": "get_zones",
   "claim": "route crosses Cape Cod Bay Seasonal Management Area",
-  "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales"
+  "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales"
 }

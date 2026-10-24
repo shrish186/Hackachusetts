@@ -38,7 +38,7 @@ def get_sources() -> dict[str, Any]:
          "note": sight.get("note", "Real OBIS right whale occurrences clipped to the study bbox.")},
         {"layer": "risk",
          "name": "app.engine.risk screening model (real OBIS sightings + Vanderlaan & Taggart 2007 lethality curve)",
-         "source_url": "https://doi.org/10.1111/j.1748-7692.2007.00048.x",
+         "source_url": "http://www.phys.ocean.dal.ca/~taggart/Publications/Vanderlaan_Taggart_MarMamSci-23_2007.pdf",
          "fetched_at": sight.get("fetched_at"), "cached": True, "synthetic": True,
          "license": "Lethality curve (c) authors; Fathom model code MIT.",
          "note": ("Transparent screening model, not a measured strike probability. "

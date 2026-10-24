@@ -19,7 +19,7 @@
     "active_to": "2026-05-15T00:00:00Z",
     "speed_limit_kn": 10.0,
     "prohibited": false,
-    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+    "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
     "source_updated": "2026-01-01T00:00:00Z",
     "synthetic": false
   },
@@ -43,7 +43,7 @@
     "active_to": "2026-03-24T00:00:00Z",
     "speed_limit_kn": 10.0,
     "prohibited": false,
-    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+    "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
     "source_updated": "2026-03-10T00:00:00Z",
     "synthetic": true
   },
@@ -67,7 +67,7 @@
     "active_to": "2026-04-30T00:00:00Z",
     "speed_limit_kn": null,
     "prohibited": true,
-    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/sustainable-fisheries/fishery-management-area-closures",
+    "source_url": "https://www.fisheries.noaa.gov/region/new-england-mid-atlantic",
     "source_updated": "2026-02-01T00:00:00Z",
     "synthetic": true
   },
@@ -91,7 +91,7 @@
     "active_to": null,
     "speed_limit_kn": null,
     "prohibited": false,
-    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts-activities",
     "source_updated": "2025-11-01T00:00:00Z",
     "synthetic": true
   },
@@ -115,7 +115,7 @@
     "active_to": "2026-03-31T00:00:00Z",
     "speed_limit_kn": null,
     "prohibited": true,
-    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts-activities",
     "source_updated": "2026-03-01T00:00:00Z",
     "synthetic": true
   }

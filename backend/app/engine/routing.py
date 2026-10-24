@@ -766,6 +766,40 @@ def zone_names() -> dict[str, str]:
     return {z.id: z.name for z in default_zones()}
 
 
+def _drop_dominated(
+    chosen: list[tuple[str, float, str, dict[str, Any]]],
+) -> list[tuple[str, float, str, dict[str, Any]]]:
+    """Remove plans dominated on BOTH eta_hours and risk_exposure (item E).
+
+    Plan A dominates B when A.eta <= B.eta and A.risk <= B.risk with at least one
+    strictly smaller. A dominated plan is never worth showing (it is slower *and*
+    riskier than a sibling). Always keep at least one plan (the first, which is
+    the fastest after the caller's sort). A tiny tolerance avoids dropping plans
+    that differ only by rounding noise.
+    """
+    if len(chosen) <= 1:
+        return chosen
+    tol = 1e-9
+    kept: list[tuple[str, float, str, dict[str, Any]]] = []
+    for i, ci in enumerate(chosen):
+        ri = ci[3]
+        dominated = False
+        for j, cj in enumerate(chosen):
+            if i == j:
+                continue
+            rj = cj[3]
+            not_worse = rj["eta_hours"] <= ri["eta_hours"] + tol and rj["risk_exposure"] <= ri["risk_exposure"] + tol
+            strictly_better = rj["eta_hours"] < ri["eta_hours"] - tol or rj["risk_exposure"] < ri["risk_exposure"] - tol
+            # Break ties deterministically by index so two identical plans don't
+            # dominate each other into an empty set.
+            if not_worse and strictly_better or (not_worse and not strictly_better and j < i):
+                dominated = True
+                break
+        if not dominated:
+            kept.append(ci)
+    return kept or [chosen[0]]
+
+
 def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> dict[str, Any]:
     """Fastest / Balanced / Safest alternates (Req 4.1, 5.3, 5.4).
 
@@ -849,6 +883,9 @@ def plan_routes(trip_request: Any, extra_zones: Sequence[Any] | None = None) -> 
     # Order by ETA (Fastest first). Names follow the measured numbers, not the
     # weight that produced a track: "Safest" only for the minimum-risk plan.
     chosen.sort(key=lambda c: (c[3]["eta_hours"], c[3]["risk_exposure"]))
+    # Drop dominated plans (audit item E): never show a plan that another plan
+    # beats on BOTH time and whale-risk. Keep at least one (the fastest).
+    chosen = _drop_dominated(chosen)
     fastest = chosen[0][3]
     names = name_plans([c[3] for c in chosen], fastest)
     chosen = [(names[i], w, m, r) for i, (_, w, m, r) in enumerate(chosen)]

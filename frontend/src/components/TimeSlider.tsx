@@ -7,26 +7,48 @@ import { SLICE_COUNT, SLICE_HOURS, formatLocal, sliceToIso } from '@/lib/time';
  * updates every time-dependent layer via app state. Includes a play button.
  */
 export function TimeSlider() {
-  const { sliceIndex, setSliceIndex } = useAppState();
+  const { sliceIndex, setSliceIndex, replay } = useAppState();
   const [playing, setPlaying] = useState(false);
   const timer = useRef<number | null>(null);
+  // Mirror the latest slice index so the interval reads a fresh value rather
+  // than a stale closure (the "plays a day then stops" bug). The player owns an
+  // absolute counter and advances by setting absolute indices.
+  const idxRef = useRef(sliceIndex);
+  idxRef.current = sliceIndex;
 
   useEffect(() => {
     if (!playing) {
       if (timer.current) window.clearInterval(timer.current);
+      timer.current = null;
       return;
     }
+    // If starting from the last slice, restart at the left end.
+    if (idxRef.current >= SLICE_COUNT - 1) {
+      idxRef.current = 0;
+      setSliceIndex(0);
+    }
     timer.current = window.setInterval(() => {
-      setSliceIndex((prev) => (prev + 1) % SLICE_COUNT);
+      const next = idxRef.current + 1;
+      if (next >= SLICE_COUNT - 1) {
+        // Land exactly on the last slice, then stop and reset the button.
+        idxRef.current = SLICE_COUNT - 1;
+        setSliceIndex(SLICE_COUNT - 1);
+        setPlaying(false);
+        return;
+      }
+      idxRef.current = next;
+      setSliceIndex(next);
     }, 900);
     return () => {
       if (timer.current) window.clearInterval(timer.current);
+      timer.current = null;
     };
-    // setSliceIndex supports a functional updater here.
+    // setSliceIndex is stable enough for our use; we intentionally re-run only
+    // when `playing` flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
-  const iso = sliceToIso(sliceIndex);
+  const iso = sliceToIso(sliceIndex, replay);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-3 sm:p-4">

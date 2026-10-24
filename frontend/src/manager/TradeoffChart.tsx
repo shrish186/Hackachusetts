@@ -23,14 +23,16 @@ export function TradeoffChart({ scenarios, selectedId, onSelect, labels }: Trade
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
 
+  // Coerce any null/NaN delta to 0 so the chart never renders NaN coordinates.
+  const num = (v: number) => (Number.isFinite(v) ? v : 0);
   const pts = scenarios.map((s) => ({
     s,
-    riskReduced: -s.delta_risk_pct, // higher = more risk removed
-    fleetCost: (s.delta_hours_pct + -s.delta_effort_access_pct) / 2, // higher = costlier
+    riskReduced: num(-s.delta_risk_pct), // higher = more risk removed
+    fleetCost: num((num(s.delta_hours_pct) + -num(s.delta_effort_access_pct)) / 2), // higher = costlier
   }));
 
-  const xMax = Math.max(10, ...pts.map((p) => p.riskReduced)) * 1.1;
-  const yMax = Math.max(10, ...pts.map((p) => p.fleetCost)) * 1.15;
+  const xMax = Math.max(10, ...pts.map((p) => Math.abs(p.riskReduced))) * 1.1;
+  const yMax = Math.max(10, ...pts.map((p) => Math.abs(p.fleetCost))) * 1.15;
 
   const sx = (v: number) => pad.l + (v / xMax) * plotW;
   const sy = (v: number) => pad.t + plotH - (v / yMax) * plotH;
@@ -81,10 +83,17 @@ export function TradeoffChart({ scenarios, selectedId, onSelect, labels }: Trade
         const fill = s.on_frontier ? '#3fae8f' : '#1b7fa8';
         return (
           <g key={s.scenario_id} className="cursor-pointer" onClick={() => onSelect(s.scenario_id)}>
+            {/* Native hover tooltip (item C): no chart library needed. */}
+            <title>
+              {`${s.label}: ${Math.round(riskReduced)}% whale risk removed, fleet cost ${fleetCost.toFixed(0)}%` +
+                (s.on_frontier ? ` — ${labels.frontier}` : '')}
+            </title>
             {s.on_frontier && (
               <circle cx={cx} cy={cy} r={isSel ? 11 : 9} fill="none" stroke="#3fae8f" strokeWidth={1.5} opacity={0.6} />
             )}
             <circle cx={cx} cy={cy} r={isSel ? 7 : 5} fill={fill} stroke="#e6f4f9" strokeWidth={isSel ? 2 : 1} />
+            {/* Invisible larger hit/hover target so the tooltip is easy to trigger. */}
+            <circle cx={cx} cy={cy} r={14} fill="transparent" />
             <text x={cx} y={cy - 12} textAnchor="middle" fontSize="8" fill="#e6f4f9">
               {Math.round(riskReduced)}%
             </text>

@@ -9,7 +9,6 @@ import {
 } from 'react';
 import type { Language } from '@/api/types';
 import {
-  REPLAY_WHALE_SEASON_ISO,
   defaultDeparture,
   isoToDatetimeLocal,
   isoToSlice,
@@ -96,30 +95,35 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   });
 
   // Slice index is derived from the departure instant so the slider tracks it.
+  // In replay the window starts at 2026-03-15, so the slice is relative to that.
   const sliceIndex = useMemo(
-    () => isoToSlice(new Date(departure).toISOString()),
-    [departure],
+    () => isoToSlice(new Date(departure).toISOString(), replay),
+    [departure, replay],
   );
 
-  // Layer fetch time: whale-season instant when replaying, else the departure.
+  // Layer fetch time: always the slider/departure instant, so dragging the
+  // slider updates the map layers in BOTH modes (item A). Replay just moves the
+  // window start to 2026-03-15 (see setReplay below).
   const layerTimeIso = useMemo(
-    () => (replay ? REPLAY_WHALE_SEASON_ISO : new Date(departure).toISOString()),
-    [replay, departure],
+    () => new Date(departure).toISOString(),
+    [departure],
   );
   const setSliceIndex: Dispatch<SetStateAction<number>> = (next) => {
     const idx =
       typeof next === 'function' ? (next as (p: number) => number)(sliceIndex) : next;
     // Moving the slider sets the departure to that slice's local wall-clock.
-    setDeparture(isoToDatetimeLocal(sliceToIso(idx)));
+    setDeparture(isoToDatetimeLocal(sliceToIso(idx, replay)));
   };
 
-  // Turning replay on/off snaps the departure (and therefore the slider).
+  // Turning replay on/off snaps the departure (and therefore the slider). In
+  // replay the slider starts at the LEFT END (slice 0 = 2026-03-15T00:00Z), and
+  // the window runs across that day (item A).
   const setReplay: Dispatch<SetStateAction<boolean>> = (next) => {
     const on = typeof next === 'function' ? (next as (p: boolean) => boolean)(replay) : next;
     setReplayState(on);
     setDeparture(
       on
-        ? isoToDatetimeLocal(REPLAY_WHALE_SEASON_ISO)
+        ? isoToDatetimeLocal(sliceToIso(0, true))
         : toDatetimeLocalValue(defaultDeparture()),
     );
   };

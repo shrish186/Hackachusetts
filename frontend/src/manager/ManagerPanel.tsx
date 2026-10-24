@@ -408,14 +408,15 @@ function Delta({
   pct: number;
   goodWhenNegative?: boolean;
 }) {
-  const negative = pct < 0;
+  const v = Number.isFinite(pct) ? pct : 0;
+  const negative = v < 0;
   const good = goodWhenNegative ? negative : !negative;
   return (
     <div className="flex justify-between gap-2">
       <span className="truncate text-mist">{label}</span>
       <span className={['shrink-0 font-mono', good ? 'text-kelp' : 'text-coral'].join(' ')}>
-        {pct > 0 ? '+' : ''}
-        {pct.toFixed(0)}%
+        {v > 0 ? '+' : ''}
+        {v.toFixed(0)}%
       </span>
     </div>
   );

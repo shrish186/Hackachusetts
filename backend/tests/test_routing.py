@@ -104,3 +104,48 @@ def test_req5_3_alternates_are_distinct_and_fast() -> None:
     assert len(tracks) == len(out["plans"])
     for p in out["plans"]:
         assert 2 * p["eta_hours"] <= 24 and p["fuel_est_l"] > 0 and 0 <= p["effort_proxy"] <= 1
+
+
+# --- Dominated-plan filtering (audit item E) ---------------------------------
+
+def test_e_drop_dominated_unit() -> None:
+    """A plan slower AND riskier than a sibling is removed; keep at least one."""
+    from app.engine.routing import _drop_dominated
+
+    def c(name, eta, risk):
+        return (name, 0.5, "x", {"eta_hours": eta, "risk_exposure": risk})
+
+    # B (5 h, 0.9) is dominated by A (3 h, 0.4). C (4 h, 0.2) is not (lower risk).
+    kept = _drop_dominated([c("A", 3.0, 0.4), c("B", 5.0, 0.9), c("C", 4.0, 0.2)])
+    names = {k[0] for k in kept}
+    assert "B" not in names
+    assert names == {"A", "C"}
+    # Identical duplicates collapse to one, never to zero.
+    one = _drop_dominated([c("A", 3.0, 0.4), c("A2", 3.0, 0.4)])
+    assert len(one) == 1
+    assert _drop_dominated([c("solo", 3.0, 0.4)]) == [c("solo", 3.0, 0.4)]
+
+
+def test_e_returned_plans_are_never_dominated() -> None:
+    """No plan from plan_routes is slower AND riskier than another plan."""
+    out = plan_routes(_trip(target_ground="stellwagen_bank", max_hours=24))
+    if not out["ok"]:
+        return  # a no-route trip has nothing to compare
+    plans = out["plans"]
+    assert len(plans) >= 1
+    tol = 1e-9
+    for a in plans:
+        for b in plans:
+            if a is b:
+                continue
+            not_worse = b["eta_hours"] <= a["eta_hours"] + tol and b["risk_exposure"] <= a["risk_exposure"] + tol
+            strictly = b["eta_hours"] < a["eta_hours"] - tol or b["risk_exposure"] < a["risk_exposure"] - tol
+            assert not (not_worse and strictly), f"{a['name']} is dominated by {b['name']}"
+
+
+def test_e_no_balanced_with_alternative_mislabel() -> None:
+    """Never a 'Balanced' plan alongside an 'Alternative' chip (name sanity)."""
+    out = plan_routes(_trip(target_ground="stellwagen_bank", max_hours=24))
+    if out["ok"]:
+        names = {p["name"] for p in out["plans"]}
+        assert not ({"Balanced"} <= names and any(n.startswith("Alternative") for n in names))

@@ -11,7 +11,7 @@
     },
     {
       "layer": "zones",
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "fetched_at": "2026-01-01T00:00:00Z",
       "cached": true,
       "synthetic": false

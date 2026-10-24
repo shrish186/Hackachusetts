@@ -2,7 +2,7 @@
   "metadata": {
     "description": "Protection and regulatory zones for the Fathom study area. Polygons are HAND-DRAWN APPROXIMATIONS of official NOAA/BOEM areas (not the official shapefiles); dates and speed limits are verified against the cited NOAA sources. Each zone links its official source.",
     "source": "Hand-drawn approximations of NOAA Fisheries SMAs, Mass DMF/GARFO closures, and BOEM wind lease areas",
-    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+    "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
     "license": "Underlying facts are U.S. Government work / public domain (NOAA, BOEM); the approximate polygons here are our own.",
     "note": "Speed limits apply by law to vessels 65 ft and longer; Fathom treats them as advisory for all vessels.",
     "fetched_at": "2026-10-24T00:00:00Z",
@@ -23,7 +23,7 @@
       "active_to": "2026-05-15T23:59:59Z",
       "speed_limit_kn": 10.0,
       "prohibited": false,
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "source_updated": "2026-01-01T00:00:00Z",
       "synthetic": true,
       "note": "Hand-drawn approximation of the NOAA Cape Cod Bay SMA. Dates verified: active Jan 1 through May 15; 10 kn for vessels >=65 ft."
@@ -42,7 +42,7 @@
       "active_to": "2026-04-30T23:59:59Z",
       "speed_limit_kn": 10.0,
       "prohibited": false,
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "source_updated": "2026-03-01T00:00:00Z",
       "synthetic": true,
       "note": "Hand-drawn approximation of the NOAA Off Race Point SMA. Dates verified: active Mar 1 through Apr 30; 10 kn for vessels >=65 ft."
@@ -61,7 +61,7 @@
       "active_to": "2026-07-31T23:59:59Z",
       "speed_limit_kn": 10.0,
       "prohibited": false,
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "source_updated": "2026-04-01T00:00:00Z",
       "synthetic": true,
       "note": "Hand-drawn approximation of the NOAA Great South Channel SMA (only its western edge falls in the study bbox). Dates verified: active Apr 1 through Jul 31; 10 kn for vessels >=65 ft."
@@ -80,7 +80,7 @@
       "active_to": "2026-03-24T23:59:59Z",
       "speed_limit_kn": 10.0,
       "prohibited": false,
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "source_url": "https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
       "source_updated": "2026-03-10T00:00:00Z",
       "synthetic": true,
       "note": "Illustrative Dynamic/Voluntary Slow Zone. Real DSZs are triggered by sightings and change frequently; this is an example window, not a live DSZ. Check the NOAA DSZ page for current zones."
@@ -99,7 +99,7 @@
       "active_to": "2026-04-30T23:59:59Z",
       "speed_limit_kn": null,
       "prohibited": true,
-      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/sustainable-fisheries/fishery-management-area-closures",
+      "source_url": "https://www.fisheries.noaa.gov/region/new-england-mid-atlantic",
       "source_updated": "2026-02-01T00:00:00Z",
       "synthetic": true,
       "note": "Hand-drawn approximation of a seasonal fishery closure in the western Gulf of Maine. Confirm exact boundary/dates on the NOAA GARFO closures page before operational use."
@@ -118,7 +118,7 @@
       "active_to": null,
       "speed_limit_kn": null,
       "prohibited": false,
-      "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+      "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts-activities",
       "source_updated": "2025-11-01T00:00:00Z",
       "synthetic": true,
       "note": "Hand-drawn approximation of a BOEM Massachusetts/Rhode Island wind energy lease area. Not the official BOEM lease polygon."
@@ -137,7 +137,7 @@
       "active_to": "2026-03-31T23:59:59Z",
       "speed_limit_kn": null,
       "prohibited": true,
-      "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+      "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts-activities",
       "source_updated": "2026-03-01T00:00:00Z",
       "synthetic": true,
       "note": "Illustrative construction-exclusion window inside the lease area; not an official BOEM construction notice."

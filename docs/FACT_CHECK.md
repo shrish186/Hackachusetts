@@ -44,7 +44,7 @@ Last checked: 2026-10-24 (UTC).
   - Off Race Point SMA: active **Mar 1 – Apr 30**, 10 kn for vessels ≥ 65 ft.
   - Great South Channel SMA: active **Apr 1 – Jul 31**, 10 kn for vessels ≥ 65 ft.
     https://content.govdelivery.com/accounts/USNOAAFISHERIES/bulletins/40ff22f
-  - General rule: https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales
+  - General rule: https://www.fisheries.noaa.gov/national/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales
 - **Still approximate:** the zone **polygons** in `data/snapshots/zones.json`
   are hand-drawn approximations of the official areas, not the NOAA shapefiles,
   so every zone keeps `synthetic: true` with a per-zone `note` saying so.

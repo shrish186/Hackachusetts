@@ -5,6 +5,8 @@
 
 /** The demo forecast window: a 48-hour span of 3-hour slices (design.md §6). */
 export const DEMO_START_ISO = '2026-03-14T00:00:00Z';
+/** Replay-mode window start: the slider's left end is 2026-03-15 (item A). */
+export const REPLAY_START_ISO = '2026-03-15T00:00:00Z';
 export const SLICE_HOURS = 3;
 export const SLICE_COUNT = 16; // 48h / 3h
 
@@ -16,15 +18,21 @@ export const SLICE_COUNT = 16; // 48h / 3h
  */
 export const REPLAY_WHALE_SEASON_ISO = '2026-03-15T13:00:00Z';
 
-/** ISO timestamp for slice index [0, SLICE_COUNT). */
-export function sliceToIso(index: number): string {
-  const start = new Date(DEMO_START_ISO).getTime();
-  return new Date(start + index * SLICE_HOURS * 3600 * 1000).toISOString();
+/** UTC ISO of the window's left end. Replay starts the window at 2026-03-15. */
+export function windowStartIso(replay = false): string {
+  return replay ? REPLAY_START_ISO : DEMO_START_ISO;
+}
+
+/** ISO timestamp for slice index [0, SLICE_COUNT) within the active window. */
+export function sliceToIso(index: number, replay = false): string {
+  const start = new Date(windowStartIso(replay)).getTime();
+  const clamped = Math.max(0, Math.min(SLICE_COUNT - 1, index));
+  return new Date(start + clamped * SLICE_HOURS * 3600 * 1000).toISOString();
 }
 
 /** Nearest slice index to a given UTC instant (clamped to [0, SLICE_COUNT-1]). */
-export function isoToSlice(iso: string): number {
-  const start = new Date(DEMO_START_ISO).getTime();
+export function isoToSlice(iso: string, replay = false): number {
+  const start = new Date(windowStartIso(replay)).getTime();
   const t = new Date(iso).getTime();
   if (isNaN(t)) return 0;
   const idx = Math.round((t - start) / (SLICE_HOURS * 3600 * 1000));
