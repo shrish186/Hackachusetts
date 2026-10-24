@@ -156,3 +156,45 @@ def filter_by_time(conditions: list[Conditions], when: datetime) -> list[Conditi
 def default_conditions() -> ConditionsResult:
     """Cached-snapshot conditions (cached call for reuse)."""
     return load_cached_conditions()
+
+
+# ---------------------------------------------------------------------------
+# Background refresh (server runtime): refresh the conditions snapshot at most
+# every REFRESH_INTERVAL_S, with a short timeout, always falling back to the
+# bundled snapshot. The loader API above is unchanged; this is additive so the
+# server can opt in without the engine/simulator depending on it.
+# ---------------------------------------------------------------------------
+
+REFRESH_INTERVAL_S = 30 * 60  # at most once every 30 minutes
+REFRESH_TIMEOUT_S = 5.0       # give up quickly and keep serving the snapshot
+
+_last_refresh_ts: float = 0.0
+
+
+def maybe_background_refresh(now_fn=None, force: bool = False) -> bool:
+    """Refresh the conditions snapshot from NDBC if the interval has elapsed.
+
+    Safe to call on every request: it is throttled to at most once per
+    REFRESH_INTERVAL_S, uses a short timeout, and never raises -- on any failure
+    (or in demo mode) it leaves the bundled snapshot in place and returns False.
+    Returns True only if a fresh live fetch succeeded and replaced the cache.
+    """
+    global _last_refresh_ts
+    import time as _time
+
+    if demo_mode():
+        return False
+    clock = now_fn or _time.monotonic
+    now = clock()
+    if not force and (now - _last_refresh_ts) < REFRESH_INTERVAL_S:
+        return False
+    _last_refresh_ts = now
+    try:
+        result = _fetch_live_conditions(REFRESH_TIMEOUT_S)
+    except Exception:  # noqa: BLE001 - keep serving the snapshot
+        return False
+    if result.cached or result.error:
+        return False
+    # Invalidate the cached default so the next read picks up fresh data.
+    default_conditions.cache_clear()
+    return True
