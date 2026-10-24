@@ -38,6 +38,29 @@ from .models import (
 )
 from .placeholders import placeholder_response
 
+try:
+    from . import backend_bridge as _bridge
+except Exception:  # pragma: no cover - bridge should always import
+    _bridge = None  # type: ignore
+
+
+def _backend_ready() -> bool:
+    """True when the real backend engine is importable (wire real data)."""
+    return _bridge is not None and _bridge.available()
+
+
+def _real_response(tool: str, source: str, **payload: Any) -> dict[str, Any]:
+    """Envelope for REAL engine output: ``placeholder: false`` + a real source."""
+    from datetime import datetime, timezone
+
+    return {
+        "placeholder": False,
+        "tool": tool,
+        "source": source,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        **payload,
+    }
+
 
 def get_conditions(bbox: dict, time_range: dict) -> dict[str, Any]:
     """Return wave/wind/SST per cell for a bbox over a time range (PLACEHOLDER).
@@ -70,6 +93,15 @@ def get_zones(bbox: dict, time: Any) -> dict[str, Any]:
         time: ISO-8601 UTC timestamp to evaluate zone activity at.
     """
     args = GetZonesArgs(bbox=bbox, time=time)
+    if _backend_ready():
+        zones = _bridge.zones_at(args.time.isoformat())
+        return _real_response(
+            tool="get_zones",
+            source="app.ingest.zones (bundled zones snapshot)",
+            bbox=args.bbox.model_dump(),
+            time=args.time.isoformat(),
+            zones=zones,
+        )
     return placeholder_response(
         tool="get_zones",
         note=(
@@ -92,6 +124,16 @@ def get_whale_risk(bbox: dict, time: Any, speed_kn: float) -> dict[str, Any]:
         speed_kn: Planned vessel speed in knots (> 0).
     """
     args = GetWhaleRiskArgs(bbox=bbox, time=time, speed_kn=speed_kn)
+    if _backend_ready():
+        cells = _bridge.whale_risk_points(args.time.isoformat(), args.speed_kn)
+        return _real_response(
+            tool="get_whale_risk",
+            source="app.engine.risk (deterministic model, config/risk.yaml)",
+            bbox=args.bbox.model_dump(),
+            time=args.time.isoformat(),
+            speed_kn=args.speed_kn,
+            risk_cells=cells,
+        )
     return placeholder_response(
         tool="get_whale_risk",
         note=(
@@ -134,6 +176,17 @@ def get_effort_proxy(bbox: dict, month: int) -> dict[str, Any]:
         month: Month of year, 1-12.
     """
     args = GetEffortProxyArgs(bbox=bbox, month=month)
+    if _backend_ready():
+        cells = _bridge.effort_grid(args.bbox.model_dump())
+        return _real_response(
+            tool="get_effort_proxy",
+            source="app.engine.effort (SYNTHETIC proxy field, config/ports.yaml)",
+            bbox=args.bbox.model_dump(),
+            month=args.month,
+            effort_cells=cells,
+            synthetic=True,
+            disclaimer="Effort proxy is an estimate of activity, not catch or revenue.",
+        )
     return placeholder_response(
         tool="get_effort_proxy",
         note=(
@@ -178,6 +231,24 @@ def simulate_zone(candidate_polygon: dict, fleet_sample_id: str) -> dict[str, An
     args = SimulateZoneArgs(
         candidate_polygon=candidate_polygon, fleet_sample_id=fleet_sample_id
     )
+    if _backend_ready():
+        result = _bridge.simulate_candidate(args.candidate_polygon, prohibited=True)
+        opt = result["options"][0] if result.get("options") else {}
+        deltas = opt.get("deltas_pct", {})
+        return _real_response(
+            tool="simulate_zone",
+            source="app.engine.simulator (synthetic fleet, config/ports.yaml)",
+            fleet_sample_id=args.fleet_sample_id,
+            candidate_polygon=args.candidate_polygon,
+            baseline=result.get("baseline"),
+            delta_risk_pct=deltas.get("risk"),
+            delta_hours_pct=deltas.get("hours"),
+            delta_fuel_pct=deltas.get("fuel"),
+            delta_effort_access_pct=deltas.get("effort_access"),
+            on_frontier=opt.get("on_frontier"),
+            summary=opt.get("summary"),
+            labels=result.get("labels"),
+        )
     return placeholder_response(
         tool="simulate_zone",
         note=(

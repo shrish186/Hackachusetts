@@ -11,7 +11,7 @@
       "command": "python",
       "args": ["-m", "fathom_mcp"],
       "env": { "FATHOM_DEMO_MODE": "true" },
-      "disabled": true,
+      "disabled": false,
       "autoApprove": ["get_zones", "get_conditions"]
     }
   }
