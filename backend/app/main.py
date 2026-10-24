@@ -16,7 +16,7 @@ os.environ.setdefault("FATHOM_DEMO_MODE", "true")
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
-from app.api import health, layers, meta  # noqa: E402
+from app.api import health, layers, meta, sim  # noqa: E402
 from app.api.security import HardeningMiddleware, allowed_origins, install_error_handlers  # noqa: E402
 
 app = FastAPI(
@@ -40,3 +40,4 @@ install_error_handlers(app)
 app.include_router(health.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
 app.include_router(layers.router, prefix="/api")
+app.include_router(sim.router, prefix="/api")
