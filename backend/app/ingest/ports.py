@@ -20,7 +20,7 @@ from functools import lru_cache
 import numpy as np
 
 from app.ingest.config import config_path, load_yaml
-from app.ingest.grid import GridSpec, build_grid_spec, default_grid, land_mask_array
+from app.ingest.grid import GridSpec, default_grid, land_mask_array
 
 
 @lru_cache(maxsize=1)
