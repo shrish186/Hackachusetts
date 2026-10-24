@@ -21,7 +21,9 @@ from app.ingest.config import config_path, data_path
 from app.ingest.ports import (
     all_ports_water_points,
     is_water,
+    load_all_ports,
     load_grounds,
+    load_planner_ports,
     load_ports,
     snap_to_water,
 )
@@ -278,3 +280,89 @@ def test_expected_ports_and_grounds_present():
     assert set(load_grounds()) == {
         "stellwagen_bank", "jeffreys_ledge", "cape_cod_bay",
     }
+
+
+# --- Planner-only ports (dropdown; must not touch the fleet) --------------
+
+_BASE_PORTS = {"gloucester", "boston", "plymouth", "provincetown", "new_bedford"}
+_EXPECTED_PLANNER = {
+    "marblehead", "salem", "rockport", "scituate", "green_harbor", "sandwich",
+    "barnstable", "hyannis", "chatham", "woods_hole", "vineyard_haven",
+    "menemsha", "nantucket",
+}
+# Candidates that must be dropped: outside grid or snap > 0.1 deg.
+_DROPPED = {"newburyport", "cohasset"}
+
+
+def test_loaders_return_only_base_five_when_planner_excluded():
+    """load_ports (used by the fleet/simulator) returns exactly the base 5."""
+    assert set(load_ports()) == _BASE_PORTS
+    # None of the base five carries planner_only (absent or False).
+    for p in load_ports().values():
+        assert not p.get("planner_only", False)
+
+
+def test_planner_ports_are_flagged_and_expected_set():
+    """Planner-only ports are the expected set and all flagged planner_only."""
+    planner = load_planner_ports()
+    assert set(planner) == _EXPECTED_PLANNER
+    assert _DROPPED.isdisjoint(set(planner)), "dropped candidates must not appear"
+    for pid, entry in planner.items():
+        assert entry.get("planner_only") is True, f"{pid} missing planner_only: true"
+
+
+def test_all_ports_picker_union_is_base_plus_planner():
+    """load_all_ports (picker) = base + planner, base flagged planner_only False."""
+    allp = load_all_ports()
+    assert set(allp) == _BASE_PORTS | _EXPECTED_PLANNER
+    for pid in _BASE_PORTS:
+        assert allp[pid]["planner_only"] is False
+    for pid in _EXPECTED_PLANNER:
+        assert allp[pid]["planner_only"] is True
+
+
+def test_planner_port_ids_and_metadata_valid():
+    """Planner port ids are lowercase [a-z0-9_] with non-empty display metadata."""
+    for pid, entry in load_planner_ports().items():
+        assert _ID_RE.match(pid), f"planner id {pid!r} not lowercase [a-z0-9_]"
+        for field in ("name", "display_name", "description", "region"):
+            v = entry.get(field)
+            assert isinstance(v, str) and v.strip(), f"{pid} missing {field}"
+
+
+def test_planner_ports_are_in_water_and_in_bbox():
+    """Every planner port is inside the study grid and on a water cell."""
+    for pid, entry in load_planner_ports().items():
+        lon, lat = float(entry["lon"]), float(entry["lat"])
+        assert -71.0 <= lon <= -69.0 and 41.0 <= lat <= 43.5, f"{pid} out of bbox"
+        assert is_water(lon, lat), f"planner port {pid} is on a land cell"
+        # Stored coord is already the snapped water cell -> snapping is a no-op.
+        slon, slat = snap_to_water(lon, lat)
+        assert is_water(slon, slat)
+
+
+def test_fleet_unaffected_by_planner_ports():
+    """The 200-trip fleet still uses only the base five ports (hard constraint)."""
+    from app.engine.fleet import build_fleet
+
+    used = {t.port for t in build_fleet(200, seed=42)}
+    assert used <= _BASE_PORTS, f"fleet leaked planner ports: {used - _BASE_PORTS}"
+
+
+# --- eMOLT bottom-temperature snapshot ------------------------------------
+
+def test_emolt_snapshot_is_real_bottom_temp_in_bbox():
+    """eMOLT snapshot (if present) is real bottom temps inside the study bbox."""
+    path = SNAPSHOT_DIR / "emolt_bottom_temp.json"
+    if not path.exists():
+        pytest.skip("emolt_bottom_temp.json not present")
+    payload = json.loads(path.read_text())
+    meta = payload["metadata"]
+    assert meta["synthetic"] is False
+    assert "emolt" in meta["source"].lower()
+    assert meta.get("source_url") and meta.get("fetched_at")
+    rows = payload["readings"]
+    assert rows, "expected some eMOLT readings"
+    for r in rows:
+        assert -71.0 <= r["lon"] <= -69.0 and 41.0 <= r["lat"] <= 43.5
+        assert -5 <= r["bottom_temp_c"] <= 40

@@ -1,0 +1,304 @@
+{
+  "metadata": {
+    "description": "Real eMOLT (Environmental Monitors on Lobster Traps) BOTTOM-water temperature observations in the Fathom study bbox, most recent reading per station. Fishermen-collected via NOAA/NMFS/NEFSC.",
+    "source": "eMOLT via NOAA/NMFS/NEFSC ERDDAP (eMOLT_realtime_bottom_temps_and_profiles)",
+    "source_url": "https://comet.nefsc.noaa.gov/erddap/info/eMOLT_realtime_bottom_temps_and_profiles/index.html",
+    "program_url": "https://www.emolt.org/",
+    "license": "U.S. Government work / public domain (NOAA); cite eMOLT and NEFSC",
+    "note": "Real bottom-temperature observations (not sea-surface temperature). One most-recent reading per station in the last 7 days. Span: 2026-10-18 to 2026-10-24.",
+    "variable": "bottom_temp_c (degree_C)",
+    "record_count": 36,
+    "fetched_at": "2026-10-24T21:43:51Z",
+    "synthetic": false
+  },
+  "readings": [
+    {
+      "lon": -70.3049,
+      "lat": 41.9389,
+      "observed_at": "2026-10-24T18:52:10Z",
+      "depth_m": 3.37,
+      "bottom_temp_c": 13.887,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.19,
+      "lat": 43.4643,
+      "observed_at": "2026-10-24T16:59:03Z",
+      "depth_m": 13.55,
+      "bottom_temp_c": 11.915,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.1983,
+      "lat": 43.453,
+      "observed_at": "2026-10-24T16:08:09Z",
+      "depth_m": 1.77,
+      "bottom_temp_c": 12.046,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.0654,
+      "lat": 41.4155,
+      "observed_at": "2026-10-24T16:04:18Z",
+      "depth_m": 8.08,
+      "bottom_temp_c": 12.763,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2747,
+      "lat": 43.2333,
+      "observed_at": "2026-10-24T14:37:46Z",
+      "depth_m": 1.71,
+      "bottom_temp_c": 11.818,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.3175,
+      "lat": 42.007,
+      "observed_at": "2026-10-24T12:23:58Z",
+      "depth_m": 48.61,
+      "bottom_temp_c": 12.155,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.4963,
+      "lat": 41.8739,
+      "observed_at": "2026-10-24T12:18:03Z",
+      "depth_m": 2.63,
+      "bottom_temp_c": 13.47,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2674,
+      "lat": 43.2493,
+      "observed_at": "2026-10-24T12:11:42Z",
+      "depth_m": 1.68,
+      "bottom_temp_c": 11.793,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.3057,
+      "lat": 41.9386,
+      "observed_at": "2026-10-21T20:01:46Z",
+      "depth_m": 8.35,
+      "bottom_temp_c": 14.547,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.3876,
+      "lat": 41.8674,
+      "observed_at": "2026-10-21T17:38:56Z",
+      "depth_m": 1.59,
+      "bottom_temp_c": 14.709,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2755,
+      "lat": 41.98125,
+      "observed_at": "2026-10-21T12:09:03Z",
+      "depth_m": 9.85,
+      "bottom_temp_c": 13.807,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -69.8875,
+      "lat": 41.9123,
+      "observed_at": "2026-10-19T17:58:23Z",
+      "depth_m": 1.77,
+      "bottom_temp_c": 13.647,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.142,
+      "lat": 41.9647,
+      "observed_at": "2026-10-19T15:43:34Z",
+      "depth_m": 1.51,
+      "bottom_temp_c": 14.894,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2713,
+      "lat": 43.3972,
+      "observed_at": "2026-10-19T15:20:08Z",
+      "depth_m": 2.5,
+      "bottom_temp_c": 12.881,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.21895,
+      "lat": 43.3452,
+      "observed_at": "2026-10-19T14:43:20Z",
+      "depth_m": 6.17,
+      "bottom_temp_c": 12.785,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7685,
+      "lat": 41.4009,
+      "observed_at": "2026-10-19T14:42:44Z",
+      "depth_m": 1.05,
+      "bottom_temp_c": 15.873,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.3057,
+      "lat": 41.9735,
+      "observed_at": "2026-10-19T14:33:27Z",
+      "depth_m": 25.41,
+      "bottom_temp_c": 13.828,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2756,
+      "lat": 43.232,
+      "observed_at": "2026-10-19T14:26:23Z",
+      "depth_m": 26.85,
+      "bottom_temp_c": 12.114,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7685,
+      "lat": 41.3888,
+      "observed_at": "2026-10-19T14:07:42Z",
+      "depth_m": 25.61,
+      "bottom_temp_c": 15.647,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7627,
+      "lat": 41.3848,
+      "observed_at": "2026-10-19T13:31:08Z",
+      "depth_m": 1.53,
+      "bottom_temp_c": 15.709,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7627,
+      "lat": 41.3851,
+      "observed_at": "2026-10-19T13:30:48Z",
+      "depth_m": 4.41,
+      "bottom_temp_c": 15.709,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2259,
+      "lat": 43.3052,
+      "observed_at": "2026-10-19T13:03:45Z",
+      "depth_m": 9.6,
+      "bottom_temp_c": 12.733,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7627,
+      "lat": 41.39733,
+      "observed_at": "2026-10-19T13:00:00Z",
+      "depth_m": 23.7,
+      "bottom_temp_c": 15.679,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.7627,
+      "lat": 41.4086,
+      "observed_at": "2026-10-19T12:56:18Z",
+      "depth_m": 22.78,
+      "bottom_temp_c": 15.673,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.328,
+      "lat": 42.0013,
+      "observed_at": "2026-10-19T12:44:48Z",
+      "depth_m": 1.04,
+      "bottom_temp_c": 14.437,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -69.5886,
+      "lat": 41.4823,
+      "observed_at": "2026-10-19T11:45:20Z",
+      "depth_m": 5.85,
+      "bottom_temp_c": 13.707,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.5179,
+      "lat": 42.6844,
+      "observed_at": "2026-10-19T11:44:26Z",
+      "depth_m": 8.3,
+      "bottom_temp_c": 13.186,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.2124,
+      "lat": 43.4427,
+      "observed_at": "2026-10-19T11:31:53Z",
+      "depth_m": 2.1,
+      "bottom_temp_c": 12.768,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.6993,
+      "lat": 42.8493,
+      "observed_at": "2026-10-19T10:53:51Z",
+      "depth_m": 1.62,
+      "bottom_temp_c": 12.829,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -69.8702,
+      "lat": 41.7379,
+      "observed_at": "2026-10-18T20:20:15Z",
+      "depth_m": 2.14,
+      "bottom_temp_c": 13.674,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.4759,
+      "lat": 41.887,
+      "observed_at": "2026-10-18T18:58:23Z",
+      "depth_m": 2.06,
+      "bottom_temp_c": 14.696,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.6541,
+      "lat": 42.2825,
+      "observed_at": "2026-10-18T17:45:34Z",
+      "depth_m": 1.74,
+      "bottom_temp_c": 13.882,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.6661,
+      "lat": 42.892,
+      "observed_at": "2026-10-18T17:25:55Z",
+      "depth_m": 15.3,
+      "bottom_temp_c": 13.001,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.198,
+      "lat": 43.463,
+      "observed_at": "2026-10-18T16:05:29Z",
+      "depth_m": 6.07,
+      "bottom_temp_c": 12.721,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.13185,
+      "lat": 41.90325,
+      "observed_at": "2026-10-18T15:48:30Z",
+      "depth_m": 3.02,
+      "bottom_temp_c": 14.72,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    },
+    {
+      "lon": -70.0707,
+      "lat": 41.4148,
+      "observed_at": "2026-10-18T15:01:49Z",
+      "depth_m": 3.27,
+      "bottom_temp_c": 14.21,
+      "source": "eMOLT (NOAA/NMFS/NEFSC ERDDAP)"
+    }
+  ]
+}

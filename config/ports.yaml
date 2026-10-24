@@ -86,3 +86,135 @@ fishing_grounds:
     lon: -70.350
     lat: 41.900
     note: "Central Cape Cod Bay"
+
+# ---------------------------------------------------------------------------
+# PLANNER-ONLY ports. Kept under a SEPARATE top-level key (not `ports`) so the
+# simulator fleet builder (backend/app/engine/fleet.py) -- which seeds only from
+# `ports` -- is completely unaffected: the 200-trip fleet and all precomputed
+# simulator numbers stay identical. These extra real Massachusetts harbors exist
+# only to populate the trip-planner dropdown. The ingest loader exposes them via
+# load_planner_ports() / load_all_ports() for /api/meta/ports + the frontend
+# picker, each carrying planner_only: true.
+#
+# Coordinates are the nearest study-grid WATER cell to the real harbor mouth
+# (snapped via app.ingest.ports.snap_to_water, each within 0.1 deg of the real
+# harbor). Candidates outside the grid or snapping > 0.1 deg (newburyport,
+# cohasset) were dropped. ids are lowercase [a-z0-9_].
+planner_ports:
+  marblehead:
+    name: "Marblehead"
+    display_name: "Marblehead, MA"
+    description: "North Shore harbor and sailing hub with an inshore lobster fleet."
+    region: "North Shore / Massachusetts Bay"
+    lon: -70.825
+    lat: 42.525
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (42.50,-70.85)"
+  salem:
+    name: "Salem"
+    display_name: "Salem, MA"
+    description: "Historic North Shore port on Salem Sound."
+    region: "North Shore / Massachusetts Bay"
+    lon: -70.875
+    lat: 42.525
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (42.52,-70.87)"
+  rockport:
+    name: "Rockport"
+    display_name: "Rockport, MA"
+    description: "Small harbor on the tip of Cape Ann; inshore lobster boats."
+    region: "Cape Ann / North Shore"
+    lon: -70.625
+    lat: 42.675
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (42.66,-70.61)"
+  scituate:
+    name: "Scituate"
+    display_name: "Scituate, MA"
+    description: "South Shore harbor with an active inshore lobster fleet."
+    region: "South Shore / Massachusetts Bay"
+    lon: -70.675
+    lat: 42.225
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (42.20,-70.70)"
+  green_harbor:
+    name: "Green Harbor"
+    display_name: "Green Harbor (Marshfield), MA"
+    description: "Small South Shore harbor on Cape Cod Bay."
+    region: "South Shore / Cape Cod Bay"
+    lon: -70.625
+    lat: 42.075
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (42.08,-70.63)"
+  sandwich:
+    name: "Sandwich"
+    display_name: "Sandwich, MA"
+    description: "Cape Cod Bay harbor at the east end of the Cape Cod Canal."
+    region: "Cape Cod Bay / Upper Cape"
+    lon: -70.475
+    lat: 41.775
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.77,-70.50)"
+  barnstable:
+    name: "Barnstable"
+    display_name: "Barnstable, MA"
+    description: "Harbor on the north shore of Cape Cod in Cape Cod Bay."
+    region: "Cape Cod Bay / Mid Cape"
+    lon: -70.275
+    lat: 41.725
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.72,-70.30)"
+  hyannis:
+    name: "Hyannis"
+    display_name: "Hyannis, MA"
+    description: "Main harbor of the south side of Cape Cod on Nantucket Sound."
+    region: "Nantucket Sound / Mid Cape"
+    lon: -70.275
+    lat: 41.625
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.63,-70.28)"
+  chatham:
+    name: "Chatham"
+    display_name: "Chatham, MA"
+    description: "Harbor at the elbow of Cape Cod; day-boat groundfish fleet."
+    region: "Outer Cape / Nantucket Sound"
+    lon: -69.975
+    lat: 41.675
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.67,-69.95)"
+  woods_hole:
+    name: "Woods Hole"
+    display_name: "Woods Hole, MA"
+    description: "Research and ferry port at the southwest tip of Cape Cod."
+    region: "Vineyard Sound / Upper Cape"
+    lon: -70.675
+    lat: 41.525
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.52,-70.66)"
+  vineyard_haven:
+    name: "Vineyard Haven"
+    display_name: "Vineyard Haven, MA"
+    description: "Main harbor on the north shore of Martha's Vineyard."
+    region: "Vineyard Sound / Martha's Vineyard"
+    lon: -70.575
+    lat: 41.475
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.46,-70.60)"
+  menemsha:
+    name: "Menemsha"
+    display_name: "Menemsha (Chilmark), MA"
+    description: "Small fishing village harbor on western Martha's Vineyard."
+    region: "Vineyard Sound / Martha's Vineyard"
+    lon: -70.775
+    lat: 41.375
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.36,-70.77)"
+  nantucket:
+    name: "Nantucket"
+    display_name: "Nantucket, MA"
+    description: "Harbor on Nantucket island, south of Cape Cod."
+    region: "Nantucket Sound / Nantucket"
+    lon: -70.075
+    lat: 41.275
+    planner_only: true
+    note: "Snapped to nearest water cell of real harbor mouth (41.29,-70.10)"

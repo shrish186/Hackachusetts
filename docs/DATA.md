@@ -12,6 +12,7 @@ Last refreshed: **2026-10-24 (UTC)**. All times UTC unless a local label is give
 |---|---|---|---|---|---|---|
 | Conditions (wave, wind, SST) | NOAA NDBC buoys + NWS marine gridpoint forecast | ndbc.noaa.gov/data/realtime2 ; api.weather.gov | 2026-10-24 | **Real** | 2 buoy cells + 5 NWS forecast samples; NWS rows are forecast | US Gov public domain |
 | Whale sightings | OBIS (NOAA/NMFS/NEFSC surveys) | obis.org | 2026-10-24 | **Real** | 60 most-recent **Jan-May (whale-season)** in-bbox records, kept for routing speed | CC-BY 4.0 |
+| Bottom temperature (eMOLT) | eMOLT via NOAA/NMFS/NEFSC ERDDAP | comet.nefsc.noaa.gov/erddap | 2026-10-24 | **Real** | fishermen-collected hourly bottom temps; most-recent reading per station in-bbox (last 7 days). Bottom temp, NOT sea-surface | US Gov public domain |
 | Ports | real harbors, snapped to nearest water cell | NOAA charts / gazetteer | n/a | **Real coords (grid-snapped)** | 3 ports' harbor-mouth points landed in coarse land cells; moved to the adjacent water cell (within a few km) | — |
 | Fishing grounds | real grounds | NOAA charts | n/a | **Real coords** | all in water; `jeffreys_ledge` is legitimately inside the Western GoM closure in whale season | — |
 | Whale risk | model: real OBIS sightings × Vanderlaan & Taggart (2007) | doi.org/10.1111/j.1748-7692.2007.00048.x | 2026-10-24 | **Model over real inputs** (flagged synthetic) | screening model, not a probability of a real strike | paper © authors |
@@ -23,6 +24,15 @@ Last refreshed: **2026-10-24 (UTC)**. All times UTC unless a local label is give
 
 ## What became real this round
 
+- **Bottom temperature (eMOLT)** → real fishermen-collected bottom-water
+  temperatures from the eMOLT program (Environmental Monitors on Lobster Traps)
+  via the NOAA/NMFS/NEFSC ERDDAP, clipped to the study bbox (most-recent reading
+  per station). Stored in `data/snapshots/emolt_bottom_temp.json`
+  (`synthetic: false`); ingest in `backend/app/ingest/emolt.py`, refreshed by
+  `scripts/refresh_snapshots.py --emolt`. This is a distinct layer from NWS/NDBC
+  sea-surface/near-surface readings and a strong "data from the fishermen
+  themselves" story. Not yet wired into the risk/routing engine — exposed as a
+  real snapshot for the map/UI.
 - **Conditions** → real NOAA NDBC buoy observations + real NWS marine forecast.
 - **Sightings** → real OBIS North Atlantic right whale occurrences, now filtered
   to the **Jan-May whale season** so the March replay shows the genuine seasonal

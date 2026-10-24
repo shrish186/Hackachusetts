@@ -80,12 +80,24 @@ Last checked: 2026-10-24 (UTC).
   (44013 Boston, 44029 Mass Bay) plus **real** NWS marine gridpoint forecast
   samples (api.weather.gov) for study-wide wave/wind coverage. `synthetic: false`.
 
+## 7. Bottom temperature — **REAL (eMOLT)** as of 2026-10-24
+
+- `data/snapshots/emolt_bottom_temp.json` holds **real** bottom-water
+  temperatures from the eMOLT program (Environmental Monitors on Lobster Traps),
+  fishermen-collected and served via the NOAA/NMFS/NEFSC ERDDAP, clipped to the
+  study bbox (most-recent reading per station). `synthetic: false`.
+- This is **bottom** temperature (~0.2 °C accuracy), not sea-surface
+  temperature — do not conflate them on a slide.
+- Dataset: https://comet.nefsc.noaa.gov/erddap/info/eMOLT_realtime_bottom_temps_and_profiles/index.html
+  — Program: https://www.emolt.org/ — InPort: https://www.fisheries.noaa.gov/inport/item/25149
+
 ---
 
 ## Summary for the judges
 
 - **Real data:** ocean conditions (NOAA NDBC buoys + NWS forecast), whale
-  sightings (OBIS), and the verified lethality-curve parameters.
+  sightings (OBIS), eMOLT bottom temperature, and the verified lethality-curve
+  parameters.
 - **Verified facts (safe to state):** right whale population (~384, 2024); the
   speed–lethality curve (0.5 at 11.8 kn); SMA active **dates** and the 10 kn
   limit for vessels ≥ 65 ft.

@@ -217,19 +217,84 @@ def refresh_sightings() -> bool:
     return True
 
 
+def refresh_emolt() -> bool:
+    """Rewrite emolt_bottom_temp.json from live eMOLT bottom-temperature data.
+
+    eMOLT = Environmental Monitors on Lobster Traps: fishermen-collected hourly
+    bottom temperatures via the NOAA/NMFS/NEFSC ERDDAP. Real; synthetic:false.
+    Keeps the most recent reading per station in the study bbox. Falls back to
+    the existing snapshot (never fabricates) on any failure.
+    """
+    from app.ingest.emolt import DATASET_PAGE, PROGRAM_URL, STUDY_BBOX, fetch_bottom_temps
+
+    try:
+        rows = fetch_bottom_temps(bbox=STUDY_BBOX, days=7, timeout_s=30.0)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[emolt] fetch FAILED, keeping existing snapshot: {exc}")
+        return False
+    if not rows:
+        print("[emolt] no rows in bbox/window; keeping existing snapshot")
+        return False
+
+    now = _now_iso()
+    readings = [
+        {
+            "lon": round(r.lon, 5),
+            "lat": round(r.lat, 5),
+            "observed_at": r.observed_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "depth_m": round(r.depth_m, 2) if r.depth_m is not None else None,
+            "bottom_temp_c": round(r.bottom_temp_c, 3),
+            "source": r.source,
+        }
+        for r in rows
+    ]
+    span = (
+        f"{min(s['observed_at'] for s in readings)[:10]} to "
+        f"{max(s['observed_at'] for s in readings)[:10]}"
+    )
+    payload = {
+        "metadata": {
+            "description": (
+                "Real eMOLT (Environmental Monitors on Lobster Traps) BOTTOM-water "
+                "temperature observations in the Fathom study bbox, most recent reading "
+                "per station. Fishermen-collected via NOAA/NMFS/NEFSC."
+            ),
+            "source": "eMOLT via NOAA/NMFS/NEFSC ERDDAP (eMOLT_realtime_bottom_temps_and_profiles)",
+            "source_url": DATASET_PAGE,
+            "program_url": PROGRAM_URL,
+            "license": "U.S. Government work / public domain (NOAA); cite eMOLT and NEFSC",
+            "note": (
+                "Real bottom-temperature observations (not sea-surface temperature). "
+                f"One most-recent reading per station in the last 7 days. Span: {span}."
+            ),
+            "variable": "bottom_temp_c (degree_C)",
+            "record_count": len(readings),
+            "fetched_at": now,
+            "synthetic": False,
+        },
+        "readings": readings,
+    }
+    _write(SNAPSHOT_DIR / "emolt_bottom_temp.json", payload)
+    print(f"[emolt] wrote {len(readings)} real eMOLT bottom-temp readings ({span}) at {now}")
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Refresh Fathom data snapshots from live sources.")
-    ap.add_argument("--conditions", action="store_true", help="Refresh conditions.json (NDBC).")
+    ap.add_argument("--conditions", action="store_true", help="Refresh conditions.json (NDBC+NWS).")
     ap.add_argument("--sightings", action="store_true", help="Refresh sightings.json (OBIS).")
+    ap.add_argument("--emolt", action="store_true", help="Refresh emolt_bottom_temp.json (eMOLT).")
     ap.add_argument("--all", action="store_true", help="Refresh everything (default).")
     args = ap.parse_args(argv)
 
-    do_all = args.all or not (args.conditions or args.sightings)
+    do_all = args.all or not (args.conditions or args.sightings or args.emolt)
     ok = True
     if do_all or args.conditions:
         ok = refresh_conditions() and ok
     if do_all or args.sightings:
         ok = refresh_sightings() and ok
+    if do_all or args.emolt:
+        ok = refresh_emolt() and ok
     # Exit 0 even on graceful fallback; only crash on unexpected errors.
     return 0
 

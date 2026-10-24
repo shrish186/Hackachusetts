@@ -118,3 +118,37 @@ def test_background_refresh_throttles(monkeypatch):
     assert cond.maybe_background_refresh(now_fn=clock) is False  # attempts, fails -> cache
     assert cond.maybe_background_refresh(now_fn=clock) is False  # throttled, no attempt
     assert calls["n"] == 1
+
+
+# --- eMOLT bottom-temperature ingest (offline parsing) --------------------
+def test_emolt_parse_erddap_table_normalizes():
+    from app.ingest.emolt import parse_erddap_table
+
+    table = {
+        "columnNames": ["time", "latitude", "longitude", "depth", "temperature"],
+        "columnUnits": ["UTC", "degrees_north", "degrees_east", "m", "degree_C"],
+        "rows": [
+            ["2026-10-24T18:52:10Z", 41.9389, -70.3049, 3.37, 13.887],
+            ["2026-10-24T16:59:03Z", 43.4643, -70.19, 13.55, 11.915],
+            ["bad", None, -70.0, 10.0, 9.0],  # dropped (bad time + lat)
+        ],
+    }
+    rows = parse_erddap_table(table)
+    assert len(rows) == 2
+    assert rows[0].bottom_temp_c == 13.887 and rows[0].depth_m == 3.37
+    assert all(r.observed_at.tzinfo is not None for r in rows)
+    assert rows[0].source.startswith("eMOLT")
+
+
+def test_emolt_most_recent_per_station():
+    from datetime import datetime, timezone
+
+    from app.ingest.emolt import EmoltReading, most_recent_per_station
+
+    older = EmoltReading(-70.30, 41.94, datetime(2026, 10, 20, tzinfo=timezone.utc), 3.0, 12.0, "eMOLT")
+    newer = EmoltReading(-70.302, 41.939, datetime(2026, 10, 24, tzinfo=timezone.utc), 3.0, 13.0, "eMOLT")
+    other = EmoltReading(-69.50, 42.50, datetime(2026, 10, 22, tzinfo=timezone.utc), 5.0, 11.0, "eMOLT")
+    kept = most_recent_per_station([older, newer, other], round_deg=2)
+    # The two near-identical stations collapse to the newer one.
+    assert len(kept) == 2
+    assert newer in kept and older not in kept

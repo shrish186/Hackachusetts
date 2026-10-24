@@ -29,8 +29,44 @@ def _ports_cfg() -> dict:
 
 
 def load_ports() -> dict[str, dict]:
-    """Raw port definitions from config/ports.yaml."""
+    """Raw base port definitions from config/ports.yaml (the `ports` key).
+
+    These are the ONLY ports the simulator fleet seeds from; the loader API is
+    unchanged. Planner-only harbors live under `planner_ports` (see
+    ``load_planner_ports`` / ``load_all_ports``).
+    """
     return dict(_ports_cfg().get("ports", {}))
+
+
+def load_planner_ports() -> dict[str, dict]:
+    """Planner-only ports from config/ports.yaml (the `planner_ports` key).
+
+    These extra real Massachusetts harbors populate the trip-planner dropdown
+    only. Each is returned with ``planner_only: True``. They are NOT used by the
+    fleet/simulator.
+    """
+    out: dict[str, dict] = {}
+    for pid, entry in _ports_cfg().get("planner_ports", {}).items():
+        e = dict(entry)
+        e["planner_only"] = True
+        out[pid] = e
+    return out
+
+
+def load_all_ports() -> dict[str, dict]:
+    """All selectable ports for /api/meta/ports and the frontend picker.
+
+    Base ports (``planner_only: False``) plus planner-only ports
+    (``planner_only: True``), base first. The fleet/simulator must keep using
+    ``load_ports`` (base only); this function is for the UI picker.
+    """
+    out: dict[str, dict] = {}
+    for pid, entry in load_ports().items():
+        e = dict(entry)
+        e.setdefault("planner_only", False)
+        out[pid] = e
+    out.update(load_planner_ports())
+    return out
 
 
 def load_grounds() -> dict[str, dict]:

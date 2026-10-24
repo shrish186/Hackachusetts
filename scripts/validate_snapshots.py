@@ -86,6 +86,21 @@ def validate_sightings(name: str, payload: dict, errors: list[str]) -> None:
             errors.append(f"{where}: bad observed_at {s.get('observed_at')!r}")
 
 
+def validate_emolt(name: str, payload: dict, errors: list[str]) -> None:
+    for i, r in enumerate(payload.get("readings", [])):
+        where = f"{name}[readings#{i}]"
+        lon, lat = r.get("lon"), r.get("lat")
+        if lon is None or lat is None or not _in_bbox(lon, lat):
+            errors.append(f"{where}: ({lon},{lat}) outside study bbox {BBOX}")
+        t = r.get("bottom_temp_c")
+        if not isinstance(t, (int, float)) or not (-5 <= t <= 40):
+            errors.append(f"{where}: bottom_temp_c out of range [-5,40]: {t}")
+        if r.get("depth_m") is not None and not (0 <= r["depth_m"] <= 1000):
+            errors.append(f"{where}: depth_m out of range [0,1000]: {r['depth_m']}")
+        if not _iso_ok(r.get("observed_at")):
+            errors.append(f"{where}: bad observed_at {r.get('observed_at')!r}")
+
+
 def validate_zones(name: str, payload: dict, errors: list[str]) -> None:
     for i, z in enumerate(payload.get("zones", [])):
         where = f"{name}[zones#{i}:{z.get('id')}]"
@@ -127,6 +142,8 @@ def validate_file(path: Path, errors: list[str]) -> None:
         validate_sightings(name, payload, errors)
     if "zones" in payload:
         validate_zones(name, payload, errors)
+    if "readings" in payload:
+        validate_emolt(name, payload, errors)
 
 
 def validate_all() -> list[str]:
