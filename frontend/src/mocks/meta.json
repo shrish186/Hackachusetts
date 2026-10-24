@@ -1,0 +1,34 @@
+{
+  "demo_mode": true,
+  "data_timestamp": "2026-03-14T18:00:00Z",
+  "sources": [
+    {
+      "layer": "conditions",
+      "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013",
+      "fetched_at": "2026-03-14T18:05:00Z",
+      "cached": true,
+      "synthetic": false
+    },
+    {
+      "layer": "zones",
+      "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+      "fetched_at": "2026-01-01T00:00:00Z",
+      "cached": true,
+      "synthetic": false
+    },
+    {
+      "layer": "risk",
+      "source_url": null,
+      "fetched_at": "2026-03-14T18:00:00Z",
+      "cached": false,
+      "synthetic": true
+    },
+    {
+      "layer": "sightings",
+      "source_url": null,
+      "fetched_at": "2026-03-14T15:30:00Z",
+      "cached": false,
+      "synthetic": true
+    }
+  ]
+}

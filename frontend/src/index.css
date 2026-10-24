@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Fathom dark ocean theme tokens.
+   Tailwind v4 reads these as utilities, e.g. bg-abyss, text-foam, border-depth. */
+@theme {
+  --color-abyss: #04121f;        /* deepest background */
+  --color-deep: #082a3f;         /* panel background */
+  --color-depth: #0e3a56;        /* borders / dividers */
+  --color-current: #12506f;      /* raised surfaces */
+  --color-tide: #1b7fa8;         /* accent (interactive) */
+  --color-surf: #39b7d6;         /* bright accent */
+  --color-foam: #e6f4f9;         /* primary text */
+  --color-mist: #9bc3d4;         /* secondary text */
+  --color-kelp: #3fae8f;         /* positive / safe */
+  --color-coral: #f2994a;        /* warning */
+  --color-alert: #e5544b;        /* danger / prohibited */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-abyss);
+  color: var(--color-foam);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* MapLibre dark attribution/controls so they read on the dark theme. */
+.maplibregl-ctrl-attrib {
+  background: rgba(4, 18, 31, 0.7) !important;
+  color: var(--color-mist) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--color-surf) !important;
+}
+.maplibregl-ctrl-group {
+  background: rgba(8, 42, 63, 0.9) !important;
+  border: 1px solid var(--color-depth) !important;
+}
+.maplibregl-ctrl-group button {
+  filter: invert(0.9) hue-rotate(180deg);
+}

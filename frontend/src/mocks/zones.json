@@ -1,0 +1,122 @@
+[
+  {
+    "id": "sma_cape_cod_bay",
+    "name": "Cape Cod Bay Seasonal Management Area",
+    "kind": "whale_sma",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-70.65, 41.75],
+          [-70.0, 41.75],
+          [-70.0, 42.1],
+          [-70.65, 42.1],
+          [-70.65, 41.75]
+        ]
+      ]
+    },
+    "active_from": "2026-01-01T00:00:00Z",
+    "active_to": "2026-05-15T00:00:00Z",
+    "speed_limit_kn": 10.0,
+    "prohibited": false,
+    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+    "source_updated": "2026-01-01T00:00:00Z",
+    "synthetic": false
+  },
+  {
+    "id": "slow_zone_stellwagen_mar",
+    "name": "Dynamic Slow Zone — Stellwagen (March)",
+    "kind": "slow_zone",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-70.45, 42.2],
+          [-70.1, 42.2],
+          [-70.1, 42.55],
+          [-70.45, 42.55],
+          [-70.45, 42.2]
+        ]
+      ]
+    },
+    "active_from": "2026-03-10T00:00:00Z",
+    "active_to": "2026-03-24T00:00:00Z",
+    "speed_limit_kn": 10.0,
+    "prohibited": false,
+    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales",
+    "source_updated": "2026-03-10T00:00:00Z",
+    "synthetic": true
+  },
+  {
+    "id": "closure_western_gom",
+    "name": "Western Gulf of Maine Seasonal Closure",
+    "kind": "fishing_closure",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-70.3, 42.6],
+          [-69.7, 42.6],
+          [-69.7, 43.1],
+          [-70.3, 43.1],
+          [-70.3, 42.6]
+        ]
+      ]
+    },
+    "active_from": "2026-02-01T00:00:00Z",
+    "active_to": "2026-04-30T00:00:00Z",
+    "speed_limit_kn": null,
+    "prohibited": true,
+    "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/sustainable-fisheries/fishery-management-area-closures",
+    "source_updated": "2026-02-01T00:00:00Z",
+    "synthetic": true
+  },
+  {
+    "id": "wind_lease_vineyard",
+    "name": "Vineyard Wind Lease Area (OCS-A 0501)",
+    "kind": "wind_lease",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-70.9, 41.05],
+          [-70.4, 41.05],
+          [-70.4, 41.35],
+          [-70.9, 41.35],
+          [-70.9, 41.05]
+        ]
+      ]
+    },
+    "active_from": null,
+    "active_to": null,
+    "speed_limit_kn": null,
+    "prohibited": false,
+    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+    "source_updated": "2025-11-01T00:00:00Z",
+    "synthetic": true
+  },
+  {
+    "id": "wind_construction_vineyard_mar",
+    "name": "Vineyard Wind Construction Exclusion (active window)",
+    "kind": "wind_construction",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-70.75, 41.12],
+          [-70.55, 41.12],
+          [-70.55, 41.28],
+          [-70.75, 41.28],
+          [-70.75, 41.12]
+        ]
+      ]
+    },
+    "active_from": "2026-03-01T00:00:00Z",
+    "active_to": "2026-03-31T00:00:00Z",
+    "speed_limit_kn": null,
+    "prohibited": true,
+    "source_url": "https://www.boem.gov/renewable-energy/state-activities/massachusetts",
+    "source_updated": "2026-03-01T00:00:00Z",
+    "synthetic": true
+  }
+]

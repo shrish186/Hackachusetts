@@ -1,0 +1,20 @@
+[
+  {
+    "cell_id": "42_17",
+    "time": "2026-03-14T18:00:00Z",
+    "wave_m": 1.4,
+    "wind_kn": 12.5,
+    "sst_c": 6.2,
+    "source": "noaa_ndbc_44013",
+    "fetched_at": "2026-03-14T18:05:00Z"
+  },
+  {
+    "cell_id": "43_18",
+    "time": "2026-03-14T18:00:00Z",
+    "wave_m": 2.1,
+    "wind_kn": 18.0,
+    "sst_c": 5.8,
+    "source": "noaa_ndbc_44013",
+    "fetched_at": "2026-03-14T18:05:00Z"
+  }
+]

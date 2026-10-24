@@ -1,0 +1,74 @@
+[
+  {
+    "waypoints": [
+      [-70.18, 42.05],
+      [-70.25, 42.18],
+      [-70.3, 42.3],
+      [-70.28, 42.42]
+    ],
+    "eta_hours": 3.8,
+    "fuel_est_l": 215.0,
+    "zones_crossed": ["sma_cape_cod_bay", "slow_zone_stellwagen_mar"],
+    "max_wave_m": 1.6,
+    "risk_exposure": 0.42,
+    "effort_proxy": 0.73,
+    "citations": [
+      {
+        "tool_call_id": "call_3",
+        "tool": "get_whale_risk",
+        "claim": "risk_exposure of 0.42 over the planned route",
+        "source_url": null
+      },
+      {
+        "tool_call_id": "call_5",
+        "tool": "get_zones",
+        "claim": "route crosses Cape Cod Bay Seasonal Management Area",
+        "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales"
+      }
+    ]
+  },
+  {
+    "waypoints": [
+      [-70.18, 42.05],
+      [-70.08, 42.2],
+      [-70.05, 42.35],
+      [-70.12, 42.42]
+    ],
+    "eta_hours": 4.4,
+    "fuel_est_l": 248.0,
+    "zones_crossed": ["slow_zone_stellwagen_mar"],
+    "max_wave_m": 1.9,
+    "risk_exposure": 0.21,
+    "effort_proxy": 0.61,
+    "citations": [
+      {
+        "tool_call_id": "call_4",
+        "tool": "get_whale_risk",
+        "claim": "risk_exposure of 0.21 over the planned route",
+        "source_url": null
+      }
+    ]
+  },
+  {
+    "waypoints": [
+      [-70.18, 42.05],
+      [-70.3, 42.12],
+      [-70.42, 42.28],
+      [-70.38, 42.44]
+    ],
+    "eta_hours": 5.1,
+    "fuel_est_l": 286.0,
+    "zones_crossed": ["sma_cape_cod_bay"],
+    "max_wave_m": 1.5,
+    "risk_exposure": 0.12,
+    "effort_proxy": 0.49,
+    "citations": [
+      {
+        "tool_call_id": "call_6",
+        "tool": "get_whale_risk",
+        "claim": "risk_exposure of 0.12 over the planned route",
+        "source_url": null
+      }
+    ]
+  }
+]

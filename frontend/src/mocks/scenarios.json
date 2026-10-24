@@ -1,0 +1,32 @@
+[
+  {
+    "scenario_id": "full_closure",
+    "label": "Full closure of Stellwagen approach",
+    "delta_risk_pct": -61.0,
+    "delta_hours_pct": 14.2,
+    "delta_fuel_pct": 15.8,
+    "delta_effort_access_pct": -38.0,
+    "on_frontier": false,
+    "summary": "A full closure removes most whale-strike risk but cuts fishing access by more than a third and adds real steaming time. The biggest livelihood cost of the three options."
+  },
+  {
+    "scenario_id": "dynamic_zone",
+    "label": "Dynamic zone around latest sightings",
+    "delta_risk_pct": -54.0,
+    "delta_hours_pct": 5.1,
+    "delta_fuel_pct": 5.6,
+    "delta_effort_access_pct": -9.0,
+    "on_frontier": true,
+    "summary": "A dynamic zone that follows recent sightings removes almost as much risk as a full closure while keeping most fishing access. One of the efficient options."
+  },
+  {
+    "scenario_id": "seasonal_speed_limit",
+    "label": "Seasonal 10 kn speed limit (no closure)",
+    "delta_risk_pct": -47.0,
+    "delta_hours_pct": 7.3,
+    "delta_fuel_pct": 3.2,
+    "delta_effort_access_pct": -2.0,
+    "on_frontier": true,
+    "summary": "A seasonal speed limit keeps nearly all fishing access and still cuts risk by roughly half. Slower transit adds some time but very little fuel. An efficient option."
+  }
+]
