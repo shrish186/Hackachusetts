@@ -79,7 +79,17 @@ def vessels_config() -> dict[str, dict[str, float]]:
 
 @lru_cache(maxsize=1)
 def ports_config() -> dict[str, Any]:
-    return load_yaml(config_path("ports.yaml"))
+    """config/ports.yaml for the planner: ``ports`` holds the base ports plus the
+    planner-only harbors (``planner_ports``), via Lane A's ``load_all_ports``.
+
+    The simulator fleet does not use this; it seeds from the base ports only
+    (engine/fleet.py).
+    """
+    from app.ingest.ports import load_all_ports
+
+    cfg = dict(load_yaml(config_path("ports.yaml")))
+    cfg["ports"] = load_all_ports()
+    return cfg
 
 
 _COORD_RE = re.compile(r"^\s*(-?\d{1,3}(?:\.\d{1,6})?)\s*,\s*(-?\d{1,2}(?:\.\d{1,6})?)\s*$")

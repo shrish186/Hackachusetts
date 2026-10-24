@@ -22,7 +22,9 @@ def test_five_ports_with_shape() -> None:
     body, _ = _grounds("2026-03-15T13:00:00Z")
     assert body["time"] == "2026-03-15T13:00:00Z"
     ids = {p["id"] for p in body["ports"]}
-    assert ids == {"gloucester", "boston", "plymouth", "provincetown", "new_bedford"}
+    base = {"gloucester", "boston", "plymouth", "provincetown", "new_bedford"}
+    assert base <= ids
+    assert {p["id"] for p in body["ports"] if not p["planner_only"]} == base
     for p in body["ports"]:
         assert p["state"] == "MA" and {"name", "lon", "lat", "grounds"} <= p.keys()
         for g in p["grounds"]:
@@ -68,7 +70,9 @@ def test_unknown_port_and_ground_are_friendly_422() -> None:
     assert r.status_code == 422
     body = r.json()
     assert body["fields"] == ["port"]
-    assert "valid ports: boston, gloucester, new_bedford, plymouth, provincetown" in body["message"]
+    from app.engine.routing import ports_config
+
+    assert "valid ports: " + ", ".join(sorted(ports_config()["ports"])) in body["message"]
     assert "Atlantis" not in r.text and "Traceback" not in r.text
     r = c.post("/api/trip/plan", json={**TRIP, "target_ground": "georges_bank"})
     assert r.status_code == 422 and r.json()["fields"] == ["target_ground"]

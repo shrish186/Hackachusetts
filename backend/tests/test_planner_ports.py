@@ -55,6 +55,9 @@ def with_fake_port(monkeypatch):
 
     monkeypatch.setattr(trip_mod, "ports_config", lambda: patched)
     monkeypatch.setattr(ingest_ports, "_ports_cfg", lambda: patched)
+    from app.api import ports as ports_api_mod
+
+    monkeypatch.setattr(ports_api_mod, "load_all_ports", lambda: patched["ports"])
     monkeypatch.setattr(fleet, "_ports", lambda: patched["ports"])
     from app.api import ports as ports_api
 
@@ -83,8 +86,37 @@ def test_planner_only_port_listed_sorted_and_plannable(with_fake_port) -> None:
     assert names == sorted(names, key=str.lower)
     fake = next(p for p in body["ports"] if p["id"] == "aaa_test_harbor")
     assert fake["planner_only"] is True and len(fake["grounds"]) == len(routing.ports_config()["fishing_grounds"])
-    assert all(p["planner_only"] is False for p in body["ports"] if p["id"] != "aaa_test_harbor")
+    base = set(fleet.fleet_ports(routing.ports_config()["ports"]))
+    assert all(p["planner_only"] is False for p in body["ports"] if p["id"] in base)
     _assert_plans_or_clear_reason(c.post("/api/trip/plan", json={**TRIP, "port": "aaa_test_harbor"}))
+
+
+def test_planner_ports_from_config_are_listed_and_not_in_fleet() -> None:
+    from app.ingest.ports import load_planner_ports
+
+    planner = set(load_planner_ports())
+    assert len(planner) >= 10
+    assert planner <= set(routing.ports_config()["ports"])
+    assert not planner & set(fleet.fleet_ports())
+    assert all(t.port not in planner for t in fleet.build_fleet(200))
+    body = _client().get("/api/meta/ports", params={"time": REPLAY}).json()
+    listed = {p["id"]: p["planner_only"] for p in body["ports"]}
+    assert all(listed[pid] for pid in planner)
+    assert sum(not v for v in listed.values()) == 5
+    names = [p["name"] for p in body["ports"]]
+    assert names == sorted(names, key=str.lower)
+
+
+def test_sim_baseline_matches_snapshot() -> None:
+    from app.api.sim import _current_zones
+    from app.engine.simulator import Simulator
+    from app.ingest.config import data_path
+
+    snap = json.loads(data_path("snapshots", "sim_results.json").read_text())["baseline"]
+    base = Simulator(current_zones=_current_zones()).baseline()
+    assert base.trips == snap["trips"] and base.access_lost == snap["access_lost"]
+    assert base.steaming_hours == pytest.approx(snap["steaming_hours"], abs=0.05)
+    assert base.risk_exposure == pytest.approx(snap["risk_exposure"], abs=0.01)
 
 
 def test_ready_after_basic_phase_while_full_runs(monkeypatch) -> None:

@@ -49,7 +49,8 @@ def _ports() -> dict[str, dict]:
 def fleet_ports(ports: dict[str, dict] | None = None) -> dict[str, dict]:
     """Ports the synthetic fleet sails from.
 
-    Ports marked ``planner_only: true`` in config/ports.yaml are available to the
+    Planner-only harbors live under ``planner_ports`` in config/ports.yaml and are
+    never read here; as a second guard, ports marked ``planner_only: true`` are available to the
     Captain trip planner but are left out of the fleet, so the simulator
     baseline (and data/snapshots/sim_results.json) does not change when ports
     are added for planning.

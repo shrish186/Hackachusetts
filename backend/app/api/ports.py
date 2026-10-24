@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.trip import MAX_FUTURE, earliest_departure
 from app.engine.routing import ground_status
-from app.ingest.ports import load_grounds, load_ports
+from app.ingest.ports import load_all_ports, load_grounds
 
 router = APIRouter(tags=["meta"])
 
@@ -78,7 +78,7 @@ def build_ports(when: datetime) -> dict[str, Any]:
             "planner_only": bool(p.get("planner_only", False)),
             "grounds": [dict(g) for g in ground_list],
         }
-        for pid, p in load_ports().items()
+        for pid, p in load_all_ports().items()
     ]
     ports.sort(key=lambda p: (str(p["name"]).lower(), p["id"]))
     return {"time": _iso(when), "ports": ports}
