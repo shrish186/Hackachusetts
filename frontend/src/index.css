@@ -70,15 +70,16 @@ body {
 /* Zoom control (bottom-right): lift it clear of the bottom time slider and,
    on phones, the bottom sheet / floating button (item 1). The slider is ~8rem
    tall at the bottom; the mobile opener sits at ~7rem. */
-.maplibregl-ctrl-bottom-right .fathom-nav {
-  margin-right: 10px;
+/* Use !important to beat MapLibre's default `.maplibregl-ctrl { margin: 10px }`. */
+.fathom-nav {
+  margin-right: 10px !important;
   /* Phone: lift fully above the bottom time-slider panel (~8rem) AND the
      mobile "Plan a trip" opener, so the zoom never sits on the slider. */
-  margin-bottom: 14.5rem;
+  margin-bottom: 14.5rem !important;
 }
 @media (min-width: 640px) {
-  .maplibregl-ctrl-bottom-right .fathom-nav {
+  .fathom-nav {
     /* Desktop: slider is a centered max-w panel, so only clear its height. */
-    margin-bottom: 9rem;
+    margin-bottom: 9rem !important;
   }
 }
