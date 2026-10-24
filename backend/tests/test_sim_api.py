@@ -162,3 +162,35 @@ def test_no_public_response_contains_todo() -> None:
     # And the sim run response.
     r = client.post("/api/sim/run", json={"scenario_id": "seasonal_speed_limit"})
     assert "TODO" not in r.text
+
+
+# --- Baseline access_lost + plain-language explanation (task 4) ---------------
+
+def test_req6_baseline_reports_access_lost_with_explanation() -> None:
+    """The baseline reports lost access (grounds in today's closed zones) and a
+    plain-language explanation whose numbers match, identical across languages.
+
+    Confirms Shrish's routing finding (docs/API_CONTRACT.md): the router counts
+    trips to grounds inside active closed zones as lost access rather than
+    relocating them, so the baseline shows access_lost > 0 with no scenario.
+    """
+    import re
+
+    r = client.post("/api/sim/run", json={"scenario_id": "extend_closure_east"})
+    assert r.status_code == 200
+    body = r.json()
+
+    base = body["baseline"]
+    assert base["trips"] == 200
+    assert base["access_lost"] > 0, "baseline should report grounds already closed"
+
+    exp = body["baseline_explanation"]
+    assert set(exp) == {"en", "pt", "es"}
+    # The real numbers appear in the text.
+    assert str(base["access_lost"]) in exp["en"]
+    assert str(base["trips"]) in exp["en"]
+    # Numbers are identical across all three languages (Req 7.2).
+    def nums(s: str) -> list[str]:
+        return re.findall(r"\d+", s)
+
+    assert nums(exp["en"]) == nums(exp["pt"]) == nums(exp["es"])

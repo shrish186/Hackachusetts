@@ -39,6 +39,7 @@ from pydantic import BaseModel, Field, model_validator
 from app.engine.simulator import (
     Scenario,
     Simulator,
+    baseline_access_explanation,
     preloaded_scenarios,
 )
 from app.ingest.config import data_path
@@ -211,6 +212,13 @@ def _serve_preset(scenario_id: str) -> dict[str, Any]:
         result = dict(pre)
         result["requested"] = scenario_id
         result["served_from"] = "precomputed"
+        # Ensure the plain-language baseline access-loss note is present even if
+        # the committed snapshot predates it (keeps the served shape current).
+        if "baseline_explanation" not in result:
+            base = result.get("baseline", {})
+            result["baseline_explanation"] = baseline_access_explanation(
+                int(base.get("access_lost", 0)), int(base.get("trips", 0))
+            )
         return result
     # Fallback (snapshot missing): compute live. Keeps correctness over speed.
     sim = Simulator(current_zones=_current_zones())

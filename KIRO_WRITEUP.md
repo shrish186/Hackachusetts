@@ -89,9 +89,11 @@ it — a closure that sits on a fishing ground removes those trips entirely, whi
 saving, so we fixed the model (report `access_lost`) and the invariant, not the
 test-to-pass. Screenshot: `09-pbt-counterexample.png`.
 
-`pytest -q`: **112 tests pass** across 15 test files.
+`pytest -q`: **158 passed, 1 skipped** across 18 test files.
 
 ## 7. Real bugs QA caught (and what happened)
+
+All five are real and traceable to commits in this repo.
 
 - **Simulator timeout / 504 (fixed).** `POST /api/sim/run` with a preset took
   >20 s on Render and returned `504 {"error":"Request timed out."}`; a second
@@ -101,14 +103,31 @@ test-to-pass. Screenshot: `09-pbt-counterexample.png`.
   in ~20 ms; keep the live path only for custom polygons, now bounded (vertex
   cap 200, study-area clip, hard 8 s budget → `422`, single-flight semaphore →
   `429`). Commit `7951075`.
-- **Reversed departure-window 500.** A `depart_window` with end before start
-  surfaced a 500 instead of a clean 422 — logged for the API owner; the trip
-  request model should reject it at validation.
-- **Blank-map worker bug.** The map tile/worker init intermittently rendered a
-  blank map on first load — a frontend (Lane C) issue tracked during QA.
+- **Blank-map worker bug (fixed).** The map rendered blank on first load — the
+  deck.gl/MapLibre worker crashed on viewport height and the container collapsed
+  to a 0-height strip. Fixed over several commits: non-interleaved deck.gl
+  overlay attached only after map load, a `ResizeObserver` to keep the map sized,
+  and `h-full/w-full` on the container (`7476dec`, `058af71`, `40ca948`,
+  `6977637`, `b124381`).
+- **CARTO API-key tiles (fixed).** The basemap went blank because CARTO's tile
+  endpoint started requiring a key (and a stray `{r}` retina placeholder broke
+  the URL). Fixed by switching to keyless OpenStreetMap tiles and dropping `{r}`
+  (`097826b`, `7ce988f`).
+- **Empty Render env vars (fixed).** The deployed backend came up with no
+  `FATHOM_ALLOWED_ORIGINS`/`VITE_API_URL` set, so CORS origins and the API base
+  were wrong. Fixed by documenting the required env in `docs/DEPLOY.md` and
+  `render.yaml` and trimming trailing slashes/spaces on parse (`ad1b389`,
+  `b860b57`).
+- **CORS 405 on preflight (fixed).** The browser's `OPTIONS` preflight returned
+  405, blocking the Vercel frontend from calling the API. Fixed in the CORS /
+  hardening middleware with regression tests (`bc023d4`).
 
-Honesty: only the 504 has a committed fix in this repo; the other two are QA
-findings handed to their owning lanes.
+Honesty note: the blank-map, CARTO, Render-env and CORS fixes were made by the
+frontend/backend lanes (Lane C / Lane B); Lane D (QA) reported them and owns the
+simulator 504 fix.
+
+Screenshots: `13-live-map.png` (map rendering after the fixes),
+`14-manager-result.png` (Pareto result), `15-mobile-390.png` (390 px mobile).
 
 ## 8. Honest lessons
 

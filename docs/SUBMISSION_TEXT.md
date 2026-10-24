@@ -33,16 +33,20 @@ number. The same engine is exposed as an MCP server.
 
 No keys needed — demo mode runs from bundled public/synthetic data.
 
-1. Open the live app and accept the intro card. Toggle the weather, zones, and
-   risk layers; click a zone to see its dates and source.
-2. **Captain mode:** click "Try the demo trip," watch the agent stream its tool
-   calls, open a plan's "why" to see citations, drag the risk slider, switch the
-   language (numbers stay identical).
-3. **Manager mode:** pick a preset scenario (extend closure east / dynamic zone /
-   seasonal speed limit) — results are instant (precomputed) — and read the
-   trade-off chart and the plain-language summary.
+1. Open the live app, accept the intro card, and turn on **"Replay whale
+   season"** (15 Mar 2026) so the seasonal closures and slow zones are active.
+   Toggle the weather, zones, and risk layers; click a zone to see its dates and
+   source.
+2. **Captain mode (Gloucester, small boat):** click "Try the demo trip," watch
+   the agent stream its tool calls, read the three ranked routes and the
+   trade-off line, tap a plan's "Why" to see a citation, then switch to
+   Portuguese (numbers stay identical).
+3. **Manager mode:** run the three preset scenarios (extend closure east /
+   dynamic zone / seasonal speed limit) — results are instant (precomputed) —
+   and read the Pareto trade-off chart (efficient options highlighted) and the
+   plain-language summary.
 4. **Run the tests:** `cd backend && pip install -r requirements.txt && pytest -q`
-   (112 tests, including Hypothesis property tests).
+   (**158 passed, 1 skipped**, including Hypothesis property tests).
 
 API quick check:
 ```
@@ -52,13 +56,18 @@ curl -X POST https://fathom-six-vert.vercel.app/api/sim/run \
 
 ## Data honesty
 
-Fathom uses only public or synthetic data. Every layer carries its source,
-fetch time, and a cached/synthetic flag; anything not from a real source is
-flagged `synthetic: true` and badged in the UI. The whale-risk model is a
-transparent screening tool based on the Vanderlaan & Taggart (2007) vessel-strike
-lethality curve — not a prediction — and the fishing-effort figure is an estimate
-of activity, **not** catch or revenue. The fleet in the simulator is synthetic
-and anonymized; no real vessel identity is shown.
+Fathom uses only public or synthetic data (full breakdown in `docs/DATA.md`).
+Conditions are **real** NOAA NDBC buoy observations plus the **real** NWS marine
+gridpoint forecast; whale sightings are **real** OBIS right-whale occurrences
+(CC-BY 4.0). Protection-zone **dates** are real (NOAA 2026 season bulletins) but
+the **zone polygons are hand-drawn approximations**, clearly labeled. Every layer
+carries its source, fetch time, and a cached/synthetic flag; anything not from a
+real source is flagged `synthetic: true` and badged in the UI. The whale-risk
+layer is a transparent screening model (real OBIS sightings × the Vanderlaan &
+Taggart 2007 vessel-strike lethality curve) — not a prediction — and the
+fishing-effort figure is an estimate of activity, **not** catch or revenue. The
+fleet in the simulator is synthetic and anonymized; no real vessel identity is
+shown.
 
 ## Safety
 

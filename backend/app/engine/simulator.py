@@ -543,6 +543,45 @@ def _pareto_points(options: list[OptionResult]) -> list[dict[str, Any]]:
     return pts
 
 
+def baseline_access_explanation(access_lost: int, total_trips: int) -> dict[str, str]:
+    """Plain-language note on baseline access loss, in en/pt/es (identical numbers).
+
+    Even before any new scenario, some fleet trips target grounds that sit
+    inside today's *already-active* closed zones (notably the Western Gulf of
+    Maine Seasonal Closure and the Vineyard Wind construction exclusion). The
+    router does not relocate those trips — it reports them as lost access
+    (confirmed with Shrish's routing finding in docs/API_CONTRACT.md). This
+    explains why the baseline shows ``access_lost`` > 0 with no scenario applied.
+
+    Exposed as a module function so the API layer can attach the same text to a
+    precomputed preset result without re-running the simulator.
+    """
+    n = access_lost
+    total = total_trips
+    return {
+        "en": (
+            f"Before any new rule, {n} of {total} fleet trips already target "
+            f"fishing grounds inside today's active closed zones (mainly the "
+            f"Western Gulf of Maine closure and the Vineyard Wind construction "
+            f"exclusion), so they are counted as lost access, not re-routed."
+        ),
+        "pt": (
+            f"Antes de qualquer nova regra, {n} de {total} viagens da frota já "
+            f"têm como destino pesqueiros dentro das zonas fechadas ativas de "
+            f"hoje (principalmente o fecho do oeste do Golfo do Maine e a "
+            f"exclusão de construção do Vineyard Wind), por isso são contadas "
+            f"como acesso perdido, e não realocadas."
+        ),
+        "es": (
+            f"Antes de cualquier nueva norma, {n} de {total} viajes de la flota "
+            f"ya se dirigen a caladeros dentro de las zonas cerradas activas de "
+            f"hoy (sobre todo el cierre del oeste del Golfo de Maine y la "
+            f"exclusión de construcción de Vineyard Wind), por lo que se cuentan "
+            f"como acceso perdido, no reubicados."
+        ),
+    }
+
+
 def _summaries(option: OptionResult) -> dict[str, str]:
     """Plain-language summaries in en/pt/es with IDENTICAL numbers (Req 7.2).
 
@@ -658,6 +697,7 @@ class Simulator:
         _mark_pareto_frontier(options)
         return {
             "baseline": base.as_dict(),
+            "baseline_explanation": baseline_access_explanation(base.access_lost, base.trips),
             "options": [
                 {**o.as_dict(), "summary": _summaries(o)} for o in options
             ],
