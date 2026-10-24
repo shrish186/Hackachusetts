@@ -64,20 +64,26 @@ export function Combobox({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [touched, setTouched] = useState(false);
+  // True only while the user is actively typing a filter (vs. the box showing
+  // the committed selection's label). When false we show the full list.
+  const [typing, setTyping] = useState(false);
 
   // Keep the input text in sync when the value changes from outside.
   useEffect(() => {
     const sel = options.find((o) => o.id === value) ?? null;
     setQuery(sel ? sel.label : '');
+    setTyping(false);
   }, [value, options]);
 
   const filtered = useMemo(() => {
-    const q = fold(query.trim());
+    // Only filter once the user has typed; otherwise show every option so a
+    // committed selection's label never hides the rest of the list.
+    const q = typing ? fold(query.trim()) : '';
     if (!q) return options;
     return options.filter(
       (o) => fold(o.label).includes(q) || fold(o.keywords ?? '').includes(q) || fold(o.id).includes(q),
     );
-  }, [query, options]);
+  }, [query, options, typing]);
 
   // Clamp the active index whenever the filtered list changes.
   useEffect(() => {
@@ -89,6 +95,7 @@ export function Combobox({
     onChange(opt.id);
     setQuery(opt.label);
     setOpen(false);
+    setTyping(false);
     setTouched(true);
   }
 
@@ -140,16 +147,27 @@ export function Combobox({
         disabled={disabled}
         value={query}
         placeholder={placeholder}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => {
+          setOpen(true);
+          // Select the text so the first keystroke replaces the label and the
+          // full list stays visible until the user actually types.
+          e.target.select();
+        }}
         onBlur={() => {
           // Delay so option mousedown can fire first.
           window.setTimeout(() => {
             setOpen(false);
             setTouched(true);
+            setTyping(false);
+            // If there's a committed selection, restore its label. If not (and
+            // the user typed something that matched nothing), keep the text so
+            // the "Pick a …" invalid message shows.
+            if (selected) setQuery(selected.label);
           }, 120);
         }}
         onChange={(e) => {
           setQuery(e.target.value);
+          setTyping(true);
           setOpen(true);
           setActive(0);
         }}
