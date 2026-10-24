@@ -133,3 +133,93 @@ def test_meta_sources_every_layer_is_fully_described():
         # A layer flagged real must cite where it came from.
         if s["synthetic"] is False:
             assert s["source_url"], f"real layer {s['layer']} needs a source_url"
+
+
+# --- Replay date zone activity (task 2) -----------------------------------
+
+REPLAY = datetime(2026, 3, 15, 13, 0, tzinfo=timezone.utc)
+
+
+def test_replay_date_zone_activity_is_correct():
+    """Task 2: at 2026-03-15T13:00:00Z the expected zones are active/inactive.
+
+    Active: Cape Cod Bay SMA, Off Race Point SMA, Western Gulf of Maine closure,
+    Stellwagen slow zone. Inactive: Great South Channel SMA (opens Apr 1).
+    """
+    zones = {z.id: z for z in load_zones()}
+    for zid in (
+        "sma_cape_cod_bay",
+        "sma_off_race_point",
+        "closure_western_gom",
+        "slow_zone_stellwagen_mar",
+    ):
+        assert zid in zones, f"missing zone {zid}"
+        assert is_active(zones[zid], REPLAY), f"{zid} should be active on 2026-03-15"
+    assert "sma_great_south_channel" in zones
+    assert not is_active(zones["sma_great_south_channel"], REPLAY), (
+        "Great South Channel SMA should NOT be active on 2026-03-15 (opens Apr 1)"
+    )
+
+
+# --- Sightings support a meaningful March heatmap (task 1) ----------------
+
+def test_sightings_are_real_whale_season_records():
+    """Task 1: sightings are real OBIS records, all in the Jan-May window."""
+    payload = json.loads((SNAPSHOT_DIR / "sightings.json").read_text())
+    meta = payload["metadata"]
+    assert meta["synthetic"] is False
+    assert "obis" in meta["source"].lower()
+    rows = payload["sightings"]
+    assert 40 <= len(rows) <= 80, f"expected ~60 sightings, got {len(rows)}"
+    for s in rows:
+        month = int(s["observed_at"][5:7])
+        assert month in (1, 2, 3, 4, 5), f"sighting outside whale season: {s['observed_at']}"
+
+
+def test_risk_layer_is_meaningful_at_replay_date():
+    """Task 1: the risk heatmap at the replay date has real spatial variation."""
+    import numpy as np
+
+    from app.engine.risk import load_sightings, risk_grid
+    from app.ingest.grid import build_grid_spec, land_mask_array
+
+    spec = build_grid_spec()
+    mask = land_mask_array(spec)
+    grid = risk_grid(spec, REPLAY, 12.0, load_sightings(), mask)
+    assert grid.max() > 0.15, "March heatmap should show non-trivial risk"
+    assert int((grid > 0.05).sum()) > 50, "March heatmap should cover many cells"
+    assert np.all(grid >= 0.0) and np.all(grid <= 1.0)
+
+
+# --- Grounds and ports vs land / closures (task 3) ------------------------
+
+def test_no_fishing_ground_is_on_land():
+    """Task 3: every fishing ground sits in water (grounds on land are bugs)."""
+    cfg = yaml.safe_load(config_path("ports.yaml").read_text())
+    for key, g in cfg["fishing_grounds"].items():
+        assert is_water(g["lon"], g["lat"]), f"ground {key} is on land: ({g['lon']},{g['lat']})"
+
+
+def test_all_ports_are_in_water_at_grid_resolution():
+    """Task 3: every port coordinate resolves to a water cell (routable origin)."""
+    cfg = yaml.safe_load(config_path("ports.yaml").read_text())
+    for key, p in cfg["ports"].items():
+        assert is_water(p["lon"], p["lat"]), f"port {key} is on a land cell: ({p['lon']},{p['lat']})"
+
+
+def test_jeffreys_ledge_is_legitimately_closed_in_whale_season():
+    """Task 3: jeffreys_ledge sits in the Western GoM closure during whale season.
+
+    This is a legitimate closure (not a data bug): trips targeting it lose access
+    at the replay date by design. Documented in docs/DATA.md.
+    """
+    from shapely.geometry import Point
+
+    from app.ingest.zones import zone_shape
+
+    cfg = yaml.safe_load(config_path("ports.yaml").read_text())
+    g = cfg["fishing_grounds"]["jeffreys_ledge"]
+    pt = Point(g["lon"], g["lat"])
+    closure = next(z for z in load_zones() if z.id == "closure_western_gom")
+    assert is_active(closure, REPLAY)
+    assert zone_shape(closure).covers(pt), "jeffreys_ledge should fall inside the closure"

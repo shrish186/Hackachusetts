@@ -1,9 +1,9 @@
 {
   "baseline": {
-    "risk_exposure": 60.9514,
-    "steaming_hours": 535.33,
-    "fuel_l": 31047.8,
-    "effort_access": 36.5143,
+    "risk_exposure": 60.4785,
+    "steaming_hours": 578.45,
+    "fuel_l": 34100.3,
+    "effort_access": 35.6477,
     "trips": 200,
     "access_lost": 57
   },
@@ -13,10 +13,10 @@
       "name": "Extend whale closure east",
       "description": "Extend the Western Gulf of Maine closure ~20 nm east (full no-entry).",
       "totals": {
-        "risk_exposure": 60.9514,
-        "steaming_hours": 535.33,
-        "fuel_l": 31047.8,
-        "effort_access": 36.5143,
+        "risk_exposure": 60.4785,
+        "steaming_hours": 578.45,
+        "fuel_l": 34100.3,
+        "effort_access": 35.6477,
         "trips": 200,
         "access_lost": 57
       },
@@ -28,8 +28,8 @@
       },
       "cost_breakdown": {
         "access_lost_trips": 57,
-        "steaming_hours": 535.33,
-        "fuel_l": 31047.799999999967
+        "steaming_hours": 578.4499999999997,
+        "fuel_l": 34100.29999999999
       },
       "on_frontier": true,
       "summary": {
@@ -43,29 +43,29 @@
       "name": "Dynamic zone around recent sightings",
       "description": "A smaller dynamic no-entry zone placed over the latest sighting cluster.",
       "totals": {
-        "risk_exposure": 30.7008,
-        "steaming_hours": 262.83,
-        "fuel_l": 14111.5,
-        "effort_access": 22.1582,
+        "risk_exposure": 39.298,
+        "steaming_hours": 287.67,
+        "fuel_l": 16031.4,
+        "effort_access": 21.6783,
         "trips": 200,
         "access_lost": 120
       },
       "deltas_pct": {
-        "risk": -49.6,
-        "hours": -50.9,
-        "fuel": -54.5,
-        "effort_access": -39.3
+        "risk": -35.0,
+        "hours": -50.3,
+        "fuel": -53.0,
+        "effort_access": -39.2
       },
       "cost_breakdown": {
         "access_lost_trips": 120,
-        "steaming_hours": 262.83000000000015,
-        "fuel_l": 14111.499999999995
+        "steaming_hours": 287.6700000000001,
+        "fuel_l": 16031.399999999992
       },
       "on_frontier": true,
       "summary": {
-        "en": "\"Dynamic zone around recent sightings\": the fleet is exposed to 49.6% less whale risk, spends 50.9% more steaming time, and has 39.3% less access to fishing grounds (effort is an estimate, not revenue).",
-        "pt": "\"Dynamic zone around recent sightings\": a frota fica exposta a 49.6% menos risco de baleias, gasta 50.9% mais tempo de navegação e tem 39.3% menos acesso aos pesqueiros (o esforço é uma estimativa, não receita).",
-        "es": "\"Dynamic zone around recent sightings\": la flota queda expuesta a 49.6% menos riesgo de ballenas, dedica 50.9% más de tiempo de navegación y tiene 39.3% menos acceso a los caladeros (el esfuerzo es una estimación, no ingresos)."
+        "en": "\"Dynamic zone around recent sightings\": the fleet is exposed to 35.0% less whale risk, spends 50.3% more steaming time, and has 39.2% less access to fishing grounds (effort is an estimate, not revenue).",
+        "pt": "\"Dynamic zone around recent sightings\": a frota fica exposta a 35.0% menos risco de baleias, gasta 50.3% mais tempo de navegação e tem 39.2% menos acesso aos pesqueiros (o esforço é uma estimativa, não receita).",
+        "es": "\"Dynamic zone around recent sightings\": la flota queda expuesta a 35.0% menos riesgo de ballenas, dedica 50.3% más de tiempo de navegación y tiene 39.2% menos acceso a los caladeros (el esfuerzo es una estimación, no ingresos)."
       }
     },
     {
@@ -73,29 +73,29 @@
       "name": "Seasonal 10-knot speed limit (instead of closure)",
       "description": "A broad 10 kn speed cap over the approaches rather than a closure.",
       "totals": {
-        "risk_exposure": 60.7095,
-        "steaming_hours": 536.23,
-        "fuel_l": 30949.6,
-        "effort_access": 36.4816,
+        "risk_exposure": 60.6351,
+        "steaming_hours": 576.95,
+        "fuel_l": 33808.4,
+        "effort_access": 35.6818,
         "trips": 200,
         "access_lost": 57
       },
       "deltas_pct": {
-        "risk": -0.4,
-        "hours": 0.2,
-        "fuel": -0.3,
-        "effort_access": -0.1
+        "risk": 0.3,
+        "hours": -0.3,
+        "fuel": -0.9,
+        "effort_access": 0.1
       },
       "cost_breakdown": {
         "access_lost_trips": 57,
-        "steaming_hours": 536.23,
-        "fuel_l": 30949.599999999973
+        "steaming_hours": 576.9499999999998,
+        "fuel_l": 33808.39999999999
       },
       "on_frontier": true,
       "summary": {
-        "en": "\"Seasonal 10-knot speed limit (instead of closure)\": the fleet is exposed to 0.4% less whale risk, spends 0.2% more steaming time, and has 0.1% less access to fishing grounds (effort is an estimate, not revenue).",
-        "pt": "\"Seasonal 10-knot speed limit (instead of closure)\": a frota fica exposta a 0.4% menos risco de baleias, gasta 0.2% mais tempo de navegação e tem 0.1% menos acesso aos pesqueiros (o esforço é uma estimativa, não receita).",
-        "es": "\"Seasonal 10-knot speed limit (instead of closure)\": la flota queda expuesta a 0.4% menos riesgo de ballenas, dedica 0.2% más de tiempo de navegación y tiene 0.1% menos acceso a los caladeros (el esfuerzo es una estimación, no ingresos)."
+        "en": "\"Seasonal 10-knot speed limit (instead of closure)\": the fleet is exposed to 0.3% more whale risk, spends 0.3% more steaming time, and has 0.1% more access to fishing grounds (effort is an estimate, not revenue).",
+        "pt": "\"Seasonal 10-knot speed limit (instead of closure)\": a frota fica exposta a 0.3% mais risco de baleias, gasta 0.3% mais tempo de navegação e tem 0.1% mais acesso aos pesqueiros (o esforço é uma estimativa, não receita).",
+        "es": "\"Seasonal 10-knot speed limit (instead of closure)\": la flota queda expuesta a 0.3% más riesgo de ballenas, dedica 0.3% más de tiempo de navegación y tiene 0.1% más acceso a los caladeros (el esfuerzo es una estimación, no ingresos)."
       }
     }
   ],
@@ -110,15 +110,15 @@
     {
       "scenario_id": "dynamic_zone_sightings",
       "name": "Dynamic zone around recent sightings",
-      "risk_reduced": 49.6,
-      "fleet_cost": -5.8,
+      "risk_reduced": 35.0,
+      "fleet_cost": -5.55,
       "on_frontier": true
     },
     {
       "scenario_id": "seasonal_speed_limit",
       "name": "Seasonal 10-knot speed limit (instead of closure)",
-      "risk_reduced": 0.4,
-      "fleet_cost": 0.15,
+      "risk_reduced": -0.3,
+      "fleet_cost": -0.2,
       "on_frontier": true
     }
   ],
@@ -132,11 +132,11 @@
     "effort_access": "ESTIMATE of fishing activity, not catch or revenue",
     "advisory": "Advisory only; does not replace official notices or captain judgment."
   },
-  "computed_at": "2026-10-24T18:23:58.184400Z",
+  "computed_at": "2026-10-24T20:23:42.363273Z",
   "schema_version": 1,
   "provenance": {
     "precomputed": true,
-    "computed_at": "2026-10-24T18:23:58.184400Z",
+    "computed_at": "2026-10-24T20:23:42.363273Z",
     "script": "scripts/precompute_sim.py",
     "router": "real",
     "fleet": {

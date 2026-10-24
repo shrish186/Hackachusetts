@@ -87,15 +87,34 @@ def parse_records(results: list[dict]) -> list[ObisSighting]:
     return out
 
 
+# Whale-season months for the Massachusetts study area. Right whales aggregate
+# in Cape Cod Bay / Massachusetts Bay roughly January through May, which is why
+# the Cape Cod Bay and Off Race Point Seasonal Management Areas fall in this
+# window. Filtering sightings to these months makes a March replay honest: the
+# heatmap reflects the real seasonal presence pattern, not off-season records.
+WHALE_SEASON_MONTHS = (1, 2, 3, 4, 5)
+
+
+def filter_months(
+    rows: list[ObisSighting], months: tuple[int, ...] | None
+) -> list[ObisSighting]:
+    """Keep only rows whose observed month is in ``months`` (all if None)."""
+    if not months:
+        return rows
+    return [r for r in rows if r.observed_at.month in months]
+
+
 def fetch_sightings(
     bbox: tuple[float, float, float, float] = STUDY_BBOX,
     size: int = 500,
     timeout_s: float = 20.0,
+    months: tuple[int, ...] | None = None,
 ) -> list[ObisSighting]:
     """Download right-whale occurrences for ``bbox``. Raises on network error.
 
-    Returns the most recent ``size`` records (OBIS returns newest-biased pages;
-    we additionally sort by date descending here).
+    Returns records sorted newest-first. If ``months`` is given (e.g.
+    ``WHALE_SEASON_MONTHS``), only sightings observed in those calendar months
+    are returned, so a whale-season replay shows the real seasonal pattern.
     """
     import httpx
 
@@ -108,5 +127,6 @@ def fetch_sightings(
     resp.raise_for_status()
     results = resp.json().get("results", [])
     rows = parse_records(results)
+    rows = filter_months(rows, months)
     rows.sort(key=lambda r: r.observed_at, reverse=True)
     return rows

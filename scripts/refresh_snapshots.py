@@ -142,23 +142,36 @@ def refresh_conditions() -> bool:
 
 
 def refresh_sightings() -> bool:
-    """Rewrite sightings.json from live OBIS right-whale occurrences."""
-    from app.ingest.obis import fetch_sightings, OBIS_HOME, SCIENTIFIC_NAME, STUDY_BBOX
+    """Rewrite sightings.json from live OBIS right-whale occurrences.
+
+    Keeps the most-recent real records observed in the whale-season window
+    (Jan-May), so the 15 Mar demo replay shows the genuine seasonal presence
+    pattern rather than off-season records. Falls back to the last Jan-May
+    behaviour only via the live source; never fabricates data.
+    """
+    from app.ingest.obis import (
+        fetch_sightings,
+        OBIS_HOME,
+        SCIENTIFIC_NAME,
+        STUDY_BBOX,
+        WHALE_SEASON_MONTHS,
+    )
 
     try:
-        rows = fetch_sightings(bbox=STUDY_BBOX, size=600, timeout_s=20.0)
+        rows = fetch_sightings(
+            bbox=STUDY_BBOX, size=800, timeout_s=20.0, months=WHALE_SEASON_MONTHS
+        )
     except Exception as exc:  # noqa: BLE001
         print(f"[sightings] OBIS fetch FAILED, keeping existing snapshot: {exc}")
         return False
     if not rows:
-        print("[sightings] OBIS returned no rows; keeping existing snapshot")
+        print("[sightings] OBIS returned no whale-season rows; keeping existing snapshot")
         return False
 
     now = _now_iso()
-    # Keep the most recent records: enough to be representative of the seasonal
-    # pattern, few enough that the per-cell risk model stays fast for routing
-    # (Req 5.3 regenerates routes in < 3 s). OBIS has thousands in-bbox; the
-    # demo retains a recent sample.
+    # Keep the ~60 most recent whale-season records: representative of the
+    # seasonal pattern, few enough that the per-cell risk model stays fast for
+    # routing (Req 5.3 regenerates routes in < 3 s). OBIS has thousands in-bbox.
     rows = rows[:60]
     sightings = [
         {
@@ -170,17 +183,29 @@ def refresh_sightings() -> bool:
         }
         for r in rows
     ]
+    span = (
+        f"{min(s['observed_at'] for s in sightings)[:10]} to "
+        f"{max(s['observed_at'] for s in sightings)[:10]}"
+    )
     payload = {
         "metadata": {
             "description": (
                 f"Real {SCIENTIFIC_NAME} (North Atlantic right whale) occurrence records "
-                "for the Fathom study bbox from OBIS. Most recent records retained."
+                "for the Fathom study bbox from OBIS, restricted to the Jan-May whale "
+                "season and limited to the most recent records."
             ),
             "source": "OBIS (Ocean Biodiversity Information System), aggregating NOAA/NMFS/NEFSC surveys",
             "source_url": OBIS_HOME,
             "license": "CC-BY 4.0 (OBIS); cite OBIS and the underlying datasets",
-            "note": "Real observations clipped to the study bbox; the demo retains the most recent records.",
+            "note": (
+                "Real observations clipped to the study bbox and to the Jan-May whale "
+                "season (months 1-5), newest first. These are historical seasonal "
+                "sightings, not live/recent detections; on a March replay they drive "
+                "the risk layer's seasonal presence term (recency of multi-year-old "
+                f"records is ~0). Date span: {span}."
+            ),
             "scientific_name": SCIENTIFIC_NAME,
+            "season_months": list(WHALE_SEASON_MONTHS),
             "record_count": len(sightings),
             "fetched_at": now,
             "synthetic": False,
@@ -188,7 +213,7 @@ def refresh_sightings() -> bool:
         "sightings": sightings,
     }
     _write(SNAPSHOT_DIR / "sightings.json", payload)
-    print(f"[sightings] wrote {len(sightings)} real OBIS records at {now}")
+    print(f"[sightings] wrote {len(sightings)} real OBIS whale-season records ({span}) at {now}")
     return True
 
 

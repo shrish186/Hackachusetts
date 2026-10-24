@@ -11,7 +11,9 @@ Last refreshed: **2026-10-24 (UTC)**. All times UTC unless a local label is give
 | Layer | Source | URL | fetched_at | Real / synthetic | Limitations | License |
 |---|---|---|---|---|---|---|
 | Conditions (wave, wind, SST) | NOAA NDBC buoys + NWS marine gridpoint forecast | ndbc.noaa.gov/data/realtime2 ; api.weather.gov | 2026-10-24 | **Real** | 2 buoy cells + 5 NWS forecast samples; NWS rows are forecast | US Gov public domain |
-| Whale sightings | OBIS (NOAA/NMFS/NEFSC surveys) | obis.org | 2026-10-24 | **Real** | 60 most-recent in-bbox records kept for routing speed | CC-BY 4.0 |
+| Whale sightings | OBIS (NOAA/NMFS/NEFSC surveys) | obis.org | 2026-10-24 | **Real** | 60 most-recent **Jan-May (whale-season)** in-bbox records, kept for routing speed | CC-BY 4.0 |
+| Ports | real harbors, snapped to nearest water cell | NOAA charts / gazetteer | n/a | **Real coords (grid-snapped)** | 3 ports' harbor-mouth points landed in coarse land cells; moved to the adjacent water cell (within a few km) | — |
+| Fishing grounds | real grounds | NOAA charts | n/a | **Real coords** | all in water; `jeffreys_ledge` is legitimately inside the Western GoM closure in whale season | — |
 | Whale risk | model: real OBIS sightings × Vanderlaan & Taggart (2007) | doi.org/10.1111/j.1748-7692.2007.00048.x | 2026-10-24 | **Model over real inputs** (flagged synthetic) | screening model, not a probability of a real strike | paper © authors |
 | Protection zones | NOAA SMAs, GARFO/Mass DMF closures, BOEM leases | fisheries.noaa.gov ; boem.gov | 2026-10-24 | **Dates real, polygons synthetic** | polygons are hand-drawn approximations | facts public domain |
 | Land mask / coastline | hand-drawn approximation of NOAA/Natural Earth | naturalearthdata.com | n/a | **Synthetic** | coarse; ports snapped to water | Natural Earth public domain |
@@ -22,8 +24,46 @@ Last refreshed: **2026-10-24 (UTC)**. All times UTC unless a local label is give
 ## What became real this round
 
 - **Conditions** → real NOAA NDBC buoy observations + real NWS marine forecast.
-- **Sightings** → real OBIS North Atlantic right whale occurrences.
+- **Sightings** → real OBIS North Atlantic right whale occurrences, now filtered
+  to the **Jan-May whale season** so the March replay shows the genuine seasonal
+  pattern (see "Whale-season replay" below).
 - **SMA dates & 10 kn limit** → verified against NOAA 2026 season bulletins.
+
+## Whale-season replay (15 Mar 2026) — why the heatmap is honest
+
+The risk layer is `p_whale = alpha*presence + (1-alpha)*recency`, then times the
+lethality curve. The bundled sightings are **real** OBIS records from past
+whale seasons (2023-2025, Jan-May). On the 2026-03-15 replay their *recency*
+term is ~0 (they are years old), so the March heatmap is driven by the
+**seasonal presence** term — i.e. it shows where right whales really have been
+in Massachusetts/Cape Cod Bay in spring, not fabricated recent detections. This
+is deliberate and labeled: we never invent recent sightings to make the demo
+look live. At the replay date the risk grid peaks around 0.31 at 12 kn with a few
+hundred non-trivial cells, concentrated in Cape Cod Bay / Stellwagen — matching
+the known spring aggregation.
+
+## Fleet access at baseline — grounds, ports, and legitimate closures (task 3)
+
+QA reported **57 of 200** simulated trips with `access_lost` at baseline. I
+traced it:
+
+- **Root cause = a legitimate closure, not a bug.** The 200-trip fleet (seed 42)
+  assigns exactly **57 trips to `jeffreys_ledge`**, and Jeffreys Ledge sits
+  inside the **Western Gulf of Maine seasonal closure**, which is active in
+  whale season (including the 2026-03-15 replay date). Those 57 trips lose
+  access *because the regulation closes that ground* — that is the simulator
+  correctly showing the livelihood cost of the closure, not a data error. The
+  ground is left unchanged. Out of season the closure is inactive and access
+  returns. `access_lost` after the port fix below is still exactly 57, which
+  confirms the cause is the closure and nothing else.
+- **Ports on land (fixed anyway).** Separately, the coarse synthetic land mask
+  put three real harbor-mouth points (Gloucester, Boston, Plymouth) inside
+  "land" cells. `config/ports.yaml` now uses the nearest navigable **water**
+  cell to each harbor (within a few km) so every trip origin is routable; all
+  five ports and all three grounds now resolve to water (tests enforce this).
+  This did not change baseline `access_lost` (the router already tolerated the
+  origins), but it removes a latent correctness trap.
+- **No fishing ground sits on land.**
 
 ## What is still synthetic (and honestly labeled)
 

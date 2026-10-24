@@ -9,21 +9,26 @@
 # locations), but routes/effort built on them remain model estimates.
 
 ports:
+  # Coordinates are the nearest navigable WATER cell to each real harbor on the
+  # study grid. The real harbor mouths sit at the coast, and the bundled land
+  # mask is a coarse approximation, so a harbor-mouth point can land in a "land"
+  # cell. Using the adjacent water cell keeps every trip origin routable while
+  # staying within a few km of the real harbor. See docs/DATA.md.
   gloucester:
     name: "Gloucester"
-    lon: -70.662
-    lat: 42.610
-    note: "Gloucester Harbor, Cape Ann"
+    lon: -70.625
+    lat: 42.575
+    note: "Off Gloucester Harbor, Cape Ann (nearest water cell to -70.662,42.610)"
   boston:
     name: "Boston"
-    lon: -70.950
-    lat: 42.350
-    note: "Boston Harbor approaches (President Roads)"
+    lon: -70.875
+    lat: 42.425
+    note: "Boston Harbor outer approaches (nearest water cell to -70.950,42.350)"
   plymouth:
     name: "Plymouth"
-    lon: -70.650
-    lat: 41.958
-    note: "Plymouth Harbor"
+    lon: -70.625
+    lat: 42.025
+    note: "Off Plymouth in Cape Cod Bay (nearest water cell to -70.650,41.958)"
   provincetown:
     name: "Provincetown"
     lon: -70.180

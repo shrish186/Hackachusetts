@@ -10,10 +10,25 @@ from datetime import timezone
 
 from app.ingest.ndbc import parse_latest
 from app.ingest.nws import _KMH_TO_KN, NwsReading, _first_value, _parse_vt
-from app.ingest.obis import parse_records
+from app.ingest.obis import WHALE_SEASON_MONTHS, filter_months, parse_records
 
 
 # --- OBIS -----------------------------------------------------------------
+def test_obis_filter_months_keeps_only_whale_season():
+    """filter_months keeps only Jan-May records for the whale-season replay."""
+    raw = [
+        {"decimalLongitude": -70.3, "decimalLatitude": 42.1, "eventDate": "2024-03-10", "individualCount": "2"},
+        {"decimalLongitude": -70.2, "decimalLatitude": 42.0, "eventDate": "2024-08-10", "individualCount": "1"},
+        {"decimalLongitude": -70.1, "decimalLatitude": 42.2, "eventDate": "2024-01-05", "individualCount": "1"},
+    ]
+    rows = parse_records(raw)
+    kept = filter_months(rows, WHALE_SEASON_MONTHS)
+    assert {r.observed_at.month for r in kept} == {1, 3}
+    assert len(kept) == 2
+    # None means no filtering.
+    assert len(filter_months(rows, None)) == 3
+
+
 def test_obis_parse_records_normalizes_and_drops_bad():
     raw = [
         {"decimalLongitude": -70.3, "decimalLatitude": 42.1, "eventDate": "2022-04-04T17:01:46",
