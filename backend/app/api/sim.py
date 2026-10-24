@@ -19,20 +19,37 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
-from app.api import _snapshots as snap
 from app.engine.simulator import (
     Scenario,
     Simulator,
     preloaded_scenarios,
 )
+from app.ingest.zones import default_zones
 
 router = APIRouter(tags=["sim"])
 
 
 def _current_zones() -> list[dict]:
-    """Load the zones active in the baseline from the bundled snapshot."""
-    result = snap.load_snapshot("zones")
-    return list(result.records)
+    """Load the baseline zones from Lane A's zone ingest as plain dicts.
+
+    The simulator consumes zones as dicts (``geometry``/``prohibited``/
+    ``speed_limit_kn``); ``default_zones()`` returns validated ``Zone`` objects,
+    so we project the fields the simulator needs.
+    """
+    zones: list[dict] = []
+    for z in default_zones():
+        zones.append(
+            {
+                "id": z.id,
+                "name": z.name,
+                "kind": z.kind,
+                "geometry": z.geometry,
+                "prohibited": z.prohibited,
+                "speed_limit_kn": z.speed_limit_kn,
+                "synthetic": z.synthetic,
+            }
+        )
+    return zones
 
 
 class PolygonModel(BaseModel):
