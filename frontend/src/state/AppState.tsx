@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from 'react';
+import type { Language } from '@/api/types';
 
 export type Mode = 'captain' | 'manager';
 
@@ -29,6 +30,10 @@ export interface AppState {
   speedKn: number;
   setSpeedKn: Dispatch<SetStateAction<number>>;
 
+  /** UI + plan-text language (requirements.md Req 7). */
+  language: Language;
+  setLanguage: Dispatch<SetStateAction<Language>>;
+
   layers: LayerToggles;
   toggleLayer: (key: keyof LayerToggles) => void;
 }
@@ -39,6 +44,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>('captain');
   const [sliceIndex, setSliceIndex] = useState(6); // ~Sat afternoon
   const [speedKn, setSpeedKn] = useState(10);
+  const [language, setLanguage] = useState<Language>('en');
   const [layers, setLayers] = useState<LayerToggles>({
     conditions: false,
     zones: true,
@@ -54,11 +60,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setSliceIndex,
       speedKn,
       setSpeedKn,
+      language,
+      setLanguage,
       layers,
       toggleLayer: (key) =>
         setLayers((prev) => ({ ...prev, [key]: !prev[key] })),
     }),
-    [mode, sliceIndex, speedKn, layers],
+    [mode, sliceIndex, speedKn, language, layers],
   );
 
   return (

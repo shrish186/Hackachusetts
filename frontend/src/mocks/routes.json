@@ -1,5 +1,6 @@
 [
   {
+    "name": "Direct run",
     "waypoints": [
       [-70.18, 42.05],
       [-70.25, 42.18],
@@ -12,6 +13,13 @@
     "max_wave_m": 1.6,
     "risk_exposure": 0.42,
     "effort_proxy": 0.73,
+    "weather_window": {
+      "from": "2026-03-15T09:00:00Z",
+      "to": "2026-03-15T15:00:00Z",
+      "max_wave_m": 1.6,
+      "max_wind_kn": 15.0,
+      "note": "Calm morning; seas build after midday."
+    },
     "citations": [
       {
         "tool_call_id": "call_3",
@@ -24,10 +32,17 @@
         "tool": "get_zones",
         "claim": "route crosses Cape Cod Bay Seasonal Management Area",
         "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales"
+      },
+      {
+        "tool_call_id": "call_7",
+        "tool": "get_conditions",
+        "claim": "max wave height 1.6 m in the departure window",
+        "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013"
       }
     ]
   },
   {
+    "name": "Eastern balance",
     "waypoints": [
       [-70.18, 42.05],
       [-70.08, 42.2],
@@ -40,16 +55,30 @@
     "max_wave_m": 1.9,
     "risk_exposure": 0.21,
     "effort_proxy": 0.61,
+    "weather_window": {
+      "from": "2026-03-15T09:00:00Z",
+      "to": "2026-03-15T16:00:00Z",
+      "max_wave_m": 1.9,
+      "max_wind_kn": 18.0,
+      "note": "Slightly more exposed; wind freshens offshore."
+    },
     "citations": [
       {
         "tool_call_id": "call_4",
         "tool": "get_whale_risk",
         "claim": "risk_exposure of 0.21 over the planned route",
         "source_url": null
+      },
+      {
+        "tool_call_id": "call_8",
+        "tool": "get_conditions",
+        "claim": "max wave height 1.9 m in the departure window",
+        "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013"
       }
     ]
   },
   {
+    "name": "Safest, slower",
     "waypoints": [
       [-70.18, 42.05],
       [-70.3, 42.12],
@@ -62,12 +91,25 @@
     "max_wave_m": 1.5,
     "risk_exposure": 0.12,
     "effort_proxy": 0.49,
+    "weather_window": {
+      "from": "2026-03-15T09:00:00Z",
+      "to": "2026-03-15T17:00:00Z",
+      "max_wave_m": 1.5,
+      "max_wind_kn": 14.0,
+      "note": "Sheltered track; calmest of the three."
+    },
     "citations": [
       {
         "tool_call_id": "call_6",
         "tool": "get_whale_risk",
         "claim": "risk_exposure of 0.12 over the planned route",
         "source_url": null
+      },
+      {
+        "tool_call_id": "call_9",
+        "tool": "get_zones",
+        "claim": "stays inside the 10 kn Cape Cod Bay Seasonal Management Area limit",
+        "source_url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/endangered-species-conservation/reducing-vessel-strikes-north-atlantic-right-whales"
       }
     ]
   }

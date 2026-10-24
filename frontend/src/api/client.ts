@@ -6,7 +6,9 @@
  * behind the /api proxy, see vite.config.ts) to use real endpoints.
  */
 import type {
+  AgentEvent,
   Conditions,
+  Language,
   MetaResponse,
   RiskCell,
   RoutePlan,
@@ -16,6 +18,39 @@ import type {
   Zone,
 } from './types';
 import * as mock from '@/mocks';
+
+/** Plain-language label per tool, by language (for the live agent feed). */
+const TOOL_LABELS: Record<Language, Record<string, string>> = {
+  en: {
+    get_conditions: 'Checking weather and sea state…',
+    get_zones: 'Checking protection zones…',
+    get_whale_risk: 'Checking whale risk…',
+    get_effort_proxy: 'Checking fishing access…',
+    plan_routes: 'Planning routes…',
+    estimate_fuel: 'Estimating fuel…',
+  },
+  pt: {
+    get_conditions: 'Verificando clima e estado do mar…',
+    get_zones: 'Verificando zonas de proteção…',
+    get_whale_risk: 'Verificando risco de baleia…',
+    get_effort_proxy: 'Verificando acesso à pesca…',
+    plan_routes: 'Planejando rotas…',
+    estimate_fuel: 'Estimando combustível…',
+  },
+  es: {
+    get_conditions: 'Revisando clima y estado del mar…',
+    get_zones: 'Revisando zonas de protección…',
+    get_whale_risk: 'Revisando riesgo de ballena…',
+    get_effort_proxy: 'Revisando acceso a pesca…',
+    plan_routes: 'Planificando rutas…',
+    estimate_fuel: 'Estimando combustible…',
+  },
+};
+
+export interface PlanStreamCallbacks {
+  onEvent: (event: AgentEvent) => void;
+  signal?: AbortSignal;
+}
 
 /** True unless explicitly disabled via env. Mocks are the default. */
 export const USE_MOCKS: boolean = import.meta.env.VITE_USE_MOCKS !== 'false';
@@ -73,6 +108,42 @@ export const api = {
 
   async planTrip(req: TripRequest): Promise<RoutePlan[]> {
     if (USE_MOCKS) return delay(mock.routes, 500);
+    return postJson<RoutePlan[]>('/trip/plan', req);
+  },
+
+  /**
+   * Plan a trip while streaming the agent's tool-call steps to the UI
+   * (requirements.md Req 4.5). In mock mode this replays the scripted
+   * agentScript with small delays; against the real backend this would read
+   * an SSE stream from POST /api/trip/plan. Resolves to the ranked plans.
+   */
+  async planTripStream(
+    req: TripRequest,
+    cb: PlanStreamCallbacks,
+  ): Promise<RoutePlan[]> {
+    if (USE_MOCKS) {
+      const labels = TOOL_LABELS[req.language] ?? TOOL_LABELS.en;
+      for (const step of mock.agentScript) {
+        if (cb.signal?.aborted) break;
+        cb.onEvent({
+          id: step.id,
+          tool: step.tool,
+          label: labels[step.tool] ?? step.tool,
+          status: 'running',
+        });
+        await delay(null, 420);
+        if (cb.signal?.aborted) break;
+        cb.onEvent({
+          id: step.id,
+          tool: step.tool,
+          label: labels[step.tool] ?? step.tool,
+          status: 'done',
+          detail: step.detail,
+        });
+      }
+      return delay(mock.routes, 250);
+    }
+    // Real backend: fall back to the non-streaming endpoint for now.
     return postJson<RoutePlan[]>('/trip/plan', req);
   },
 

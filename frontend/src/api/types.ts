@@ -100,8 +100,21 @@ export interface Citation {
   source_url: string | null;
 }
 
+/** A weather window for the planned departure (design.md §10 plan "why"). */
+export interface WeatherWindow {
+  /** ISO datetime (UTC) the window opens / closes. */
+  from: string;
+  to: string;
+  max_wave_m: number;
+  max_wind_kn: number;
+  /** Short human summary, e.g. "building seas after 3pm". */
+  note: string;
+}
+
 /** One planned route alternative. */
 export interface RoutePlan {
+  /** Optional short label for the plan, e.g. "Direct run". */
+  name?: string;
   waypoints: Array<[number, number]>; // [lon, lat]
   eta_hours: number;
   fuel_est_l: number;
@@ -110,6 +123,20 @@ export interface RoutePlan {
   risk_exposure: number; // sum(risk * hours)
   effort_proxy: number; // estimate, NOT revenue
   citations: Citation[];
+  /** Optional weather window for the "why" drawer. */
+  weather_window?: WeatherWindow;
+}
+
+/** A single streamed agent step (design.md §7; requirements.md Req 4.5). */
+export interface AgentEvent {
+  id: string;
+  /** The tool the agent is calling, e.g. "get_zones". */
+  tool: string;
+  /** Plain-language label shown in the live feed, e.g. "Checking zones…". */
+  label: string;
+  status: 'running' | 'done' | 'error';
+  /** Optional one-line result summary once done. */
+  detail?: string;
 }
 
 /** Metadata about data sources and demo mode. GET /api/meta/sources. */

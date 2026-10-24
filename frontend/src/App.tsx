@@ -12,12 +12,14 @@ import type { RoutePlan } from '@/api/types';
 export function App() {
   const { mode } = useAppState();
   const meta = useMeta();
-  const [routes, setRoutes] = useState<RoutePlan[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<RoutePlan | null>(null);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Full-screen dark ocean map */}
-      <MapView routes={mode === 'captain' ? routes : []} />
+      {/* Full-screen dark ocean map. Captain mode draws the selected plan. */}
+      <MapView
+        routes={mode === 'captain' && selectedRoute ? [selectedRoute] : []}
+      />
 
       {/* Top bar: brand, data timestamp, mode toggle, demo badge */}
       <TopBar demoMode={meta?.demo_mode ?? true} dataTimestamp={meta?.data_timestamp ?? null} />
@@ -25,7 +27,7 @@ export function App() {
       {/* Left: mode-specific panel */}
       <div className="pointer-events-none absolute left-3 top-28 z-10 sm:top-32 sm:left-4">
         {mode === 'captain' ? (
-          <CaptainPanel onRoutes={setRoutes} />
+          <CaptainPanel onSelectedRoute={setSelectedRoute} />
         ) : (
           <ManagerPanel />
         )}

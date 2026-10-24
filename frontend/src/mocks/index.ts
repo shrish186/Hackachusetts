@@ -10,6 +10,7 @@
  * VITE_USE_MOCKS=false) and the client in ../api/client.ts hits /api instead.
  */
 import type {
+  AgentEvent,
   Conditions,
   MetaResponse,
   RiskCell,
@@ -29,8 +30,23 @@ import scenariosJson from './scenarios.json';
 export const meta = metaJson as MetaResponse;
 export const zones = zonesJson as Zone[];
 export const sightings = sightingsJson as Sighting[];
-export const routes = routesJson as RoutePlan[];
+export const routes = routesJson as unknown as RoutePlan[];
 export const scenarios = scenariosJson as ScenarioResult[];
+
+/**
+ * Scripted agent tool-calls for the Captain live feed (design.md §7,
+ * requirements.md Req 4.5). The real backend streams these over SSE; the mock
+ * replays them with small delays so the UI shows each step appear one by one.
+ * Labels are set per-language at render time; only the tool + detail live here.
+ */
+export const agentScript: Array<Omit<AgentEvent, 'status' | 'label'> & { detail: string }> = [
+  { id: 'e1', tool: 'get_conditions', detail: 'Waves 1.5–1.9 m, wind up to 18 kn in the window.' },
+  { id: 'e2', tool: 'get_zones', detail: '2 active zones nearby; 1 closure avoided.' },
+  { id: 'e3', tool: 'get_whale_risk', detail: 'Risk exposure 0.12–0.42 depending on route.' },
+  { id: 'e4', tool: 'get_effort_proxy', detail: 'Fishing access estimate 0.49–0.73.' },
+  { id: 'e5', tool: 'plan_routes', detail: '3 candidate routes, de-duplicated.' },
+  { id: 'e6', tool: 'estimate_fuel', detail: 'Fuel 215–286 L (estimate).' },
+];
 
 const { bbox, cellDeg } = STUDY_AREA;
 const [minLon, minLat, maxLon, maxLat] = bbox;

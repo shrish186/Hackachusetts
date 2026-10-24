@@ -1,56 +1,120 @@
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { api } from '@/api/client';
-import type { RoutePlan, VesselType } from '@/api/types';
-import { Disclaimer } from '@/components/Disclaimer';
+import type { AgentEvent, RoutePlan, VesselType } from '@/api/types';
+import { useAppState } from '@/state/AppState';
+import { useZones } from '@/hooks/useLayerData';
+import { sliceToIso } from '@/lib/time';
+import { t, DISCLAIMER } from '@/lib/i18n';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { AgentFeed } from './AgentFeed';
+import { PlanCard } from './PlanCard';
 
 interface CaptainPanelProps {
-  onRoutes: (routes: RoutePlan[]) => void;
+  /** Called when the captain selects a plan (or clears it). Drives the map. */
+  onSelectedRoute: (route: RoutePlan | null) => void;
 }
 
-const VESSELS: { id: VesselType; label: string }[] = [
-  { id: 'small_boat', label: 'Small boat' },
-  { id: 'mid_trawler', label: 'Mid trawler' },
-  { id: 'scalloper', label: 'Scalloper' },
-];
+const VESSELS: VesselType[] = ['small_boat', 'mid_trawler', 'scalloper'];
 
 /**
- * Captain mode request panel. This scaffold wires the request form to the
- * (mocked) trip planner so routes render on the map; the streaming tool-call
- * feed and ranked plan cards are Phase 2 work (tasks.md 2.8–2.9).
+ * Captain mode request panel (tasks.md 2.8 + 2.9).
+ *
+ * Trip request form → streamed agent feed → 2–3 ranked plan cards. Selecting a
+ * card draws its route on the map. Each card has a "Why" drawer and the
+ * advisory disclaimer. A language switch re-renders all plan text in
+ * English / Portuguese / Spanish (numbers + zone names stay identical).
  */
-export function CaptainPanel({ onRoutes }: CaptainPanelProps) {
+export function CaptainPanel({ onSelectedRoute }: CaptainPanelProps) {
+  const { language, setLanguage, sliceIndex } = useAppState();
+  const s = t(language);
+
+  // Resolve zone ids → display names (loaded once; names are language-neutral).
+  const zones = useZones(sliceToIso(sliceIndex));
+  const zoneName = useMemo(() => {
+    const byId = new Map(zones.map((z) => [z.id, z.name]));
+    return (id: string) => byId.get(id) ?? id;
+  }, [zones]);
+
+  // Form state
   const [vessel, setVessel] = useState<VesselType>('mid_trawler');
   const [port, setPort] = useState('provincetown');
+  const [cruiseKn, setCruiseKn] = useState(9.5);
+  const [maxHours, setMaxHours] = useState(14);
+  const [departure, setDeparture] = useState('2026-03-15T09:00');
   const [riskPref, setRiskPref] = useState(0.6);
+
+  // Result state
   const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState<AgentEvent[]>([]);
   const [plans, setPlans] = useState<RoutePlan[]>([]);
+  const [selected, setSelected] = useState<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   async function plan() {
+    // Reset prior run.
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     setLoading(true);
+    setEvents([]);
+    setPlans([]);
+    setSelected(null);
+    onSelectedRoute(null);
+
+    const departIso = new Date(departure).toISOString();
     try {
-      const routes = await api.planTrip({
-        port,
-        vessel,
-        cruise_kn: 9.5,
-        max_hours: 14,
-        depart_window: ['2026-03-15T09:00:00Z', '2026-03-15T13:00:00Z'],
-        target_ground: 'stellwagen_bank',
-        risk_pref: riskPref,
-        language: 'en',
-      });
+      const routes = await api.planTripStream(
+        {
+          port,
+          vessel,
+          cruise_kn: cruiseKn,
+          max_hours: maxHours,
+          depart_window: [departIso, departIso],
+          target_ground: 'stellwagen_bank',
+          risk_pref: riskPref,
+          language,
+        },
+        {
+          signal: ac.signal,
+          onEvent: (ev) =>
+            setEvents((prev) => {
+              // Replace the running placeholder with its done state (same id).
+              const i = prev.findIndex((p) => p.id === ev.id);
+              if (i === -1) return [...prev, ev];
+              const next = prev.slice();
+              next[i] = ev;
+              return next;
+            }),
+        },
+      );
+      if (ac.signal.aborted) return;
       setPlans(routes);
-      onRoutes(routes);
+      // Auto-select the top-ranked plan and draw it.
+      setSelected(0);
+      onSelectedRoute(routes[0] ?? null);
     } finally {
-      setLoading(false);
+      if (!ac.signal.aborted) setLoading(false);
     }
   }
 
-  return (
-    <aside className="pointer-events-auto flex w-80 max-w-[88vw] flex-col gap-3 rounded-2xl border border-depth bg-deep/85 p-4 backdrop-blur">
-      <h2 className="text-sm font-bold text-foam">Plan a trip</h2>
+  function selectPlan(i: number) {
+    setSelected(i);
+    onSelectedRoute(plans[i]);
+  }
 
+  return (
+    <aside className="pointer-events-auto flex max-h-[calc(100vh-10rem)] w-80 max-w-[88vw] flex-col gap-3 overflow-y-auto rounded-2xl border border-depth bg-deep/85 p-4 backdrop-blur">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-bold text-foam">{s.planTripTitle}</h2>
+        <div className="w-28">
+          <LanguageSwitch value={language} onChange={setLanguage} />
+        </div>
+      </div>
+
+      {/* Port */}
       <label className="text-xs text-mist">
-        Port
+        {s.port}
         <input
           value={port}
           onChange={(e) => setPort(e.target.value)}
@@ -58,30 +122,77 @@ export function CaptainPanel({ onRoutes }: CaptainPanelProps) {
         />
       </label>
 
+      {/* Vessel */}
       <div className="text-xs text-mist">
-        Vessel
+        {s.vessel}
         <div className="mt-1 flex gap-1">
           {VESSELS.map((v) => (
             <button
-              key={v.id}
-              onClick={() => setVessel(v.id)}
+              key={v}
+              onClick={() => setVessel(v)}
               className={[
-                'flex-1 rounded-lg border px-2 py-2 text-xs font-semibold transition-colors',
-                vessel === v.id
+                'flex-1 rounded-lg border px-2 py-2 text-[11px] font-semibold transition-colors',
+                vessel === v
                   ? 'border-tide bg-tide/30 text-foam'
                   : 'border-depth text-mist hover:text-foam',
               ].join(' ')}
             >
-              {v.label}
+              {s[v]}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Speed + max hours */}
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs text-mist">
+          <div className="flex justify-between">
+            <span>{s.cruiseSpeed}</span>
+            <span className="font-mono text-foam">
+              {cruiseKn} {s.knots}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={4}
+            max={18}
+            step={0.5}
+            value={cruiseKn}
+            onChange={(e) => setCruiseKn(Number(e.target.value))}
+            className="mt-1 h-8 w-full cursor-pointer accent-surf"
+          />
+        </label>
+        <label className="text-xs text-mist">
+          {s.maxHours}
+          <input
+            type="number"
+            min={1}
+            max={48}
+            step={1}
+            value={maxHours}
+            onChange={(e) => setMaxHours(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-depth bg-abyss/60 px-3 py-2 text-sm text-foam outline-none focus:border-surf"
+          />
+        </label>
+      </div>
+
+      {/* Departure */}
+      <label className="text-xs text-mist">
+        {s.departure}
+        <input
+          type="datetime-local"
+          value={departure}
+          onChange={(e) => setDeparture(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-depth bg-abyss/60 px-3 py-2 text-sm text-foam outline-none focus:border-surf [color-scheme:dark]"
+        />
+      </label>
+
+      {/* Risk vs speed slider */}
       <label className="text-xs text-mist">
         <div className="flex justify-between">
-          <span>Fastest ↔ Safest</span>
+          <span>{s.fastest}</span>
           <span className="font-mono text-foam">{riskPref.toFixed(1)}</span>
+          <span>{s.safest}</span>
         </div>
         <input
           type="range"
@@ -99,50 +210,33 @@ export function CaptainPanel({ onRoutes }: CaptainPanelProps) {
         disabled={loading}
         className="min-h-11 rounded-lg bg-tide font-semibold text-foam transition-colors hover:bg-surf disabled:opacity-60"
       >
-        {loading ? 'Planning…' : 'Plan routes'}
+        {loading ? s.planning : s.planRoutes}
       </button>
 
-      <div className="flex flex-col gap-2 overflow-y-auto">
-        {plans.map((p, i) => (
-          <PlanCard key={i} plan={p} rank={i + 1} />
-        ))}
-      </div>
+      {/* Live agent feed */}
+      <AgentFeed events={events} language={language} active={loading} />
 
-      <Disclaimer />
-    </aside>
-  );
-}
-
-function PlanCard({ plan, rank }: { plan: RoutePlan; rank: number }) {
-  return (
-    <div className="rounded-xl border border-depth bg-abyss/50 p-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-foam">Option {rank}</span>
-        <span className="rounded-full bg-kelp/20 px-2 py-0.5 text-xs font-semibold text-kelp">
-          risk {plan.risk_exposure.toFixed(2)}
-        </span>
-      </div>
-      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-mist">
-        <Stat label="ETA" value={`${plan.eta_hours.toFixed(1)} h`} />
-        <Stat label="Fuel (est.)" value={`${plan.fuel_est_l.toFixed(0)} L`} />
-        <Stat label="Max wave" value={`${plan.max_wave_m.toFixed(1)} m`} />
-        <Stat label="Effort (est.)" value={plan.effort_proxy.toFixed(2)} />
-      </dl>
-      {plan.zones_crossed.length > 0 && (
-        <p className="mt-2 text-[11px] text-mist">
-          Avoids closures; crosses {plan.zones_crossed.length} managed zone
-          {plan.zones_crossed.length > 1 ? 's' : ''}.
-        </p>
+      {/* Ranked plan cards */}
+      {plans.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {plans.map((p, i) => (
+            <PlanCard
+              key={i}
+              plan={p}
+              rank={i + 1}
+              language={language}
+              selected={selected === i}
+              onSelect={() => selectPlan(i)}
+              zoneName={zoneName}
+            />
+          ))}
+        </div>
       )}
-    </div>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <dt>{label}</dt>
-      <dd className="font-mono text-foam">{value}</dd>
-    </div>
+      {/* Always-visible advisory disclaimer */}
+      <p className="pointer-events-none text-center text-[10px] leading-snug text-mist/80">
+        {DISCLAIMER[language]}
+      </p>
+    </aside>
   );
 }
