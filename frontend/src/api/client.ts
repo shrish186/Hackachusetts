@@ -1,9 +1,16 @@
 /**
  * Fathom API client.
  *
- * Until the real FastAPI backend (design.md §9) exists, this resolves every
- * call from the mock layer. Set VITE_USE_MOCKS=false (with the backend running
- * behind the /api proxy, see vite.config.ts) to use real endpoints.
+ * Talks to the real FastAPI backend at VITE_API_URL (default
+ * http://localhost:8000). Every request has a 4-second timeout; if a request
+ * fails or times out, the client falls back to the bundled mock data and marks
+ * the connection "offline" so the UI can show an "Offline demo data" badge.
+ *
+ * The backend currently wraps layer responses as
+ * `{ layer, provenance, count, features|cells }`; this client normalizes those
+ * into the clean types in ./types.ts (the source of truth until
+ * docs/API_CONTRACT.md exists). Endpoints the backend does not implement yet
+ * (/trip/plan SSE, /sim/*, /trip/brief) fall back to mocks transparently.
  */
 import type {
   AgentEvent,
@@ -14,12 +21,169 @@ import type {
   RoutePlan,
   ScenarioResult,
   Sighting,
+  SourceMeta,
   TripRequest,
   Zone,
 } from './types';
 import * as mock from '@/mocks';
+import { STUDY_AREA } from '@/config/studyArea';
 
-/** Plain-language label per tool, by language (for the live agent feed). */
+/* -------------------------------------------------------------------------- */
+/* Config                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Base URL of the backend API. */
+export const API_URL: string =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ??
+  'http://localhost:8000';
+
+/** Per-request timeout. If exceeded we fall back to mocks. */
+const TIMEOUT_MS = 4000;
+
+const BBOX = STUDY_AREA.bbox.join(',');
+
+/* -------------------------------------------------------------------------- */
+/* Connection status (observable, for the "Offline demo data" badge)          */
+/* -------------------------------------------------------------------------- */
+
+export type ConnState = 'unknown' | 'online' | 'offline';
+
+let connState: ConnState = 'unknown';
+const listeners = new Set<(s: ConnState) => void>();
+
+export function getConnState(): ConnState {
+  return connState;
+}
+
+export function subscribeConn(fn: (s: ConnState) => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function setConn(next: ConnState) {
+  if (connState === next) return;
+  connState = next;
+  listeners.forEach((fn) => fn(next));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Low-level fetch with timeout                                               */
+/* -------------------------------------------------------------------------- */
+
+async function fetchJson<T>(
+  path: string,
+  init?: RequestInit & { timeoutMs?: number },
+): Promise<T> {
+  const ac = new AbortController();
+  const timeoutMs = init?.timeoutMs ?? TIMEOUT_MS;
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  // Chain any caller-provided signal into our abort controller.
+  if (init?.signal) {
+    if (init.signal.aborted) ac.abort();
+    else init.signal.addEventListener('abort', () => ac.abort(), { once: true });
+  }
+  try {
+    const res = await fetch(`${API_URL}${path}`, { ...init, signal: ac.signal });
+    if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+    const json = (await res.json()) as T;
+    setConn('online');
+    return json;
+  } catch (err) {
+    setConn('offline');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Resolve a promise, or the fallback value if it rejects/times out. */
+async function withFallback<T>(
+  attempt: () => Promise<T>,
+  fallback: () => T | Promise<T>,
+): Promise<T> {
+  try {
+    return await attempt();
+  } catch {
+    return fallback();
+  }
+}
+
+function delay<T>(value: T, ms = 150): Promise<T> {
+  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Response adapters (backend wrapped shape -> clean types)                   */
+/* -------------------------------------------------------------------------- */
+
+function adaptMeta(raw: unknown): MetaResponse {
+  const r = raw as { demo_mode?: boolean; sources?: unknown[]; data_timestamp?: string };
+  const sources: SourceMeta[] = (r.sources ?? []).map((s) => {
+    const o = s as Record<string, unknown>;
+    return {
+      layer: String(o.layer ?? o.name ?? 'unknown'),
+      source_url: (o.source_url as string | null) ?? null,
+      fetched_at: (o.fetched_at as string | null) ?? null,
+      cached: Boolean(o.cached),
+      synthetic: Boolean(o.synthetic),
+    };
+  });
+  // Pick the newest fetched_at as the data timestamp, if any.
+  const stamps = sources
+    .map((s) => s.fetched_at)
+    .filter((t): t is string => !!t)
+    .sort();
+  return {
+    demo_mode: Boolean(r.demo_mode),
+    sources,
+    data_timestamp: r.data_timestamp ?? stamps[stamps.length - 1] ?? new Date().toISOString(),
+  };
+}
+
+function adaptZones(raw: unknown): Zone[] {
+  const features = (raw as { features?: unknown[] }).features ?? (Array.isArray(raw) ? raw : []);
+  return (features as Record<string, unknown>[]).map((z) => ({
+    id: String(z.id),
+    name: String(z.name ?? z.id),
+    kind: z.kind as Zone['kind'],
+    geometry: z.geometry as Zone['geometry'],
+    active_from: (z.active_from as string | null) ?? null,
+    active_to: (z.active_to as string | null) ?? null,
+    speed_limit_kn: (z.speed_limit_kn as number | null) ?? null,
+    prohibited: Boolean(z.prohibited),
+    source_url: String(z.source_url ?? ''),
+    source_updated: String(z.source_updated ?? ''),
+    synthetic: z.synthetic as boolean | undefined,
+  }));
+}
+
+function adaptConditions(raw: unknown): Conditions[] {
+  const features = (raw as { features?: unknown[] }).features ?? (Array.isArray(raw) ? raw : []);
+  return features as Conditions[];
+}
+
+function adaptRisk(raw: unknown): RiskCell[] {
+  const cells = (raw as { cells?: unknown[] }).cells ?? (Array.isArray(raw) ? raw : []);
+  return (cells as Record<string, unknown>[]).map((c, i) => {
+    const factors = (c.factors ?? {}) as Record<string, number>;
+    return {
+      cell_id: String(c.cell_id ?? `${i}`),
+      lon: Number(c.lon),
+      lat: Number(c.lat),
+      risk: Number(c.risk),
+      factors: {
+        presence: Number(factors.presence ?? 0),
+        recency: Number(factors.recency ?? 0),
+        lethality: Number(factors.lethality ?? 0),
+      },
+    };
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Agent feed tool labels                                                     */
+/* -------------------------------------------------------------------------- */
+
 const TOOL_LABELS: Record<Language, Record<string, string>> = {
   en: {
     get_conditions: 'Checking weather and sea state…',
@@ -52,103 +216,206 @@ export interface PlanStreamCallbacks {
   signal?: AbortSignal;
 }
 
-/** True unless explicitly disabled via env. Mocks are the default. */
-export const USE_MOCKS: boolean = import.meta.env.VITE_USE_MOCKS !== 'false';
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
-
-/** Simulate network latency so loading states are exercised in the demo. */
-function delay<T>(value: T, ms = 180): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+/** Replay the scripted mock agent feed (used when the SSE backend is down). */
+async function replayMockStream(
+  req: TripRequest,
+  cb: PlanStreamCallbacks,
+): Promise<RoutePlan[]> {
+  const labels = TOOL_LABELS[req.language] ?? TOOL_LABELS.en;
+  for (const step of mock.agentScript) {
+    if (cb.signal?.aborted) break;
+    cb.onEvent({ id: step.id, tool: step.tool, label: labels[step.tool] ?? step.tool, status: 'running' });
+    await delay(null, 420);
+    if (cb.signal?.aborted) break;
+    cb.onEvent({
+      id: step.id,
+      tool: step.tool,
+      label: labels[step.tool] ?? step.tool,
+      status: 'done',
+      detail: step.detail,
+    });
+  }
+  return delay(mock.routes, 200);
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
-  return (await res.json()) as T;
-}
-
-async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
-  return (await res.json()) as T;
-}
+/* -------------------------------------------------------------------------- */
+/* Public API                                                                 */
+/* -------------------------------------------------------------------------- */
 
 export const api = {
   async getMeta(): Promise<MetaResponse> {
-    if (USE_MOCKS) return delay(mock.meta);
-    return getJson<MetaResponse>('/meta/sources');
+    return withFallback(
+      async () => adaptMeta(await fetchJson('/api/meta/sources')),
+      () => mock.meta,
+    );
   },
 
   async getZones(time: string): Promise<Zone[]> {
-    if (USE_MOCKS) return delay(mock.zones);
-    return getJson<Zone[]>(`/layers/zones?time=${encodeURIComponent(time)}`);
+    return withFallback(
+      async () =>
+        adaptZones(await fetchJson(`/api/layers/zones?bbox=${BBOX}&time=${encodeURIComponent(time)}`)),
+      () => mock.zones,
+    );
   },
 
   async getSightings(): Promise<Sighting[]> {
-    if (USE_MOCKS) return delay(mock.sightings);
-    return getJson<Sighting[]>('/layers/sightings');
+    // Backend has no sightings layer endpoint yet; use the bundled sample.
+    return withFallback(
+      async () => {
+        const raw = await fetchJson<{ features?: Sighting[] }>(`/api/layers/sightings?bbox=${BBOX}`);
+        return raw.features ?? mock.sightings;
+      },
+      () => mock.sightings,
+    );
   },
 
+  /** Conditions grid. From the API when up; otherwise the in-browser mock. */
   async getConditions(time: string): Promise<Conditions[]> {
-    if (USE_MOCKS) return delay(mock.conditionsGrid(time));
-    return getJson<Conditions[]>(`/layers/conditions?time=${encodeURIComponent(time)}`);
+    return withFallback(
+      async () => {
+        const data = adaptConditions(
+          await fetchJson(`/api/layers/conditions?bbox=${BBOX}&time=${encodeURIComponent(time)}`),
+        );
+        return data.length ? data : mock.conditionsGrid(time);
+      },
+      () => mock.conditionsGrid(time),
+    );
   },
 
+  /** Risk grid. From the API when up; otherwise the in-browser generator. */
   async getRisk(time: string, speedKn: number): Promise<RiskCell[]> {
-    if (USE_MOCKS) return delay(mock.riskGrid(time, speedKn));
-    return getJson<RiskCell[]>(
-      `/layers/risk?time=${encodeURIComponent(time)}&speed=${speedKn}`,
+    return withFallback(
+      async () => {
+        const data = adaptRisk(
+          await fetchJson(`/api/layers/risk?bbox=${BBOX}&time=${encodeURIComponent(time)}&speed=${speedKn}`),
+        );
+        return data.length ? data : mock.riskGrid(time, speedKn);
+      },
+      () => mock.riskGrid(time, speedKn),
     );
   },
 
   async planTrip(req: TripRequest): Promise<RoutePlan[]> {
-    if (USE_MOCKS) return delay(mock.routes, 500);
-    return postJson<RoutePlan[]>('/trip/plan', req);
+    return withFallback(
+      () => fetchJson<RoutePlan[]>('/api/trip/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req),
+      }),
+      () => mock.routes,
+    );
   },
 
   /**
-   * Plan a trip while streaming the agent's tool-call steps to the UI
-   * (requirements.md Req 4.5). In mock mode this replays the scripted
-   * agentScript with small delays; against the real backend this would read
-   * an SSE stream from POST /api/trip/plan. Resolves to the ranked plans.
+   * Plan a trip, streaming the agent's tool calls to the UI via Server-Sent
+   * Events (requirements.md Req 4.5). Reads POST /api/trip/plan as a stream
+   * with fetch; on any failure it replays the scripted mock feed instead.
    */
-  async planTripStream(
-    req: TripRequest,
-    cb: PlanStreamCallbacks,
-  ): Promise<RoutePlan[]> {
-    if (USE_MOCKS) {
-      const labels = TOOL_LABELS[req.language] ?? TOOL_LABELS.en;
-      for (const step of mock.agentScript) {
-        if (cb.signal?.aborted) break;
-        cb.onEvent({
-          id: step.id,
-          tool: step.tool,
-          label: labels[step.tool] ?? step.tool,
-          status: 'running',
-        });
-        await delay(null, 420);
-        if (cb.signal?.aborted) break;
-        cb.onEvent({
-          id: step.id,
-          tool: step.tool,
-          label: labels[step.tool] ?? step.tool,
-          status: 'done',
-          detail: step.detail,
-        });
-      }
-      return delay(mock.routes, 250);
+  async planTripStream(req: TripRequest, cb: PlanStreamCallbacks): Promise<RoutePlan[]> {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+      if (cb.signal) cb.signal.addEventListener('abort', () => ac.abort(), { once: true });
+
+      const res = await fetch(`${API_URL}/api/trip/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: JSON.stringify(req),
+        signal: ac.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok || !res.body) throw new Error(`trip/plan -> ${res.status}`);
+      setConn('online');
+
+      const plans = await consumeSse(res.body, cb);
+      return plans;
+    } catch {
+      setConn('offline');
+      return replayMockStream(req, cb);
     }
-    // Real backend: fall back to the non-streaming endpoint for now.
-    return postJson<RoutePlan[]>('/trip/plan', req);
   },
 
-  async runScenario(): Promise<ScenarioResult[]> {
-    if (USE_MOCKS) return delay(mock.scenarios, 500);
-    return postJson<ScenarioResult[]>('/sim/run', {});
+  async getScenarios(): Promise<ScenarioResult[]> {
+    return withFallback(
+      async () => {
+        const raw = await fetchJson<unknown>('/api/sim/scenarios');
+        const arr = (raw as { scenarios?: ScenarioResult[] }).scenarios ?? (raw as ScenarioResult[]);
+        return Array.isArray(arr) && arr.length ? arr : mock.scenarios;
+      },
+      () => mock.scenarios,
+    );
+  },
+
+  async runScenario(polygon?: Array<[number, number]>): Promise<ScenarioResult[]> {
+    return withFallback(
+      async () => {
+        const raw = await fetchJson<unknown>('/api/sim/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ polygon: polygon ?? null }),
+        });
+        const arr = (raw as { scenarios?: ScenarioResult[] }).scenarios ?? (raw as ScenarioResult[]);
+        return Array.isArray(arr) && arr.length ? arr : mock.scenarios;
+      },
+      () => mock.scenarios,
+    );
   },
 };
+
+/* -------------------------------------------------------------------------- */
+/* SSE parsing for the trip planner stream                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Consume a Server-Sent Events stream from the trip planner. Expects events
+ * whose `data:` payload is JSON of one of:
+ *   { type: "tool", id, tool, label?, status, detail? }   -> agent feed step
+ *   { type: "plans", plans: RoutePlan[] }                 -> final result
+ * Unknown event shapes are ignored. Returns the final plans (or mock routes).
+ */
+async function consumeSse(
+  body: ReadableStream<Uint8Array>,
+  cb: PlanStreamCallbacks,
+): Promise<RoutePlan[]> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let plans: RoutePlan[] | null = null;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE frames are separated by a blank line.
+    let sep: number;
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      const frame = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      const dataLine = frame
+        .split('\n')
+        .filter((l) => l.startsWith('data:'))
+        .map((l) => l.slice(5).trim())
+        .join('\n');
+      if (!dataLine) continue;
+      try {
+        const msg = JSON.parse(dataLine) as Record<string, unknown>;
+        if (msg.type === 'plans' && Array.isArray(msg.plans)) {
+          plans = msg.plans as RoutePlan[];
+        } else if (msg.tool || msg.type === 'tool') {
+          cb.onEvent({
+            id: String(msg.id ?? msg.tool),
+            tool: String(msg.tool ?? 'tool'),
+            label: String(msg.label ?? msg.tool ?? 'Working…'),
+            status: (msg.status as AgentEvent['status']) ?? 'done',
+            detail: msg.detail as string | undefined,
+          });
+        }
+      } catch {
+        // Ignore malformed frames.
+      }
+    }
+  }
+  return plans ?? mock.routes;
+}

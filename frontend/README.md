@@ -25,19 +25,36 @@ npm run dev      # http://localhost:5173
 npm run build    # type-check + production build
 ```
 
-## Mock-first
+## Backend connection & environment
 
-The app runs **entirely on mock data** until the real backend exists, so the
-map, mode toggle, time slider, zones, risk heatmap, routes, and scenarios all
-work with no server.
+The client talks to the real FastAPI backend and **gracefully degrades** to
+bundled demo data when the backend is down.
 
-- Mock fixtures: `src/mocks/*.json` — shapes match the API in
-  `design.md §9` and the examples in `/data/snapshots/examples`.
+| Env var | Default | Purpose |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8000` | Base URL of the Fathom API. The client prefixes every request (`/api/...`) with this. |
+
+Behavior (`src/api/client.ts`):
+
+- Every request has a **4-second timeout**. If a request fails or times out,
+  the client falls back to the bundled mock data in `src/mocks/` and flips a
+  connection flag to **offline**.
+- The badge in the top bar reflects this: **green "Live API"**, amber
+  **"Demo data"** (API up but in demo mode), or red **"Offline demo data"**
+  (API unreachable → in-browser mocks).
+- The **risk heatmap and conditions** come from the API when it is up and only
+  fall back to the in-browser generator when it is not.
+
+To point at a deployed backend, set `VITE_API_URL` (e.g. in Vercel project env
+or a local `.env.local` — see `.env.example`). **Never commit real `.env`
+files.**
+
+### Mock fallback
+
+- Mock fixtures: `src/mocks/*.json` — shapes match the API in `design.md §9`
+  and the examples in `/data/snapshots/examples`.
 - The conditions and risk **grids** are generated deterministically over the
   study bbox in `src/mocks/index.ts`.
-- The API client (`src/api/client.ts`) reads `VITE_USE_MOCKS`
-  (default `true`). Set it to `false` with the FastAPI backend running behind
-  the `/api` proxy (see `vite.config.ts`) to use real endpoints.
 
 ## Layout
 

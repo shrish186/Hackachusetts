@@ -33,7 +33,7 @@ export function TopBar({ demoMode, dataTimestamp }: TopBarProps) {
       {/* Mode toggle + demo badge */}
       <div className="pointer-events-auto flex flex-col items-end gap-2">
         <ModeToggle />
-        <DemoBadge show={demoMode} />
+        <DemoBadge demoMode={demoMode} />
       </div>
     </header>
   );
