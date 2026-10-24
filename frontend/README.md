@@ -49,6 +49,26 @@ To point at a deployed backend, set `VITE_API_URL` (e.g. in Vercel project env
 or a local `.env.local` — see `.env.example`). **Never commit real `.env`
 files.**
 
+## Deployment (Vercel)
+
+`vercel.json` at the repo root builds this app from the `frontend/`
+subdirectory (`npm --prefix frontend run build`, output `frontend/dist`) and
+adds:
+
+- A **single-page-app rewrite** (`/(.*) → /index.html`) so client routes and
+  reloads work.
+- **Security headers:** `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`,
+  and a **Content-Security-Policy**. The CSP allows the map tile host
+  (`*.basemaps.cartocdn.com`), `blob:` workers (MapLibre/deck.gl), inline
+  styles, and `https:` API calls (so any `VITE_API_URL` origin works). Verified
+  against a real `npm run build`: the app loads one external module script and
+  one stylesheet from `'self'`, with no inline or third-party scripts.
+
+Set `VITE_API_URL` in the Vercel project's Environment Variables to your
+deployed backend. If it is unset or unreachable, the app still runs on bundled
+demo data.
+
 ### Mock fallback
 
 - Mock fixtures: `src/mocks/*.json` — shapes match the API in `design.md §9`
