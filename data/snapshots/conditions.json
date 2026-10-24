@@ -2,7 +2,7 @@
   "metadata": {
     "description": "Real ocean conditions for the Fathom study area: NOAA NDBC buoy observations plus NWS marine gridpoint forecast samples for study-wide wave and wind coverage.",
     "source": "NOAA NDBC realtime2 buoy feed + NWS (api.weather.gov) marine gridpoint forecast",
-    "source_url": "https://www.ndbc.noaa.gov/data/realtime2/ ; https://api.weather.gov/",
+    "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013",
     "license": "U.S. Government work / public domain (NOAA, NWS)",
     "note": "2 real buoy cell(s) + 5 real NWS forecast sample cell(s). Buoy rows are observations; NWS rows are the current forecast. Wind converted to knots.",
     "stations": {

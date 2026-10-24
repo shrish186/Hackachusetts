@@ -21,17 +21,18 @@ _SNAPSHOTS = _REPO / "data" / "snapshots"
 
 
 def _is_wellformed(url: str) -> bool:
-    """True if ``url`` has an https/http scheme and a host (a usable link).
+    """True if ``url`` is a SINGLE, usable http(s) link.
 
-    A snapshot source_url may chain two refs with ' ; '; each part must be valid.
+    It must have an http/https scheme and a host, and must NOT contain any
+    whitespace or a semicolon — two URLs joined by ' ; ' render as one broken
+    <a href> in the Sources panel, so that shape is rejected outright.
     """
-    if not isinstance(url, str) or not url.strip():
+    if not isinstance(url, str) or not url:
         return False
-    for part in url.split(";"):
-        p = urlparse(part.strip())
-        if p.scheme not in ("http", "https") or not p.netloc:
-            return False
-    return True
+    if any(c.isspace() for c in url) or ";" in url:
+        return False
+    p = urlparse(url)
+    return p.scheme in ("http", "https") and bool(p.netloc)
 
 
 def test_meta_sources_urls_are_wellformed() -> None:

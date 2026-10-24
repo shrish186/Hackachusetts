@@ -123,7 +123,7 @@ def refresh_conditions() -> bool:
                 "wave and wind coverage."
             ),
             "source": "NOAA NDBC realtime2 buoy feed + NWS (api.weather.gov) marine gridpoint forecast",
-            "source_url": "https://www.ndbc.noaa.gov/data/realtime2/ ; https://api.weather.gov/",
+            "source_url": "https://www.ndbc.noaa.gov/station_page.php?station=44013",
             "license": "U.S. Government work / public domain (NOAA, NWS)",
             "note": (
                 f"{n_ndbc} real buoy cell(s) + {n_nws} real NWS forecast sample cell(s). "
