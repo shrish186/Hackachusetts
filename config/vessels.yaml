@@ -1,0 +1,28 @@
+# Vessel class parameters (Lane A, task 4).
+#
+# ALL VALUES ARE ESTIMATES for demo purposes, not manufacturer specs. Fuel burn
+# especially is a rough order-of-magnitude figure. Units stated per field.
+# synthetic: true -- these are hand-chosen representative estimates.
+
+synthetic: true
+note: "Representative estimates for a demo; not validated against real vessels."
+
+vessels:
+  small_boat:
+    name: "Small day boat"
+    cruise_kn: 9.0          # typical cruise speed, knots (estimate)
+    comfort_wave_m: 1.2     # wave height above which it gets uncomfortable, meters (estimate)
+    hard_wave_limit_m: 2.5  # wave height above which travel is unsafe/impassable, meters (estimate)
+    fuel_burn_l_per_h: 20.0 # fuel burn at cruise, liters/hour (estimate)
+  mid_trawler:
+    name: "Mid-size trawler"
+    cruise_kn: 10.0         # knots (estimate)
+    comfort_wave_m: 2.0     # meters (estimate)
+    hard_wave_limit_m: 4.0  # meters (estimate)
+    fuel_burn_l_per_h: 60.0 # liters/hour (estimate)
+  scalloper:
+    name: "Scalloper"
+    cruise_kn: 10.5         # knots (estimate)
+    comfort_wave_m: 2.5     # meters (estimate)
+    hard_wave_limit_m: 4.5  # meters (estimate)
+    fuel_burn_l_per_h: 90.0 # liters/hour (estimate)

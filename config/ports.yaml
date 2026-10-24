@@ -1,0 +1,53 @@
+# Massachusetts fishing ports and fishing grounds (Lane A, task 4).
+#
+# Port coordinates are the approximate harbor mouth / anchorage (decimal
+# degrees, WGS84) chosen to sit in navigable water near the grid, not the town
+# centroid. Fishing-ground coordinates are representative centers of well-known
+# grounds. Verified against public gazetteer / NOAA chart references.
+#
+# synthetic: false for the point coordinates (these are real, published
+# locations), but routes/effort built on them remain model estimates.
+
+ports:
+  gloucester:
+    name: "Gloucester"
+    lon: -70.662
+    lat: 42.610
+    note: "Gloucester Harbor, Cape Ann"
+  boston:
+    name: "Boston"
+    lon: -70.950
+    lat: 42.350
+    note: "Boston Harbor approaches (President Roads)"
+  plymouth:
+    name: "Plymouth"
+    lon: -70.650
+    lat: 41.958
+    note: "Plymouth Harbor"
+  provincetown:
+    name: "Provincetown"
+    lon: -70.180
+    lat: 42.050
+    note: "Provincetown Harbor, tip of Cape Cod"
+  new_bedford:
+    name: "New Bedford"
+    lon: -70.912
+    lat: 41.630
+    note: "New Bedford Harbor (outer, near hurricane barrier)"
+
+fishing_grounds:
+  stellwagen_bank:
+    name: "Stellwagen Bank"
+    lon: -70.250
+    lat: 42.350
+    note: "Stellwagen Bank National Marine Sanctuary, central bank"
+  jeffreys_ledge:
+    name: "Jeffreys Ledge"
+    lon: -70.250
+    lat: 42.900
+    note: "Jeffreys Ledge, northern Gulf of Maine (near bbox north edge)"
+  cape_cod_bay:
+    name: "Cape Cod Bay"
+    lon: -70.350
+    lat: 41.900
+    note: "Central Cape Cod Bay"
