@@ -1,63 +1,34 @@
-"""Meta endpoints: data source listing and demo-mode flag.
-
-See design.md section 9: ``GET /api/meta/sources`` returns the source list,
-their timestamps, and the demo-mode flag. Every dataset must carry a
-``source_url``, ``fetched_at``, and a cached/synthetic flag (steering: tech.md).
-"""
+"""GET /api/meta/sources: source list, timestamps, and demo-mode flag (design.md §9)."""
 from __future__ import annotations
 
-import os
+from typing import Any
 
 from fastapi import APIRouter
+
+from app.api.layers import conditions_records, snapshot_meta, zones_provenance
+from app.ingest.conditions import demo_mode
 
 router = APIRouter(tags=["meta"])
 
 
-def _demo_mode() -> bool:
-    """Return True when the app should run from bundled snapshots only."""
-    return os.getenv("FATHOM_DEMO_MODE", "false").lower() in {"1", "true", "yes"}
-
-
 @router.get("/meta/sources")
-def get_sources() -> dict[str, object]:
-    """List data sources with provenance and the current demo-mode flag.
-
-    Timestamps are UTC ISO-8601. ``fetched_at`` is populated by the ingest
-    jobs (Lane A); until then these entries describe candidate sources from
-    design.md section 3 and are flagged ``synthetic`` where no snapshot exists.
-    """
+def get_sources() -> dict[str, Any]:
+    """Return ``MetaResponse`` (frontend/src/api/types.ts)."""
+    _, cond = conditions_records(None)
+    zones = zones_provenance()
+    sight = snapshot_meta("sightings.json")
+    land = snapshot_meta("land_mask.geojson")
     sources = [
-        {
-            "layer": "conditions",
-            "name": "NOAA NDBC buoys / NWS marine forecast",
-            "source_url": "https://www.ndbc.noaa.gov/",
-            "fetched_at": None,
-            "cached": False,
-            "synthetic": True,
-        },
-        {
-            "layer": "zones",
-            "name": "NOAA Fisheries right whale zones / slow zones / closures",
-            "source_url": "https://www.fisheries.noaa.gov/",
-            "fetched_at": None,
-            "cached": False,
-            "synthetic": True,
-        },
-        {
-            "layer": "wind_lease",
-            "name": "BOEM offshore wind lease areas",
-            "source_url": "https://www.boem.gov/",
-            "fetched_at": None,
-            "cached": False,
-            "synthetic": True,
-        },
-        {
-            "layer": "sightings",
-            "name": "OBIS / public whale sightings sample",
-            "source_url": "https://obis.org/",
-            "fetched_at": None,
-            "cached": False,
-            "synthetic": True,
-        },
+        {"layer": "conditions", "name": cond["source"], "source_url": cond["source_url"],
+         "fetched_at": cond["fetched_at"], "cached": cond["cached"], "synthetic": cond["synthetic"]},
+        {"layer": "zones", "name": zones["source"], "source_url": zones["source_url"],
+         "fetched_at": zones["fetched_at"], "cached": True, "synthetic": zones["synthetic"]},
+        {"layer": "sightings", "name": sight.get("source", "sightings.json"), "source_url": sight.get("source_url"),
+         "fetched_at": sight.get("fetched_at"), "cached": True, "synthetic": bool(sight.get("synthetic", True))},
+        {"layer": "risk", "name": "app.engine.risk (parameters TODO-VERIFY)", "source_url": None,
+         "fetched_at": sight.get("fetched_at"), "cached": True, "synthetic": True},
+        {"layer": "land_mask", "name": "land_mask.geojson", "source_url": land.get("source_url"),
+         "fetched_at": land.get("fetched_at"), "cached": True, "synthetic": bool(land.get("synthetic", True))},
     ]
-    return {"demo_mode": _demo_mode(), "sources": sources}
+    stamps = [s["fetched_at"] for s in sources if s["fetched_at"]]
+    return {"demo_mode": demo_mode(), "data_timestamp": max(stamps) if stamps else None, "sources": sources}

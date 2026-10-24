@@ -1,188 +1,260 @@
-"""Map layer endpoints: conditions, zones, and whale risk.
-
-Implements design.md section 9:
+"""Map layer endpoints: conditions, zones, and whale risk (task 1.5, design.md §9).
 
     GET /api/layers/conditions?bbox&time
     GET /api/layers/zones?bbox&time
     GET /api/layers/risk?bbox&time&speed
 
-Data is read from ``data/snapshots/`` via :mod:`app.api._snapshots`, honoring
-``FATHOM_DEMO_MODE``. Every response carries a ``provenance`` block with
-``source``, ``fetched_at``, and ``cached`` / ``synthetic`` flags so the UI can
-badge cached and synthetic data (data-and-safety steering rule).
-
-Records are validated through Anant's pydantic models in ``app.models`` so the
-API and the engine speak the same language.
+Data comes from Lane A's ingest modules (bundled snapshots in demo mode) and
+the real risk model in ``app/engine/risk.py``. Every response has a
+``provenance`` block (source, source_url, fetched_at, cached, synthetic,
+demo_mode) and an ``items`` array whose elements match frontend/src/api/types.ts.
 """
 from __future__ import annotations
 
-from datetime import datetime
+import json
+from datetime import datetime, timezone
+from functools import lru_cache
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import ValidationError
+from shapely.geometry import box
 
-from app.api import _snapshots as snap
-from app.api._risk_stub import stub_risk
-from app.models import Conditions, Sighting, Zone
+from app.ingest.conditions import demo_mode, get_conditions as ingest_conditions
+from app.ingest.config import data_path
+from app.ingest.grid import default_grid, land_mask_array
+from app.ingest.zones import default_zones, is_active, restriction_summary, zone_shape
+from app.engine.risk import load_sightings, risk_breakdown
 
 router = APIRouter(tags=["layers"])
 
+BBox = tuple[float, float, float, float]
+SpeedQ = Annotated[float, Query(gt=0.0, le=40.0, description="Planned vessel speed, knots.")]
+BBoxQ = Annotated[
+    str | None,
+    Query(max_length=100, description="min_lon,min_lat,max_lon,max_lat (decimal degrees)."),
+]
+TimeQ = Annotated[datetime | None, Query(description="UTC time of interest (ISO-8601).")]
 
-def _parse_bbox_or_422(bbox: str | None) -> tuple[float, float, float, float] | None:
-    """Parse the bbox query param, raising HTTP 422 on malformed input."""
+#: Cells below this risk are left out of the risk layer to keep payloads small.
+MIN_RISK_REPORTED = 0.001
+
+
+def parse_bbox(raw: str | None) -> BBox | None:
+    """Parse and bound-check 'min_lon,min_lat,max_lon,max_lat'. HTTP 422 if invalid."""
+    if raw is None:
+        return None
     try:
-        return snap.parse_bbox(bbox)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        parts = [float(p) for p in raw.split(",")]
+    except ValueError:
+        raise HTTPException(422, "bbox must be four numbers: min_lon,min_lat,max_lon,max_lat") from None
+    if len(parts) != 4:
+        raise HTTPException(422, "bbox must be four numbers: min_lon,min_lat,max_lon,max_lat")
+    min_lon, min_lat, max_lon, max_lat = parts
+    if not (-180 <= min_lon <= max_lon <= 180 and -90 <= min_lat <= max_lat <= 90):
+        raise HTTPException(422, "bbox out of range or min greater than max")
+    return (min_lon, min_lat, max_lon, max_lat)
 
 
-def _zone_active_at(zone: Zone, when: datetime | None) -> bool:
-    """Return True if the zone's active window contains ``when``.
+def as_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 
-    A zone with no bounds is always active. A ``None`` time means "ignore the
-    time filter"; such zones are reported with ``active=True``.
-    """
-    if when is None:
+
+def in_bbox(lon: float, lat: float, bbox: BBox | None) -> bool:
+    if bbox is None:
         return True
-    if zone.active_from is not None and when < zone.active_from:
-        return False
-    if zone.active_to is not None and when > zone.active_to:
-        return False
-    return True
+    return bbox[0] <= lon <= bbox[2] and bbox[1] <= lat <= bbox[3]
+
+
+def cell_center(cell_id: str) -> tuple[float, float] | None:
+    """(lon, lat) centroid of an "ix_iy" cell on the study grid, or None."""
+    try:
+        ix, iy = (int(p) for p in cell_id.split("_"))
+    except ValueError:
+        return None
+    g = default_grid()
+    if not (0 <= ix < g.nx and 0 <= iy < g.ny):
+        return None
+    return g.center(ix, iy)
+
+
+@lru_cache(maxsize=1)
+def land_mask():
+    return land_mask_array(default_grid())
+
+
+@lru_cache(maxsize=8)
+def snapshot_meta(name: str) -> dict[str, Any]:
+    """The ``metadata`` block of a bundled snapshot file ({} if absent)."""
+    path = data_path("snapshots", name)
+    if not path.exists():
+        return {}
+    payload = json.loads(path.read_text())
+    return payload.get("metadata", {}) if isinstance(payload, dict) else {}
+
+
+def _iso(dt: datetime | None) -> str | None:
+    return as_utc(dt).isoformat().replace("+00:00", "Z") if dt else None
+
+
+def zones_provenance() -> dict[str, Any]:
+    meta = snapshot_meta("zones.json")
+    zones = default_zones()
+    return {
+        "source": meta.get("source", "zones.json (bundled snapshot)"),
+        "source_url": meta.get("source_url"),
+        "fetched_at": meta.get("fetched_at"),
+        "cached": True,
+        # The layer is synthetic if any zone in it is.
+        "synthetic": any(z.synthetic for z in zones) or bool(meta.get("synthetic", False)),
+        "demo_mode": demo_mode(),
+    }
+
+
+def sightings_provenance() -> dict[str, Any]:
+    meta = snapshot_meta("sightings.json")
+    return {
+        "source": "app.engine.risk + " + str(meta.get("source", "sightings.json")),
+        "source_url": meta.get("source_url"),
+        "fetched_at": meta.get("fetched_at"),
+        "cached": True,
+        # Risk parameters are TODO-VERIFY (config/risk.yaml); treat as synthetic
+        # unless both the sightings are real and the parameters are verified.
+        "synthetic": True,
+        "demo_mode": demo_mode(),
+    }
+
+
+def conditions_records(when: datetime | None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Latest conditions per cell at or before ``when`` (or latest overall)."""
+    result = ingest_conditions(prefer_live=False if demo_mode() else None)
+    provenance = {
+        "source": result.source,
+        "source_url": result.source_url,
+        "fetched_at": _iso(result.fetched_at),
+        "cached": result.cached,
+        "synthetic": result.synthetic,
+        "demo_mode": demo_mode(),
+    }
+    when = as_utc(when)
+    best: dict[str, Any] = {}
+    for c in result.conditions:
+        t = as_utc(c.time)
+        if when is not None and t > when:
+            continue
+        cur = best.get(c.cell_id)
+        if cur is None or t > as_utc(cur.time):
+            best[c.cell_id] = c
+    if when is not None and not best:
+        # Nothing at or before the requested time: fall back to the earliest records.
+        for c in result.conditions:
+            cur = best.get(c.cell_id)
+            if cur is None or as_utc(c.time) < as_utc(cur.time):
+                best[c.cell_id] = c
+    items = []
+    for c in best.values():
+        item = c.model_dump(mode="json")
+        center = cell_center(c.cell_id)
+        item["lon"], item["lat"] = center if center else (None, None)
+        item["cached"] = result.cached
+        item["synthetic"] = result.synthetic
+        items.append(item)
+    return items, provenance
 
 
 @router.get("/layers/conditions")
-def get_conditions(
-    bbox: str | None = Query(
-        None, description="min_lon,min_lat,max_lon,max_lat (decimal degrees)."
-    ),
-    time: datetime | None = Query(
-        None, description="UTC time of interest (ISO-8601). Reserved for time filtering."
-    ),
-) -> dict[str, object]:
-    """Return ocean/weather conditions for cells, with provenance.
-
-    Conditions carry per-cell lon/lat only once the grid snapshot exists; until
-    then we filter nothing spatially when a record has no coordinates. Each
-    record is validated through :class:`app.models.Conditions`.
-    """
-    result = snap.load_snapshot("conditions")
-    bounds = _parse_bbox_or_422(bbox)
-
-    features: list[dict[str, object]] = []
-    for raw in result.records:
-        try:
-            cond = Conditions.model_validate(raw)
-        except ValidationError:
-            continue
-        # Conditions records key by cell_id; spatial filtering happens once the
-        # grid snapshot (cell_id -> lon/lat) is joined by Lane A. Pass through.
-        features.append(cond.model_dump(mode="json"))
-
+def get_conditions(bbox: BBoxQ = None, time: TimeQ = None) -> dict[str, Any]:
+    """Conditions per cell (Req 1). bbox is applied via the grid cell centroid."""
+    bounds = parse_bbox(bbox)
+    items, provenance = conditions_records(time)
+    items = [i for i in items if i["lon"] is not None and in_bbox(i["lon"], i["lat"], bounds)]
     return {
         "layer": "conditions",
-        "query": {"bbox": bbox, "time": time.isoformat() if time else None},
-        "provenance": result.provenance(),
-        "count": len(features),
-        "features": features,
+        "query": {"bbox": bbox, "time": _iso(time)},
+        "provenance": provenance,
+        "count": len(items),
+        "items": items,
     }
+
+
+def zone_items(bounds: BBox | None, when: datetime) -> list[dict[str, Any]]:
+    clip = box(*bounds) if bounds else None
+    items = []
+    for z in default_zones():
+        if clip is not None and not zone_shape(z).intersects(clip):
+            continue
+        item = z.model_dump(mode="json")
+        item["active"] = is_active(z, when)
+        item["restriction"] = restriction_summary(z)
+        item["cached"] = True
+        items.append(item)
+    return items
 
 
 @router.get("/layers/zones")
-def get_zones(
-    bbox: str | None = Query(
-        None, description="min_lon,min_lat,max_lon,max_lat (decimal degrees)."
-    ),
-    time: datetime | None = Query(
-        None, description="UTC time; zones outside their active window are returned as inactive."
-    ),
-) -> dict[str, object]:
-    """Return regulatory/operational zones with active/inactive state.
-
-    Inactive zones are returned (not hidden) with ``active=False`` so the UI can
-    dim them (Req 2.3). Each record is validated through :class:`app.models.Zone`.
-    """
-    result = snap.load_snapshot("zones")
-    _parse_bbox_or_422(bbox)  # validated; polygon-vs-bbox clipping is a later task
-
-    features: list[dict[str, object]] = []
-    for raw in result.records:
-        try:
-            zone = Zone.model_validate(raw)
-        except ValidationError:
-            continue
-        payload = zone.model_dump(mode="json")
-        payload["active"] = _zone_active_at(zone, time)
-        features.append(payload)
-
+def get_zones(bbox: BBoxQ = None, time: TimeQ = None) -> dict[str, Any]:
+    """Zones with active state at ``time`` (default: now). Inactive zones are kept (Req 2.3)."""
+    bounds = parse_bbox(bbox)
+    when = as_utc(time) or datetime.now(timezone.utc)
+    items = zone_items(bounds, when)
     return {
         "layer": "zones",
-        "query": {"bbox": bbox, "time": time.isoformat() if time else None},
-        "provenance": result.provenance(),
-        "count": len(features),
-        "features": features,
+        "query": {"bbox": bbox, "time": _iso(when)},
+        "provenance": zones_provenance(),
+        "count": len(items),
+        "items": items,
     }
 
 
+@lru_cache(maxsize=1)
+def _sightings():
+    return tuple(load_sightings())
+
+
+def risk_items(bounds: BBox | None, when: datetime, speed_kn: float) -> list[dict[str, Any]]:
+    g = default_grid()
+    mask = land_mask()
+    sightings = _sightings()
+    items = []
+    for iy in range(g.ny):
+        for ix in range(g.nx):
+            if mask[iy, ix]:
+                continue
+            lon, lat = g.center(ix, iy)
+            if not in_bbox(lon, lat, bounds):
+                continue
+            b = risk_breakdown(g.cell_id(ix, iy), lon, lat, when, speed_kn, sightings)
+            if b.risk < MIN_RISK_REPORTED:
+                continue
+            items.append(
+                {
+                    "cell_id": b.cell_id,
+                    "lon": round(lon, 4),
+                    "lat": round(lat, 4),
+                    "risk": round(b.risk, 4),
+                    "factors": {
+                        "presence": round(b.presence, 4),
+                        "recency": round(b.recency, 4),
+                        "lethality": round(b.lethality, 4),
+                    },
+                    "cached": True,
+                    "synthetic": True,
+                }
+            )
+    return items
+
+
 @router.get("/layers/risk")
-def get_risk(
-    bbox: str | None = Query(
-        None, description="min_lon,min_lat,max_lon,max_lat (decimal degrees)."
-    ),
-    time: datetime | None = Query(
-        None, description="UTC time of interest (ISO-8601)."
-    ),
-    speed: float = Query(
-        10.0, gt=0.0, description="Planned vessel speed, knots (risk is monotonic in speed)."
-    ),
-) -> dict[str, object]:
-    """Return a whale-risk grid for the given speed, with provenance.
-
-    NOTE: risk is computed by a TEMPORARY stub (see ``_risk_stub.py``); the real
-    model is Lane A's ``engine/risk.py`` (design.md section 5). While the stub is
-    in use the response is flagged ``synthetic: true`` and must not be presented
-    as calibrated.
-    """
-    bounds = _parse_bbox_or_422(bbox)
-    sightings_snap = snap.load_snapshot("sightings")
-
-    # Build a crude presence prior from sightings: each sighting contributes to
-    # its own location. The real model does kernel smoothing + recency decay.
-    cells: list[dict[str, object]] = []
-    for raw in sightings_snap.records:
-        try:
-            s = Sighting.model_validate(raw)
-        except ValidationError:
-            continue
-        if not snap.in_bbox(s.lon, s.lat, bounds):
-            continue
-        presence = min(1.0, s.count / 5.0)  # TODO(Lane A): real presence prior
-        score = stub_risk(presence=presence, speed_kn=speed, is_land=False)
-        cells.append(
-            {
-                "lon": s.lon,
-                "lat": s.lat,
-                "risk": round(score, 4),
-                "factors": {
-                    "presence": round(presence, 4),
-                    "speed_kn": speed,
-                },
-            }
-        )
-
-    provenance = sightings_snap.provenance()
-    # The stub is never calibrated data; force the synthetic flag on this layer.
-    provenance["synthetic"] = True
-    provenance["source"] = f"{provenance['source']} + risk stub (uncalibrated)"
-
+def get_risk(bbox: BBoxQ = None, time: TimeQ = None, speed: SpeedQ = 10.0) -> dict[str, Any]:
+    """Whale-risk grid from app/engine/risk.py with per-cell factors (Req 3, 3.4)."""
+    bounds = parse_bbox(bbox)
+    when = as_utc(time) or datetime.now(timezone.utc)
+    items = risk_items(bounds, when, speed)
     return {
         "layer": "risk",
-        "query": {
-            "bbox": bbox,
-            "time": time.isoformat() if time else None,
-            "speed_kn": speed,
-        },
-        "provenance": provenance,
-        "count": len(cells),
-        "cells": cells,
+        "query": {"bbox": bbox, "time": _iso(when), "speed_kn": speed},
+        "provenance": sightings_provenance(),
+        "count": len(items),
+        "items": items,
     }
