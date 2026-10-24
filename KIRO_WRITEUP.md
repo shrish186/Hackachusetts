@@ -60,13 +60,17 @@ hand-authored snapshots synthetic:true`) and kept the agent from ever printing
 
 - **`fetch` MCP** — used for the hour-0 data reality check against public
   sources. Screenshot: `07-mcp-fetch.png`.
-- **Our own `fathom` MCP server** (`mcp/fathom_mcp/`) exposes all **eight**
-  engine tools (`get_conditions`, `get_zones`, `get_whale_risk`, `plan_routes`,
-  `get_effort_proxy`, `estimate_fuel`, `simulate_zone`, `export_brief`). They are
-  wired to the real backend via `backend_bridge.py`, degrade to labelled
-  placeholders if the backend isn't importable, and `python -m fathom_mcp` boots
-  clean, so the server is enabled in `.kiro/settings/mcp.json`. The in-app agent
-  and Kiro call the *same* tested engine. Screenshot: `08-mcp-fathom.png`.
+- **Our own `fathom` MCP server** (`mcp/fathom_mcp/`) exposes **nine** engine
+  tools: the eight from design §7 (`get_conditions`, `get_zones`,
+  `get_whale_risk`, `plan_routes`, `get_effort_proxy`, `estimate_fuel`,
+  `simulate_zone`, `export_brief`) plus **`list_ports(time)`**, which returns
+  ports and fishing grounds and flags which grounds are closed at a given time
+  (the same rule the router uses for `access_lost`; it shares the code the
+  forthcoming `GET /api/meta/ports` will use). They are wired to the real backend
+  via `backend_bridge.py`, degrade to labelled placeholders if the backend isn't
+  importable, and `python -m fathom_mcp` boots clean, so the server is enabled in
+  `.kiro/settings/mcp.json`. The in-app agent and Kiro call the *same* tested
+  engine. Screenshot: `08-mcp-fathom.png`.
 
 ## 6. Property-based testing
 
@@ -89,7 +93,13 @@ it — a closure that sits on a fishing ground removes those trips entirely, whi
 saving, so we fixed the model (report `access_lost`) and the invariant, not the
 test-to-pass. Screenshot: `09-pbt-counterexample.png`.
 
-`pytest -q`: **158 passed, 1 skipped** across 18 test files.
+The agent narrative also now answers **"why not that route?"** — for each
+non-recommended plan it adds one cited sentence comparing it with the
+recommended plan (ETA difference, whale-risk difference, extra zones crossed),
+using only numbers from the `plan_routes` result so the citation guard accepts
+it, identical across EN/PT/ES.
+
+`pytest -q`: **183 passed, 1 skipped** across 19 test files.
 
 ## 7. Real bugs QA caught (and what happened)
 
@@ -127,7 +137,9 @@ frontend/backend lanes (Lane C / Lane B); Lane D (QA) reported them and owns the
 simulator 504 fix.
 
 Screenshots: `13-live-map.png` (map rendering after the fixes),
-`14-manager-result.png` (Pareto result), `15-mobile-390.png` (390 px mobile).
+`14-manager-result.png` (Pareto result), `15-mobile-390.png` (390 px mobile),
+`16-whale-season-replay.png` (the replay toggle), `17-access-lost.png` (a closed
+ground reported as lost access).
 
 ## 8. Honest lessons
 

@@ -278,7 +278,8 @@ def build_synthetic_fleet(size: int = 200, seed: str = "fathom-fleet-v1") -> lis
         return anant
     trips: list[FleetTrip] = []
     for i in range(size):
-        u = lambda tag: _stable_unit(seed, i, tag)
+        def u(tag: str, _i: int = i) -> float:
+            return _stable_unit(seed, _i, tag)
         _, origin = _PORTS[int(u("port") * len(_PORTS)) % len(_PORTS)]
         _, dest = _GROUNDS[int(u("ground") * len(_GROUNDS)) % len(_GROUNDS)]
         vessel = _VESSELS[int(u("vessel") * len(_VESSELS)) % len(_VESSELS)]

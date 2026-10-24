@@ -149,3 +149,16 @@ class ExportBriefArgs(BaseModel):
         if not isinstance(wps, list) or len(wps) < 2:
             raise ValueError("route.waypoints must be a list of at least 2 (lon, lat) points")
         return v
+
+
+class ListPortsArgs(BaseModel):
+    """Args for ``list_ports``: ports, grounds, and which grounds are closed.
+
+    ``time`` is optional; when omitted, "now" is used. It accepts an ISO-8601
+    UTC timestamp (e.g. the whale-season replay instant) so the caller can see
+    which fishing grounds are closed at that moment.
+    """
+
+    time: datetime | None = Field(
+        None, description="UTC time to evaluate ground closures at; None means now."
+    )

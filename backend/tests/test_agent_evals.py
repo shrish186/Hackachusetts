@@ -121,3 +121,44 @@ def test_req4_llm_rewrite_goes_through_guard(monkeypatch) -> None:
     assert all("42.42" not in t for t in texts)
     # The rewrite was used (one sentence survived), and the invented number was dropped.
     assert len(texts) == 1 and texts[0].endswith("[tool:call_1].")
+
+
+# Lane D: "Why not that route?" comparison sentences (one cited sentence per
+# non-recommended plan, numbers only from plan_routes, identical across langs).
+_WHY_NOT_MARKERS = ("Why not", "Por que não", "¿Por qué no")
+
+
+def _why_not(narrative: list[dict]) -> list[dict]:
+    return [s for s in narrative if any(m in s["text"] for m in _WHY_NOT_MARKERS)]
+
+
+def test_laneD_why_not_one_cited_sentence_per_non_recommended_plan() -> None:
+    """Multi-plan trip: each non-recommended plan gets a cited why-not sentence."""
+    prompt = {"port": "gloucester", "vessel": "small_boat", "cruise_kn": 9.0,
+              "max_hours": 14, "target_ground": "stellwagen_bank", "risk_pref": 0.5}
+    results, plans = _run(prompt, "en")
+    n_plans = len(plans["plans"])
+    if n_plans < 2:
+        pytest.skip("only one route for this trip; nothing to compare")
+    why = _why_not(plans["narrative"])
+    # At least one why-not sentence per non-recommended plan (zone sentences extra).
+    assert len(why) >= n_plans - 1
+    # Every why-not sentence is cited and survived the guard (it is in the
+    # narrative, which is the guard's output), and cites plan_routes.
+    for s in why:
+        assert s["citations"], s["text"]
+
+
+def test_laneD_why_not_numbers_identical_across_languages() -> None:
+    """The comparison numbers are identical in en/pt/es (Req 7.2)."""
+    prompt = {"port": "gloucester", "vessel": "small_boat", "cruise_kn": 9.0,
+              "max_hours": 14, "target_ground": "stellwagen_bank", "risk_pref": 0.5}
+    out = {lang: _run(prompt, lang)[1] for lang in ("en", "pt", "es")}
+    if len(out["en"]["plans"]) < 2:
+        pytest.skip("only one route for this trip; nothing to compare")
+
+    def why_nums(plans: dict) -> list[float]:
+        text = " ".join(s["text"] for s in _why_not(plans["narrative"]))
+        return sorted(float(n) for n in NUM.findall(CITE.sub("", text)))
+
+    assert why_nums(out["en"]) and why_nums(out["en"]) == why_nums(out["pt"]) == why_nums(out["es"])

@@ -1,22 +1,23 @@
 # Fathom MCP server (`fathom_mcp`)
 
-Exposes Fathom's **eight data/risk/route tools** (see
-`.kiro/specs/fathom/design.md`, section 7) over the
+Exposes Fathom's **nine data/risk/route tools** (the eight from
+`.kiro/specs/fathom/design.md`, section 7, plus `list_ports`) over the
 [Model Context Protocol](https://modelcontextprotocol.io) using the official
 `mcp` Python SDK. The same server is used two ways:
 
 - the **in-app LLM agent** calls it at runtime to get facts it must cite;
 - **Kiro** calls it during development to query the same data while writing code.
 
-> **Status: wired to the real engine.** All eight tools now call the backend
-> deterministic engine (`backend/app/engine` + `backend/app/agent/tools.py`)
-> through `backend_bridge.py`. When the backend package is importable the tools
+> **Status: wired to the real engine.** All nine tools now call the backend
+> deterministic engine (`backend/app/engine` + `backend/app/agent/tools.py` +
+> `backend/app/ingest`) through `backend_bridge.py`. When the backend package is
+> importable the tools
 > return real results (`placeholder: false`); if it is not (the server run fully
 > standalone), each tool degrades gracefully to a clearly-labelled placeholder
 > (`placeholder: true`) instead of crashing. Synthetic layers are flagged
 > `synthetic: true`.
 
-## The eight tools
+## The nine tools
 
 | Tool | Input | Returns | Backing |
 |---|---|---|---|
@@ -28,9 +29,13 @@ Exposes Fathom's **eight data/risk/route tools** (see
 | `estimate_fuel` | route, vessel | liters + distance + hours (estimate) | `app.engine.routing` vessel burn model |
 | `simulate_zone` | polygon, fleet sample id | Δrisk / Δhours / Δfuel / Δeffort %, frontier, summary | `app.engine.simulator` |
 | `export_brief` | RoutePlan, language | one-page printable HTML brief | `app.api.trip.render_brief` |
+| `list_ports` | time (optional) | ports + fishing grounds, each ground flagged `closed` at that time | `app.ingest.ports` + `app.ingest.zones` (shares the forthcoming `GET /api/meta/ports`) |
 
-`effort_proxy` is an estimate of activity, **not** catch or revenue. Nothing
-asserts legal compliance; the agent/plan layer cites every number.
+`get_effort_proxy` is an estimate of activity, **not** catch or revenue. A ground
+is `closed` in `list_ports` when its point lies inside an active, prohibited zone
+at the given time — the same rule the router uses for `access_lost`; zone dates
+are real, zone polygons are hand-drawn. Nothing asserts legal compliance; the
+agent/plan layer cites every number.
 
 ## Layout
 
@@ -43,7 +48,7 @@ mcp/
     __init__.py           # version + re-exports
     __main__.py           # `python -m fathom_mcp` -> server.main()
     server.py             # builds MCPServer / FastMCP, registers tools, runs stdio
-    tools.py              # the eight tool functions (validate -> real engine / placeholder)
+    tools.py              # the nine tool functions (validate -> real engine / placeholder)
     backend_bridge.py     # imports the backend engine; graceful if unavailable
     models.py             # pydantic input models (bbox, time range, per-tool args)
     placeholders.py       # placeholder-response envelope (fallback only)

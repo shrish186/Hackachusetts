@@ -139,6 +139,77 @@ def render_brief_html(route: dict, language: str) -> str:
     return render_brief(body)
 
 
+def ports_at(when_iso: str | None) -> dict[str, Any]:
+    """Ports, fishing grounds, and which grounds are closed at ``when_iso``.
+
+    This is the code the forthcoming ``GET /api/meta/ports`` will share. Until
+    that endpoint lands we compute it directly from the loaders the same way the
+    router does: a ground is **closed** at a given time if its coordinate sits
+    inside an active, prohibited protection zone (the same condition the router
+    uses to report ``access_lost``). ``when_iso`` of None means "now".
+    """
+    _ensure_backend_on_path()
+    from datetime import datetime, timezone
+
+    from app.ingest.ports import load_grounds, load_ports
+    from app.ingest.zones import active_zones, default_zones, zones_containing
+
+    if when_iso:
+        when = datetime.fromisoformat(when_iso.replace("Z", "+00:00"))
+    else:
+        when = datetime.now(timezone.utc)
+
+    zones = list(default_zones())
+    active = active_zones(zones, when)
+    active_prohibited = [z for z in active if z.prohibited]
+
+    def _closing_zone(lon: float, lat: float):
+        hits = zones_containing(active_prohibited, lon, lat)
+        return hits[0] if hits else None
+
+    ports = []
+    for key, p in load_ports().items():
+        ports.append({
+            "id": key,
+            "name": p.get("name", key),
+            "lon": float(p["lon"]),
+            "lat": float(p["lat"]),
+        })
+
+    grounds = []
+    closed_count = 0
+    for key, g in load_grounds().items():
+        lon, lat = float(g["lon"]), float(g["lat"])
+        z = _closing_zone(lon, lat)
+        closed = z is not None
+        if closed:
+            closed_count += 1
+        grounds.append({
+            "id": key,
+            "name": g.get("name", key),
+            "lon": lon,
+            "lat": lat,
+            "closed": closed,
+            "closed_by": (
+                {"zone_id": z.id, "zone_name": z.name,
+                 "active_to": z.active_to.isoformat().replace("+00:00", "Z") if z.active_to else None}
+                if z else None
+            ),
+        })
+
+    return {
+        "time": when.isoformat().replace("+00:00", "Z"),
+        "ports": ports,
+        "grounds": grounds,
+        "grounds_closed": closed_count,
+        "note": (
+            "A ground is 'closed' when its point lies inside an active, prohibited "
+            "zone (same rule the router uses for access_lost). Zone polygons are "
+            "hand-drawn approximations; their active dates are real."
+        ),
+    }
+
+
 def simulate_candidate(polygon: dict, prohibited: bool = True) -> dict[str, Any]:
     """Run the what-if simulator for a custom candidate polygon (real engine)."""
     _ensure_backend_on_path()

@@ -15,19 +15,22 @@ No login, no API keys. Demo mode runs from bundled public/synthetic data.
 2. **Toggle layers and click a zone.** Turn weather, zones, and risk on/off.
    Click any zone to see its name, effective dates, restriction, and source. The
    data-timestamp strip and a "Demo data" badge stay visible. *(~20 s)*
-3. **Captain mode — run the demo trip.** With Gloucester + small boat selected,
-   click **Try the demo trip**. Watch the agent stream its tool calls, then read
-   the three ranked routes. Tap **"Why"** on one: every number carries a
-   citation. Switch the language to Portuguese — the numbers stay identical.
-   *(~35 s)*
+3. **Captain mode — run the demo trip.** In the **port picker type `gl`** and
+   pick **Gloucester**; open the **ground picker** (Jeffreys Ledge shows a red
+   **"closed" chip** at this time) and pick **Stellwagen Bank**; vessel **small
+   boat**. Click **Try the demo trip**. Watch the agent stream its tool calls,
+   read the three ranked routes, tap **"Why"** (every number is cited) and the
+   **"Why not that route?"** line on an alternative. Switch to Portuguese — the
+   numbers stay identical. *(~35 s)*
 4. **Manager mode — run the 3 presets.** Run *Extend closure east*, *Dynamic
    zone around recent sightings*, and *Seasonal 10-knot speed limit*. They return
-   instantly (precomputed). Read the Pareto trade-off chart: efficient options
+   instantly (precomputed). Read the comparison (Pareto) chart: efficient options
    are highlighted. Note the honest baseline — **57 of 200 fleet trips already
    target grounds inside today's closed zones**, reported as lost access rather
-   than silently relocated. *(~35 s)*
+   than silently relocated. Use **Share** to copy a link that reopens this exact
+   view, and open **/about** for the data-sources page. *(~35 s)*
 5. **Check the tests (optional).** `cd backend && pip install -r requirements.txt
-   && pytest -q` → **158 passed, 1 skipped**, including Hypothesis property
+   && pytest -q` → **183 passed, 1 skipped**, including Hypothesis property
    tests. *(~15 s)*
 
 ## What is real vs. synthetic (from `docs/DATA.md`)
@@ -36,9 +39,9 @@ No login, no API keys. Demo mode runs from bundled public/synthetic data.
 |---|---|
 | Conditions (wave, wind, SST) | **Real** — NOAA NDBC buoys + NWS marine forecast |
 | Whale sightings | **Real** — OBIS right-whale occurrences (CC-BY 4.0) |
-| Whale risk | **Model over real inputs** — OBIS sightings × Vanderlaan & Taggart (2007) lethality curve; a screening model, flagged synthetic |
-| Protection-zone **dates** | **Real** — NOAA 2026 season bulletins |
-| Protection-zone **polygons** | **Synthetic** — hand-drawn approximations, labeled |
+| Whale risk | **Modelled over real inputs** — real OBIS sightings × the Vanderlaan & Taggart (2007) vessel-strike lethality curve; a screening model, flagged synthetic |
+| Protection-zone **rules/dates** | **Real** — NOAA 2026 Seasonal Management Area bulletins and the 10 kn speed rule |
+| Protection-zone **polygons** | **Hand-drawn** — approximations of the published shapes, labeled synthetic |
 | Land mask / coastline | **Synthetic** — simplified approximation |
 | Ports & grounds | **Real coordinates**; derived routes/effort are estimates |
 | Effort proxy | **Synthetic** — an estimate of activity, not catch or revenue |

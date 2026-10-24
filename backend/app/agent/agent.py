@@ -77,6 +77,10 @@ T = {
         "slow": "Speed limits there add about {slow} h to the trip {c}.",
         "avoided": "{name} avoids these known closed areas: {zones} {c}.",
         "exposure": "On the {name} track waves reach about {wave} m and wind about {wind} kn; whale risk exposure is {exp} (risk times hours) {c}.",
+        "why_not_slower_riskier": "Why not {name}? It takes about {dh} h longer each way than {rec} and carries {dr} more whale risk exposure, so it is not the pick {c}.",
+        "why_not_slower_safer": "Why not {name}? It cuts whale risk exposure by {dr} but adds about {dh} h each way over {rec}, a trade the ranking did not favor {c}.",
+        "why_not_slower_same": "Why not {name}? It adds about {dh} h each way over {rec} with no lower whale risk exposure {c}.",
+        "why_not_zones": "{name} also passes through {zones}, which {rec} does not {c}.",
         "single_same": "All weightings give the same route because the open water between the port and the ground leaves no meaningfully different track {c}.",
         "single_budget": "All weightings give the same route because every different track needs about {need} h round trip, more than the {max} h limit {c}.",
         "lost_closed_zone": "The target ground {ground} is inside the active closed zone {zone}{until}, so it cannot be reached {c}.",
@@ -102,6 +106,10 @@ T = {
         "slow": "Os limites de velocidade ali somam cerca de {slow} h à viagem {c}.",
         "avoided": "{name} evita estas áreas fechadas conhecidas: {zones} {c}.",
         "exposure": "Na rota {name} as ondas chegam a cerca de {wave} m e o vento a cerca de {wind} kn; a exposição ao risco de baleia é {exp} (risco vezes horas) {c}.",
+        "why_not_slower_riskier": "Por que não a {name}? Leva cerca de {dh} h a mais por trecho que a {rec} e tem {dr} a mais de exposição ao risco de baleia, por isso não é a escolhida {c}.",
+        "why_not_slower_safer": "Por que não a {name}? Reduz a exposição ao risco de baleia em {dr}, mas acrescenta cerca de {dh} h por trecho em relação à {rec}, troca que a ordenação não favoreceu {c}.",
+        "why_not_slower_same": "Por que não a {name}? Acrescenta cerca de {dh} h por trecho em relação à {rec} sem reduzir a exposição ao risco de baleia {c}.",
+        "why_not_zones": "A {name} também passa por {zones}, o que a {rec} não faz {c}.",
         "single_same": "Todos os pesos dão a mesma rota porque a água aberta entre o porto e o pesqueiro não deixa outra rota realmente diferente {c}.",
         "single_budget": "Todos os pesos dão a mesma rota porque qualquer rota diferente precisa de cerca de {need} h ida e volta, mais que o limite de {max} h {c}.",
         "lost_closed_zone": "O pesqueiro {ground} está dentro da zona fechada ativa {zone}{until}, então não pode ser alcançado {c}.",
@@ -127,6 +135,10 @@ T = {
         "slow": "Los límites de velocidad allí suman unas {slow} h al viaje {c}.",
         "avoided": "{name} evita estas áreas cerradas conocidas: {zones} {c}.",
         "exposure": "En la ruta {name} las olas llegan a unos {wave} m y el viento a unos {wind} kn; la exposición al riesgo de ballena es {exp} (riesgo por horas) {c}.",
+        "why_not_slower_riskier": "¿Por qué no la {name}? Tarda unas {dh} h más por trayecto que la {rec} y conlleva {dr} más de exposición al riesgo de ballena, así que no es la elegida {c}.",
+        "why_not_slower_safer": "¿Por qué no la {name}? Reduce la exposición al riesgo de ballena en {dr}, pero añade unas {dh} h por trayecto respecto a la {rec}, un cambio que el orden no favoreció {c}.",
+        "why_not_slower_same": "¿Por qué no la {name}? Añade unas {dh} h por trayecto respecto a la {rec} sin reducir la exposición al riesgo de ballena {c}.",
+        "why_not_zones": "La {name} también pasa por {zones}, lo que la {rec} no hace {c}.",
         "single_same": "Todos los pesos dan la misma ruta porque el agua abierta entre el puerto y el caladero no deja otra ruta realmente distinta {c}.",
         "single_budget": "Todos los pesos dan la misma ruta porque cualquier ruta distinta necesita unas {need} h ida y vuelta, más que el límite de {max} h {c}.",
         "lost_closed_zone": "El caladero {ground} está dentro de la zona cerrada activa {zone}{until}, así que no se puede alcanzar {c}.",
@@ -239,6 +251,55 @@ def citation_guard(sentences: list[str], results: dict[str, Any], zone_names: li
     return kept
 
 
+def _why_not_sentences(lang: str, plan: dict[str, Any], zn: dict[str, str], c4: str) -> list[str]:
+    """One cited "why not that route?" sentence per non-recommended plan.
+
+    Compares each non-recommended plan against the recommended (rank 1) plan
+    using only numbers already in the plan_routes result: the ETA difference,
+    the whale-risk-exposure difference, and any zones the alternative crosses
+    that the recommended plan does not. The computed differences are written
+    back onto the plan dict (``vs_recommended``) so they are present in the
+    cited tool result and the citation guard accepts the sentence.
+    """
+    t = T[lang]
+    plans = plan.get("plans") or []
+    if len(plans) < 2:
+        return []
+    rec = next((p for p in plans if p.get("rank") == 1), plans[0])
+    rec_name = plan_name(lang, rec["name"])
+    out: list[str] = []
+    for p in plans:
+        if p is rec or p.get("rank") == rec.get("rank"):
+            continue
+        name = plan_name(lang, p["name"])
+        dh = round(p["eta_hours"] - rec["eta_hours"], 2)
+        dr = round(p["risk_exposure"] - rec["risk_exposure"], 4)
+        abs_dh = round(abs(dh), 2)
+        abs_dr = round(abs(dr), 4)
+        # Write the comparison back so its numbers live in the cited result
+        # (the citation guard checks every number in the sentence appears in the
+        # plan_routes result). Store both signed and the absolute values shown.
+        p["vs_recommended"] = {
+            "recommended": rec["name"],
+            "extra_hours": dh,
+            "risk_change": dr,
+            "extra_hours_abs": abs_dh,
+            "risk_change_abs": abs_dr,
+        }
+        if dr > 0:
+            out.append(t["why_not_slower_riskier"].format(name=name, rec=rec_name, dh=fmt(abs_dh), dr=fmt(abs_dr), c=c4))
+        elif dr < 0:
+            out.append(t["why_not_slower_safer"].format(name=name, rec=rec_name, dh=fmt(abs_dh), dr=fmt(abs_dr), c=c4))
+        else:
+            out.append(t["why_not_slower_same"].format(name=name, rec=rec_name, dh=fmt(abs_dh), c=c4))
+        # Extra zones this alternative crosses that the recommended plan avoids.
+        extra_zones = [z for z in p["zones_crossed"] if z not in rec["zones_crossed"]]
+        if extra_zones:
+            out.append(t["why_not_zones"].format(
+                name=name, rec=rec_name, zones="; ".join(zn.get(z, z) for z in extra_zones), c=c4))
+    return out
+
+
 def _template_narrative(lang: str, ids: dict[str, str], res: dict[str, Any], trip: TripRequest) -> list[str]:
     t = T[lang]
     out: list[str] = []
@@ -293,6 +354,7 @@ def _template_narrative(lang: str, ids: dict[str, str], res: dict[str, Any], tri
             out.append(t["avoided"].format(name=name, zones="; ".join(zn.get(z, z) for z in p["zones_avoided"]), c=c4))
         out.append(t["exposure"].format(name=name, exp=fmt(p["risk_exposure"]), wave=fmt(p["max_wave_m"]),
                                         wind=fmt(p["max_wind_kn"]), c=c4))
+    out.extend(_why_not_sentences(lang, plan, zn, c4))
     if "get_effort_proxy" in ids:
         ground_val = plan["plans"][0]["effort_proxy"]
         out.append(t["effort"].format(ground=plan["ground_name"], effort=fmt(ground_val),

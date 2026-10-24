@@ -34,6 +34,7 @@ from .models import (
     GetEffortProxyArgs,
     GetWhaleRiskArgs,
     GetZonesArgs,
+    ListPortsArgs,
     PlanRoutesArgs,
     SimulateZoneArgs,
 )
@@ -349,7 +350,46 @@ def export_brief(route: dict, language: str) -> dict[str, Any]:
     )
 
 
-#: Ordered registry of the eight tools, used by the server to register them.
+def list_ports(time: Any = None) -> dict[str, Any]:
+    """List ports and fishing grounds, flagging grounds closed at ``time``.
+
+    Shares the code the forthcoming ``GET /api/meta/ports`` will use. A ground is
+    marked ``closed`` when its point lies inside an active, prohibited protection
+    zone at ``time`` (the same rule the router uses for ``access_lost``). When
+    ``time`` is omitted, "now" is used.
+
+    Args:
+        time: Optional ISO-8601 UTC timestamp (e.g. the whale-season replay
+            instant ``2026-03-15T13:00:00Z``); ``None`` means now.
+    """
+    args = ListPortsArgs(time=time)
+    time_iso = args.time.isoformat() if args.time else None
+    if _backend_ready():
+        data = _bridge.ports_at(time_iso)
+        return _real_response(
+            tool="list_ports",
+            source="app.ingest.ports + app.ingest.zones (config/ports.yaml; zone dates real, polygons hand-drawn)",
+            time=data["time"],
+            ports=data["ports"],
+            grounds=data["grounds"],
+            grounds_closed=data["grounds_closed"],
+            note=data["note"],
+        )
+    return placeholder_response(
+        tool="list_ports",
+        note=(
+            "Will return ports and fishing grounds with a 'closed' flag per ground "
+            "(closed when inside an active prohibited zone at the given time). "
+            "This is placeholder data."
+        ),
+        time=time_iso,
+        ports=[],
+        grounds=[],
+        grounds_closed=0,
+    )
+
+
+#: Ordered registry of the tools, used by the server to register them.
 TOOLS = [
     get_conditions,
     get_zones,
@@ -359,4 +399,5 @@ TOOLS = [
     estimate_fuel,
     simulate_zone,
     export_brief,
+    list_ports,
 ]
