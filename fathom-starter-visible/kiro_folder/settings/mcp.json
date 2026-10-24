@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "fathom": {
+      "command": "python",
+      "args": ["-m", "fathom_mcp"],
+      "env": { "FATHOM_DEMO_MODE": "true" },
+      "disabled": true,
+      "autoApprove": ["get_zones", "get_conditions"]
+    }
+  }
+}

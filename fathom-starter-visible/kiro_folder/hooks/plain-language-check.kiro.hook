@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Plain-language check",
+  "description": "Keep captain-facing text at a reading level a working fisherman finds easy.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["frontend/src/captain/**/*.tsx", "config/languages.yaml"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review any captain-facing copy that changed. Rewrite anything above roughly grade 8 reading level, remove jargon, and make sure the advisory-only disclaimer is still visible."
+  }
+}

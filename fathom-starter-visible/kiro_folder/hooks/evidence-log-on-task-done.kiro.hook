@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Evidence logger",
+  "description": "When tasks.md changes, log what was completed so the Kiro write-up has real evidence.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [".kiro/specs/fathom/tasks.md"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "tasks.md changed. Compare it with docs/kiro-evidence/LOG.md and append one dated line for each task that is newly checked off, in the form: 'YYYY-MM-DD HH:MM | task id | what Kiro did | any issue it caught'. Do not rewrite existing lines."
+  }
+}

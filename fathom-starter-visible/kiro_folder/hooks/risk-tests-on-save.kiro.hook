@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Risk model guard",
+  "description": "When the risk or routing engine changes, run property tests and report any broken invariant.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["backend/app/engine/**/*.py", "config/risk.yaml"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The risk or routing engine changed. Run the property tests in backend/tests (risk monotonic in speed, risk within 0..1, routes never cross land or enter prohibited active zones). If any fail, explain which invariant broke and propose a fix. Do not edit tests to make them pass. Append a one-line result to docs/kiro-evidence/LOG.md."
+  }
+}

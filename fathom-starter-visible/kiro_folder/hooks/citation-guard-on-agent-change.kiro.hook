@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Citation guard",
+  "description": "When agent prompts or tools change, run the agent evals and flag uncited facts.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["backend/app/agent/**/*.py", "mcp/**/*.py"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Agent or tool code changed. Run the agent evals. For each canned prompt, check that every number, date, and zone name in the output is traceable to a tool result with a citation. Report any uncited claim and fix the prompt or post-processor. Append a one-line result to docs/kiro-evidence/LOG.md."
+  }
+}

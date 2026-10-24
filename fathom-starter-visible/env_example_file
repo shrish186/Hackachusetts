@@ -1,0 +1,8 @@
+# Copy to .env and fill in. NEVER commit .env
+FATHOM_DEMO_MODE=true
+# LLM access for the in-app agent (use whichever you actually have)
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+# or:
+ANTHROPIC_API_KEY=
